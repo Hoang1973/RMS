@@ -5,6 +5,13 @@ namespace RMS.Data.Entities
     public class User : BaseEntity
     {
         public string Name { get; set; }
-        public string Role { get; set; }
+        public Role UserRole { get; set; }
+        public ICollection<Order> Orders { get; set; }
+        public ICollection<Shift> Shifts { get; set; }
+        public enum Role
+        {
+            Admin = 1,
+            User = 2
+        }
     }
 }
