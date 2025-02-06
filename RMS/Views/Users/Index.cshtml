@@ -1,4 +1,4 @@
-﻿@model IEnumerable<RMS.Data.Entities.Ingredient>
+﻿@model IEnumerable<RMS.Data.Entities.User>
 
 @{
     ViewData["Title"] = "Index";
@@ -16,10 +16,7 @@
                 @Html.DisplayNameFor(model => model.Name)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.StockQuantity)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Unit)
+                @Html.DisplayNameFor(model => model.UserRole)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.CreatedAt)
@@ -43,10 +40,7 @@
                 @Html.DisplayFor(modelItem => item.Name)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.StockQuantity)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Unit)
+                @Html.DisplayFor(modelItem => item.UserRole)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.CreatedAt)

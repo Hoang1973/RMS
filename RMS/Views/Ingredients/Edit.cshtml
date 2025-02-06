@@ -1,17 +1,10 @@
-﻿@model RMS.Data.Entities.Ingredient
+﻿@model RMS.Models.IngredientViewModel
 
 @{
-    Layout = null;
+    ViewData["Title"] = "Edit";
 }
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Edit</title>
-</head>
-<body>
+<h1>Edit</h1>
 
 <h4>Ingredient</h4>
 <hr />
@@ -31,30 +24,16 @@
             </div>
             <div class="form-group">
                 <label asp-for="Unit" class="control-label"></label>
-                <select asp-for="Unit" class="form-control"></select>
+                <select asp-for="Unit" class="form-control">
+                    <option value="">--Select Unit--</option>
+                    <option value="kg">kg</option>
+                    <option value="liters">liters</option>
+                    <option value="pieces">pieces</option>
+                </select>
                 <span asp-validation-for="Unit" class="text-danger"></span>
             </div>
             <input type="hidden" asp-for="Id" />
-            <div class="form-group">
-                <label asp-for="CreatedAt" class="control-label"></label>
-                <input asp-for="CreatedAt" class="form-control" />
-                <span asp-validation-for="CreatedAt" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="UpdatedAt" class="control-label"></label>
-                <input asp-for="UpdatedAt" class="form-control" />
-                <span asp-validation-for="UpdatedAt" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="CreatedBy" class="control-label"></label>
-                <input asp-for="CreatedBy" class="form-control" />
-                <span asp-validation-for="CreatedBy" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="UpdatedBy" class="control-label"></label>
-                <input asp-for="UpdatedBy" class="form-control" />
-                <span asp-validation-for="UpdatedBy" class="text-danger"></span>
-            </div>
+
             <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-primary" />
             </div>
@@ -69,5 +48,3 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
-</body>
-</html>

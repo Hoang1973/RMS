@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RMS.Data;
 using RMS.Data.Entities;
+using RMS.Models;
 
 namespace RMS.Controllers
 {
@@ -54,16 +55,27 @@ namespace RMS.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,StockQuantity,Unit,")] Ingredient ingredient)
+        public async Task<IActionResult> Create(IngredientViewModel model)
         {
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
+                var ingredient = new Ingredient
+                {
+                    Name = model.Name,
+                    StockQuantity = model.StockQuantity,
+                    Unit = Enum.Parse<Ingredient.IngredientUnit>(model.Unit)
+                };
+
                 _context.Add(ingredient);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+            else if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError("", "Ingredient could not be added. Please check the details and try again.");
+            }
 
-            return View(ingredient);
+            return View(model);
         }
         //    ModelState.AddModelError("", "Ingredient could not be added. Please check the details and try again.");
 
@@ -80,17 +92,24 @@ namespace RMS.Controllers
             {
                 return NotFound();
             }
-            return View(ingredient);
+
+            var model = new IngredientViewModel
+            {
+                Id = ingredient.Id,
+                Name = ingredient.Name,
+                StockQuantity = ingredient.StockQuantity,
+                Unit = ingredient.Unit.ToString()
+            };
+
+            return View(model);
         }
 
         // POST: Ingredients/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Name,StockQuantity,Unit,Id,CreatedAt,UpdatedAt,CreatedBy,UpdatedBy")] Ingredient ingredient)
+        public async Task<IActionResult> Edit(int id, IngredientViewModel model)
         {
-            if (id != ingredient.Id)
+            if (id != model.Id)
             {
                 return NotFound();
             }
@@ -99,12 +118,22 @@ namespace RMS.Controllers
             {
                 try
                 {
+                    var ingredient = await _context.Ingredients.FindAsync(id);
+                    if (ingredient == null)
+                    {
+                        return NotFound();
+                    }
+
+                    ingredient.Name = model.Name;
+                    ingredient.StockQuantity = model.StockQuantity;
+                    ingredient.Unit = Enum.Parse<Ingredient.IngredientUnit>(model.Unit);
+
                     _context.Update(ingredient);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!IngredientExists(ingredient.Id))
+                    if (!IngredientExists(model.Id))
                     {
                         return NotFound();
                     }
@@ -115,7 +144,7 @@ namespace RMS.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(ingredient);
+            return View(model);
         }
 
         // GET: Ingredients/Delete/5

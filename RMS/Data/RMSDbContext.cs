@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RMS.Data.Entities;
+using RMS.Data.Entities.Base;
 
 namespace RMS.Data
 {
@@ -29,5 +30,35 @@ namespace RMS.Data
 
             // Additional configuration if needed
         }
+
+        public override int SaveChanges()
+        {
+            SetAuditFields();
+            return base.SaveChanges();
+        }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            SetAuditFields();
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void SetAuditFields()
+        {
+            var entries = ChangeTracker.Entries<BaseEntity>();
+
+            foreach (var entry in entries)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+        }
+
     }
 }
