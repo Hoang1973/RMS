@@ -23,11 +23,11 @@ namespace RMS.Data
         public DbSet<Shift> Shifts { get; set; }
         public DbSet<Stock> Stocks { get; set; }
 
-        //protected override void OnModelCreating(ModelBuilder modelBuilder)
-        //{
-        //    base.OnModelCreating(modelBuilder);
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
 
-        //    // Additional configuration if needed
-        //}
+            // Additional configuration if needed
+        }
     }
 }
