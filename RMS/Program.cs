@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using RMS.Data;
+
 namespace RMS
 {
     public class Program
@@ -6,8 +9,12 @@ namespace RMS
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            
+
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+            builder.Services.AddDbContext<RMSDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             var app = builder.Build();
 
