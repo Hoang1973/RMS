@@ -29,8 +29,11 @@ namespace RMS
             builder.Services.AddDbContext<RMSDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("OfficeDB")));
 
+            // Add AutoMapper
+            builder.Services.AddAutoMapper(typeof(MappingProfile));
+
             // Add service interfaces
-            builder.Services.AddScoped<IIngredientService, IngredientService>();
+            builder.Services.AddScoped<IngredientService, IngredientService>();
 
             var app = builder.Build();
 

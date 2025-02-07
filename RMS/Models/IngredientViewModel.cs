@@ -14,5 +14,10 @@ namespace RMS.Models
 
         [Required(ErrorMessage = "Unit is required.")]
         public string Unit { get; set; } // Use string instead of enum to simplify dropdowns in the UI
+
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public int? CreatedBy { get; set; }
+        public int? UpdatedBy { get; set; }
     }
 }

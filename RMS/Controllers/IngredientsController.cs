@@ -8,22 +8,24 @@ using Microsoft.EntityFrameworkCore;
 using RMS.Data;
 using RMS.Data.Entities;
 using RMS.Models;
+using RMS.Services;
 
 namespace RMS.Controllers
 {
     public class IngredientsController : Controller
     {
-        private readonly RMSDbContext _context;
+        private readonly IngredientService _ingredientService;
 
-        public IngredientsController(RMSDbContext context)
+        public IngredientsController(IngredientService ingredientService)
         {
-            _context = context;
+            _ingredientService = ingredientService;
         }
 
         // GET: Ingredients
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Ingredients.ToListAsync());
+            var models = await _ingredientService.GetAllIngredientsAsync();
+            return View(models);
         }
 
         // GET: Ingredients/Details/5
@@ -34,14 +36,13 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var ingredient = await _context.Ingredients
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (ingredient == null)
+            var model = await _ingredientService.GetIngredientByIdAsync(id.Value);
+            if (model == null)
             {
                 return NotFound();
             }
 
-            return View(ingredient);
+            return View(model);
         }
 
         // GET: Ingredients/Create
@@ -57,25 +58,15 @@ namespace RMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(IngredientViewModel model)
         {
-            if (ModelState.IsValid)
-            {
-                var ingredient = new Ingredient
-                {
-                    Name = model.Name,
-                    StockQuantity = model.StockQuantity,
-                    Unit = Enum.Parse<Ingredient.IngredientUnit>(model.Unit)
-                };
-
-                _context.Add(ingredient);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            else if (!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 ModelState.AddModelError("", "Ingredient could not be added. Please check the details and try again.");
+                return View(model);
             }
 
-            return View(model);
+            await _ingredientService.CreateIngredientAsync(model);
+            return RedirectToAction(nameof(Index));
+
         }
         //    ModelState.AddModelError("", "Ingredient could not be added. Please check the details and try again.");
 
@@ -87,19 +78,11 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var ingredient = await _context.Ingredients.FindAsync(id);
-            if (ingredient == null)
+            var model = await _ingredientService.GetIngredientByIdAsync(id.Value);
+            if (model == null)
             {
                 return NotFound();
             }
-
-            var model = new IngredientViewModel
-            {
-                Id = ingredient.Id,
-                Name = ingredient.Name,
-                StockQuantity = ingredient.StockQuantity,
-                Unit = ingredient.Unit.ToString()
-            };
 
             return View(model);
         }
@@ -118,22 +101,11 @@ namespace RMS.Controllers
             {
                 try
                 {
-                    var ingredient = await _context.Ingredients.FindAsync(id);
-                    if (ingredient == null)
-                    {
-                        return NotFound();
-                    }
-
-                    ingredient.Name = model.Name;
-                    ingredient.StockQuantity = model.StockQuantity;
-                    ingredient.Unit = Enum.Parse<Ingredient.IngredientUnit>(model.Unit);
-
-                    _context.Update(ingredient);
-                    await _context.SaveChangesAsync();
+                    await _ingredientService.UpdateIngredientAsync(model);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!IngredientExists(model.Id))
+                    if (!await _ingredientService.IngredientExistsAsync(model.Id))
                     {
                         return NotFound();
                     }
@@ -155,14 +127,13 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var ingredient = await _context.Ingredients
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (ingredient == null)
+            var model = await _ingredientService.GetIngredientByIdAsync(id.Value);
+            if (model == null)
             {
                 return NotFound();
             }
 
-            return View(ingredient);
+            return View(model);
         }
 
         // POST: Ingredients/Delete/5
@@ -170,19 +141,14 @@ namespace RMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var ingredient = await _context.Ingredients.FindAsync(id);
-            if (ingredient != null)
+            bool deleted = await _ingredientService.DeleteIngredientByIdAsync(id);
+            if (!deleted)
             {
-                _context.Ingredients.Remove(ingredient);
+                return NotFound();  // Handle case where ingredient was not found
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool IngredientExists(int id)
-        {
-            return _context.Ingredients.Any(e => e.Id == id);
-        }
     }
 }
