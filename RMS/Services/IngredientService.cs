@@ -49,7 +49,6 @@ namespace RMS.Services
         public async Task UpdateIngredientAsync(IngredientViewModel model)
         {
             var ingredient = await _context.Ingredients.FindAsync(model.Id);
-            Console.WriteLine($"Before Save: {model.CreatedAt}");
             if (ingredient == null) throw new Exception("Ingredient not found");
 
             _mapper.Map(model, ingredient);

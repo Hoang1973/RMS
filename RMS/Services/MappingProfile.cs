@@ -8,7 +8,10 @@ namespace RMS.Services
     {
         public MappingProfile()
         {
-            CreateMap<Ingredient, IngredientViewModel>().ReverseMap();
+            CreateMap<Ingredient, IngredientViewModel>()
+                .ReverseMap() // Enables bi-directional mapping
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
         }
     }
 }
