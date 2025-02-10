@@ -11,7 +11,9 @@ namespace RMS.Services
             CreateMap<Ingredient, IngredientViewModel>()
                 .ReverseMap() // Enables bi-directional mapping
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
-
+            CreateMap<Dish, DishViewModel>()
+                .ReverseMap()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         }
     }
 }

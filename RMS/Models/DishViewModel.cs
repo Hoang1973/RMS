@@ -1,10 +1,12 @@
-﻿using RMS.Data.Entities;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using RMS.Data.Entities;
 using System.ComponentModel.DataAnnotations;
 
 namespace RMS.Models
 {
-    public class DishViewModel
+    public class DishViewModel : BaseViewModel
     {
+        public int Id { get; set; }
         [Required(ErrorMessage = "Name is required.")]
         public string Name { get; set; }
         [Range(0, int.MaxValue, ErrorMessage = "Stock Quantity must be zero or positive.")]
@@ -13,5 +15,10 @@ namespace RMS.Models
 
         [Required(ErrorMessage = "Type is required.")]
         public Dish.DishType Type { get; set; }
+
+        public IEnumerable<SelectListItem> TypeOptions => Enum.GetValues(typeof(Dish.DishType))
+            .Cast<Dish.DishType>()
+            .Select(e => new SelectListItem { Value = e.ToString(), Text = e.ToString() })
+            .ToList();
     }
 }
