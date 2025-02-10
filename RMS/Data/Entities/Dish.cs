@@ -9,7 +9,7 @@ namespace RMS.Data.Entities
         public string Description { get; set; }
         public DishType Type { get; set; }
         public ICollection<OrderItem> OrderItems { get; set; }
-        public ICollection<DishIngredient> DishIngredients { get; set; }
+        public ICollection<DishIngredient> DishDishes { get; set; }
         public enum DishType
         {
             MainCourse,

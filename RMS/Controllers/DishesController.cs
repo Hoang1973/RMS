@@ -7,22 +7,27 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RMS.Data;
 using RMS.Data.Entities;
+using RMS.Models;
+using RMS.Services;
 
 namespace RMS.Controllers
 {
     public class DishesController : Controller
     {
-        private readonly RMSDbContext _context;
+        private readonly DishService _dishService;
+        //private readonly RMSDbContext _dbContext;
 
-        public DishesController(RMSDbContext context)
+        public DishesController(DishService dishService)
         {
-            _context = context;
+            _dishService = dishService;
+            //_dbContext = dbContext;
         }
 
         // GET: Dishes
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Dishes.ToListAsync());
+            var models = await _dishService.GetAllAsync();
+            return View(models);
         }
 
         // GET: Dishes/Details/5
@@ -33,14 +38,13 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var dish = await _context.Dishes
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (dish == null)
+            var model = await _dishService.GetByIdAsync(id.Value);
+            if (model == null)
             {
                 return NotFound();
             }
 
-            return View(dish);
+            return View(model);
         }
 
         // GET: Dishes/Create
@@ -50,19 +54,19 @@ namespace RMS.Controllers
         }
 
         // POST: Dishes/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Price,Description,Type,Id,CreatedAt,UpdatedAt,CreatedBy,UpdatedBy")] Dish dish)
+        public async Task<IActionResult> Create(DishViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(dish);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("", "Dish could not be added. Please check the details and try again.");
+                return View(model);
             }
-            return View(dish);
+
+            await _dishService.CreateAsync(model);
+            return RedirectToAction(nameof(Index));
+
         }
 
         // GET: Dishes/Edit/5
@@ -73,22 +77,21 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var dish = await _context.Dishes.FindAsync(id);
-            if (dish == null)
+            var model = await _dishService.GetByIdAsync(id.Value);
+            if (model == null)
             {
                 return NotFound();
             }
-            return View(dish);
+
+            return View(model);
         }
 
         // POST: Dishes/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Name,Price,Description,Type,Id,CreatedAt,UpdatedAt,CreatedBy,UpdatedBy")] Dish dish)
+        public async Task<IActionResult> Edit(int id, DishViewModel model)
         {
-            if (id != dish.Id)
+            if (id != model.Id)
             {
                 return NotFound();
             }
@@ -97,12 +100,11 @@ namespace RMS.Controllers
             {
                 try
                 {
-                    _context.Update(dish);
-                    await _context.SaveChangesAsync();
+                    await _dishService.UpdateAsync(model);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!DishExists(dish.Id))
+                    if (!await _dishService.ExistsAsync(model.Id))
                     {
                         return NotFound();
                     }
@@ -113,7 +115,7 @@ namespace RMS.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(dish);
+            return View(model);
         }
 
         // GET: Dishes/Delete/5
@@ -124,14 +126,13 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var dish = await _context.Dishes
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (dish == null)
+            var model = await _dishService.GetByIdAsync(id.Value);
+            if (model == null)
             {
                 return NotFound();
             }
 
-            return View(dish);
+            return View(model);
         }
 
         // POST: Dishes/Delete/5
@@ -139,19 +140,14 @@ namespace RMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var dish = await _context.Dishes.FindAsync(id);
-            if (dish != null)
+            bool deleted = await _dishService.DeleteByIdAsync(id);
+            if (!deleted)
             {
-                _context.Dishes.Remove(dish);
+                return NotFound();  // Handle case where dish was not found
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool DishExists(int id)
-        {
-            return _context.Dishes.Any(e => e.Id == id);
-        }
     }
 }

@@ -26,7 +26,7 @@ namespace RMS.Controllers
         // GET: Ingredients
         public async Task<IActionResult> Index()
         {
-            var models = await _ingredientService.GetAllIngredientsAsync();
+            var models = await _ingredientService.GetAllAsync();
             return View(models);
         }
 
@@ -38,7 +38,7 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var model = await _ingredientService.GetIngredientByIdAsync(id.Value);
+            var model = await _ingredientService.GetByIdAsync(id.Value);
             if (model == null)
             {
                 return NotFound();
@@ -54,8 +54,6 @@ namespace RMS.Controllers
         }
 
         // POST: Ingredients/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(IngredientViewModel model)
@@ -66,11 +64,10 @@ namespace RMS.Controllers
                 return View(model);
             }
 
-            await _ingredientService.CreateIngredientAsync(model);
+            await _ingredientService.CreateAsync(model);
             return RedirectToAction(nameof(Index));
 
         }
-        //    ModelState.AddModelError("", "Ingredient could not be added. Please check the details and try again.");
 
         // GET: Ingredients/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -80,7 +77,7 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var model = await _ingredientService.GetIngredientByIdAsync(id.Value);
+            var model = await _ingredientService.GetByIdAsync(id.Value);
             if (model == null)
             {
                 return NotFound();
@@ -103,11 +100,11 @@ namespace RMS.Controllers
             {
                 try
                 {
-                    await _ingredientService.UpdateIngredientAsync(model);
+                    await _ingredientService.UpdateAsync(model);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!await _ingredientService.IngredientExistsAsync(model.Id))
+                    if (!await _ingredientService.ExistsAsync(model.Id))
                     {
                         return NotFound();
                     }
@@ -129,7 +126,7 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var model = await _ingredientService.GetIngredientByIdAsync(id.Value);
+            var model = await _ingredientService.GetByIdAsync(id.Value);
             if (model == null)
             {
                 return NotFound();
@@ -143,7 +140,7 @@ namespace RMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            bool deleted = await _ingredientService.DeleteIngredientByIdAsync(id);
+            bool deleted = await _ingredientService.DeleteByIdAsync(id);
             if (!deleted)
             {
                 return NotFound();  // Handle case where ingredient was not found

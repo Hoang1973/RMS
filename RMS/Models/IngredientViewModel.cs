@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace RMS.Models
 {
-    public class IngredientViewModel
+    public class IngredientViewModel : BaseViewModel
     {
         public int Id { get; set; }  // Only needed for updates
 
@@ -18,11 +18,6 @@ namespace RMS.Models
         public Ingredient.IngredientUnit Unit { get; set; }
         [Required(ErrorMessage = "Type is required.")]
         public Ingredient.IngredientType Type { get; set; }
-
-        public DateTime? CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public int? CreatedBy { get; set; }
-        public int? UpdatedBy { get; set; }
 
         public IEnumerable<SelectListItem> UnitOptions => Enum.GetValues(typeof(Ingredient.IngredientUnit))
             .Cast<Ingredient.IngredientUnit>()
