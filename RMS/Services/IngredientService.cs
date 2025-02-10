@@ -41,7 +41,6 @@ namespace RMS.Services
         public async Task CreateIngredientAsync(IngredientViewModel model)
         {
             var ingredient = _mapper.Map<Ingredient>(model);
-            ingredient.Unit = Enum.Parse<Ingredient.IngredientUnit>(model.Unit);
             _context.Ingredients.Add(ingredient);
             await _context.SaveChangesAsync();
         }
@@ -50,11 +49,7 @@ namespace RMS.Services
         {
             var ingredient = await _context.Ingredients.FindAsync(model.Id);
             if (ingredient == null) throw new Exception("Ingredient not found");
-
             _mapper.Map(model, ingredient);
-
-            ingredient.Unit = Enum.Parse<Ingredient.IngredientUnit>(model.Unit);
-
             await _context.SaveChangesAsync();
         }
         public async Task<bool> DeleteIngredientByIdAsync(int id)

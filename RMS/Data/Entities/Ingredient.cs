@@ -7,6 +7,7 @@ namespace RMS.Data.Entities
         public string Name { get; set; }
         public int StockQuantity { get; set; }
         public IngredientUnit Unit { get; set; }
+        public IngredientType Type { get; set; }
         public ICollection<DishIngredient> DishIngredients { get; set; }
         public ICollection<Stock> Stocks { get; set; }
         public enum IngredientUnit
@@ -14,6 +15,18 @@ namespace RMS.Data.Entities
             kg,
             liters,
             pieces
+        }
+        public enum IngredientType
+        {
+            Meat,
+            Vegetable,
+            Fruit,
+            Dairy,
+            Grain,
+            Spice,
+            Sweetener,
+            Fat,
+            Other
         }
     }
 }
