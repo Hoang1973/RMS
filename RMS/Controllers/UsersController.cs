@@ -7,30 +7,25 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RMS.Data;
 using RMS.Data.Entities;
-using RMS.Models;
-using RMS.Services;
 
 namespace RMS.Controllers
 {
-    public class IngredientsController : Controller
+    public class UsersController : Controller
     {
-        private readonly IngredientService _ingredientService;
-        //private readonly RMSDbContext _dbContext;
+        private readonly RMSDbContext _context;
 
-        public IngredientsController(IngredientService ingredientService)
+        public UsersController(RMSDbContext context)
         {
-            _ingredientService = ingredientService;
-            //_dbContext = dbContext;
+            _context = context;
         }
 
-        // GET: Ingredients
+        // GET: Users
         public async Task<IActionResult> Index()
         {
-            var models = await _ingredientService.GetAllIngredientsAsync();
-            return View(models);
+            return View(await _context.Users.ToListAsync());
         }
 
-        // GET: Ingredients/Details/5
+        // GET: Users/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -38,41 +33,39 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var model = await _ingredientService.GetIngredientByIdAsync(id.Value);
-            if (model == null)
+            var user = await _context.Users
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (user == null)
             {
                 return NotFound();
             }
 
-            return View(model);
+            return View(user);
         }
 
-        // GET: Ingredients/Create
+        // GET: Users/Create
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Ingredients/Create
+        // POST: Users/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(IngredientViewModel model)
+        public async Task<IActionResult> Create([Bind("Name,UserRole,Id,CreatedAt,UpdatedAt,CreatedBy,UpdatedBy")] User user)
         {
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                ModelState.AddModelError("", "Ingredient could not be added. Please check the details and try again.");
-                return View(model);
+                _context.Add(user);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
             }
-
-            await _ingredientService.CreateIngredientAsync(model);
-            return RedirectToAction(nameof(Index));
-
+            return View(user);
         }
-        //    ModelState.AddModelError("", "Ingredient could not be added. Please check the details and try again.");
 
-        // GET: Ingredients/Edit/5
+        // GET: Users/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -80,21 +73,22 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var model = await _ingredientService.GetIngredientByIdAsync(id.Value);
-            if (model == null)
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
             {
                 return NotFound();
             }
-
-            return View(model);
+            return View(user);
         }
 
-        // POST: Ingredients/Edit/5
+        // POST: Users/Edit/5
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, IngredientViewModel model)
+        public async Task<IActionResult> Edit(int id, [Bind("Name,UserRole,Id,CreatedAt,UpdatedAt,CreatedBy,UpdatedBy")] User user)
         {
-            if (id != model.Id)
+            if (id != user.Id)
             {
                 return NotFound();
             }
@@ -103,11 +97,12 @@ namespace RMS.Controllers
             {
                 try
                 {
-                    await _ingredientService.UpdateIngredientAsync(model);
+                    _context.Update(user);
+                    await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!await _ingredientService.IngredientExistsAsync(model.Id))
+                    if (!UserExists(user.Id))
                     {
                         return NotFound();
                     }
@@ -118,10 +113,10 @@ namespace RMS.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(model);
+            return View(user);
         }
 
-        // GET: Ingredients/Delete/5
+        // GET: Users/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -129,28 +124,34 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var model = await _ingredientService.GetIngredientByIdAsync(id.Value);
-            if (model == null)
+            var user = await _context.Users
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (user == null)
             {
                 return NotFound();
             }
 
-            return View(model);
+            return View(user);
         }
 
-        // POST: Ingredients/Delete/5
+        // POST: Users/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            bool deleted = await _ingredientService.DeleteIngredientByIdAsync(id);
-            if (!deleted)
+            var user = await _context.Users.FindAsync(id);
+            if (user != null)
             {
-                return NotFound();  // Handle case where ingredient was not found
+                _context.Users.Remove(user);
             }
 
+            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
+        private bool UserExists(int id)
+        {
+            return _context.Users.Any(e => e.Id == id);
+        }
     }
 }

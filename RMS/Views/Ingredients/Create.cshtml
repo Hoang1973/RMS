@@ -1,17 +1,10 @@
 ﻿@model RMS.Data.Entities.Ingredient
 
 @{
-    Layout = null;
+    ViewData["Title"] = "Create";
 }
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Create</title>
-</head>
-<body>
+<h1>Create</h1>
 
 <h4>Ingredient</h4>
 <hr />
@@ -31,9 +24,14 @@
             </div>
             <div class="form-group">
                 <label asp-for="Unit" class="control-label"></label>
-                <select asp-for="Unit" class="form-control" asp-items="Html.GetEnumSelectList<RMS.Data.Entities.Ingredient.IngredientUnit>()"></select>
+                <select asp-for="Unit" class="form-control">
+                    <option value="">--Select Unit--</option>
+                    <option value="kg">kg</option>
+                    <option value="liters">liters</option>
+                    <option value="pieces">pieces</option>
+                </select>
                 <span asp-validation-for="Unit" class="text-danger"></span>
-                </div>
+            </div>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
             </div>
@@ -48,5 +46,3 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
-</body>
-</html>

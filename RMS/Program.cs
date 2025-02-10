@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RMS.Data;
+using RMS.Services;
 
 namespace RMS
 {
@@ -9,12 +10,30 @@ namespace RMS
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            
+
+
+            // Get environment variable (set manually for home/office)
+            string location = Environment.GetEnvironmentVariable("MY_LOCATION"); // Default is Home
+
+            // Choose the correct connection string
+            string connectionString = location == "Office"
+                ? builder.Configuration.GetConnectionString("OfficeDB")
+                : builder.Configuration.GetConnectionString("DefaultConnection");
+
+            //$env:MY_LOCATION = "Office"
+
+
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
             builder.Services.AddDbContext<RMSDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("OfficeDB")));
+
+            // Add AutoMapper
+            builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+            // Add service interfaces
+            builder.Services.AddScoped<IngredientService, IngredientService>();
 
             var app = builder.Build();
 
