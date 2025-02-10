@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using RMS.Data.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace RMS.Models
 {
@@ -13,11 +15,22 @@ namespace RMS.Models
         public int StockQuantity { get; set; }
 
         [Required(ErrorMessage = "Unit is required.")]
-        public string Unit { get; set; } // Use string instead of enum to simplify dropdowns in the UI
+        public Ingredient.IngredientUnit Unit { get; set; }
+        [Required(ErrorMessage = "Type is required.")]
+        public Ingredient.IngredientType Type { get; set; }
 
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public int? CreatedBy { get; set; }
         public int? UpdatedBy { get; set; }
+
+        public IEnumerable<SelectListItem> UnitOptions => Enum.GetValues(typeof(Ingredient.IngredientUnit))
+            .Cast<Ingredient.IngredientUnit>()
+            .Select(e => new SelectListItem { Value = e.ToString(), Text = e.ToString() })
+            .ToList();
+        public IEnumerable<SelectListItem> TypeOptions => Enum.GetValues(typeof(Ingredient.IngredientType))
+            .Cast<Ingredient.IngredientType>()
+            .Select(e => new SelectListItem { Value = e.ToString(), Text = e.ToString() })
+            .ToList();
     }
 }
