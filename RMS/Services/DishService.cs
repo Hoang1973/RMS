@@ -13,5 +13,6 @@ namespace RMS.Services
             : base(context, mapper)
         {
         }
+
     }
 }

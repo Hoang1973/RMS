@@ -15,12 +15,10 @@ namespace RMS.Controllers
     public class DishesController : Controller
     {
         private readonly DishService _dishService;
-        //private readonly RMSDbContext _dbContext;
 
         public DishesController(DishService dishService)
         {
             _dishService = dishService;
-            //_dbContext = dbContext;
         }
 
         // GET: Dishes
