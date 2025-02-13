@@ -25,20 +25,20 @@ namespace RMS.Services
             return _mapper.Map<List<TViewModel>>(entities);
         }
 
-        public async Task<TViewModel?> GetByIdAsync(int id)
+        public virtual async Task<TViewModel?> GetByIdAsync(int id)
         {
             var entity = await _dbSet.FindAsync(id);
             return entity == null ? null : _mapper.Map<TViewModel>(entity);
         }
 
-        public async Task CreateAsync(TViewModel model)
+        public virtual async Task CreateAsync(TViewModel model)
         {
             var entity = _mapper.Map<TEntity>(model);
             _dbSet.Add(entity);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(TViewModel model)
+        public virtual async Task UpdateAsync(TViewModel model)
         {
             var entityId = typeof(TViewModel).GetProperty("Id")?.GetValue(model);
             var entity = await _dbSet.FindAsync(entityId);

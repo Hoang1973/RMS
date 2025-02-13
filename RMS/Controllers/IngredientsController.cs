@@ -14,13 +14,11 @@ namespace RMS.Controllers
 {
     public class IngredientsController : Controller
     {
-        private readonly IngredientService _ingredientService;
-        //private readonly RMSDbContext _dbContext;
+        private readonly IIngredientService _ingredientService;
 
-        public IngredientsController(IngredientService ingredientService)
+        public IngredientsController(IIngredientService ingredientService)
         {
             _ingredientService = ingredientService;
-            //_dbContext = dbContext;
         }
 
         // GET: Ingredients

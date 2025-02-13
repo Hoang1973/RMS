@@ -3,6 +3,14 @@
 @{
     ViewData["Title"] = "Create";
 }
+<script>
+    // Convert ViewData Ingredients to JSON
+    var ingredients = @Html.Raw(Json.Serialize(((IEnumerable<SelectListItem>)ViewData["Ingredients"]).Select(i => new
+        {
+            id = i.Value,
+            name = i.Text
+        })));
+</script>
 
 <h1>Create</h1>
 
@@ -38,8 +46,26 @@
                 </select>
                 <span asp-validation-for="Type" class="text-danger"></span>
             </div>
+            <h5>Ingredients</h5>
+            <div id="ingredient-list">
+                <div class="ingredient-item">
+                    <select name="Ingredients[0].IngredientId" class="form-control">
+                        <option value="">Select Ingredient</option>
+                        @foreach (var item in (IEnumerable<SelectListItem>)ViewData["Ingredients"])
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                    <input name="Ingredients[0].QuantityNeeded" class="form-control" placeholder="Quantity" />
+                </div>
+            </div>
+
+
+            <button type="button" onclick="addIngredient()">Add More</button>
+
             <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <button type="submit" class="btn btn-success">Create Dish</button>
+                @* <input type="submit" value="Create" class="btn btn-primary" /> *@
             </div>
         </form>
     </div>
@@ -51,4 +77,23 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        let ingredientIndex = 1;
+        function addIngredient() {
+            const container = document.getElementById('ingredient-list');
+            let options = ingredients.map(ing => `<option value="${ing.id}">${ing.name}</option>`).join('');
+
+            const html = `
+                <div class="ingredient-item">
+                    <select name="Ingredients[${ingredientIndex}].IngredientId" class="form-control">
+                        <option value="">Select Ingredient</option>
+                        ${options}
+                    </select>
+                    <input name="Ingredients[${ingredientIndex}].QuantityNeeded" class="form-control" placeholder="Quantity" />
+                </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+            ingredientIndex++;
+        }
+    </script>
 }

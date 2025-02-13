@@ -33,8 +33,8 @@ namespace RMS
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
             // Add service interfaces
-            builder.Services.AddScoped<IngredientService, IngredientService>();
-            builder.Services.AddScoped<DishService, DishService>();
+            builder.Services.AddScoped<IIngredientService, IngredientService>();
+            builder.Services.AddScoped<IDishService, DishService>();
 
             var app = builder.Build();
 

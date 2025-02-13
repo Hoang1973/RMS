@@ -14,11 +14,13 @@ namespace RMS.Controllers
 {
     public class DishesController : Controller
     {
-        private readonly DishService _dishService;
+        private readonly IDishService _dishService;
+        private readonly IIngredientService _ingredientService;
 
-        public DishesController(DishService dishService)
+        public DishesController(IDishService dishService, IIngredientService ingredientService)
         {
             _dishService = dishService;
+            _ingredientService = ingredientService;
         }
 
         // GET: Dishes
@@ -46,9 +48,17 @@ namespace RMS.Controllers
         }
 
         // GET: Dishes/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View();
+            var model = new DishViewModel
+            {
+                Ingredients = new List<DishIngredientViewModel>(), // Initialize empty list
+            };
+
+            // Pass ingredient list to the ViewModel (avoid ViewBag)
+            ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
+
+            return View(model);
         }
 
         // POST: Dishes/Create
@@ -59,6 +69,9 @@ namespace RMS.Controllers
             if (!ModelState.IsValid)
             {
                 ModelState.AddModelError("", "Dish could not be added. Please check the details and try again.");
+
+                // Reload available ingredients if there's a validation error
+                ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
                 return View(model);
             }
 

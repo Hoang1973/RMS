@@ -1,4 +1,4 @@
-﻿@model RMS.Data.Entities.Dish
+﻿@model RMS.Models.DishViewModel
 
 @{
     ViewData["Title"] = "Details";
@@ -59,6 +59,28 @@
             @Html.DisplayFor(model => model.UpdatedBy)
         </dd>
     </dl>
+    @* <h5>Ingredients</h5> *@
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Ingredients</th>
+                <th>Quantity Needed</th>
+                <th>Categories</th>
+                <th>Unit</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ingredient in Model.Ingredients)
+            {
+                <tr>
+                    <td>@ingredient.IngredientName</td>
+                    <td>@ingredient.QuantityNeeded</td>
+                    <td>@ingredient.IngredientType</td>
+                    <td>@ingredient.IngredientUnit</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
 <div>
     <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
