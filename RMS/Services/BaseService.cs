@@ -34,7 +34,8 @@ namespace RMS.Services
         public virtual async Task CreateAsync(TViewModel model)
         {
             var entity = _mapper.Map<TEntity>(model);
-            _dbSet.Add(entity);
+            await CreateRelationshipsAsync(entity, model);
+            await _dbSet.AddAsync(entity);
             await _context.SaveChangesAsync();
         }
 
@@ -42,9 +43,9 @@ namespace RMS.Services
         {
             var entityId = typeof(TViewModel).GetProperty("Id")?.GetValue(model);
             var entity = await _dbSet.FindAsync(entityId);
-            //var entity = await _dbSet.FindAsync(_mapper.Map<TEntity>(model));
             if (entity == null) throw new Exception($"{typeof(TEntity).Name} not found");
             _mapper.Map(model, entity);
+            await UpdateRelationshipsAsync(entity, model);
             await _context.SaveChangesAsync();
         }
 
@@ -52,10 +53,19 @@ namespace RMS.Services
         {
             var entity = await _dbSet.FindAsync(id);
             if (entity == null) return false;
-
             _dbSet.Remove(entity);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        protected virtual Task CreateRelationshipsAsync(TEntity entity, TViewModel model)
+        {
+            return Task.CompletedTask;
+        }
+
+        protected virtual Task UpdateRelationshipsAsync(TEntity entity, TViewModel model)
+        {
+            return Task.CompletedTask;
         }
 
         public async Task<bool> ExistsAsync(int id)

@@ -15,50 +15,58 @@ namespace RMS.Services
         {
         }
 
-        public override async Task CreateAsync(DishViewModel model)
-        {
-            var dish = _mapper.Map<Dish>(model);
+        //public override async Task CreateAsync(DishViewModel model)
+        //{
+        //    var dish = _mapper.Map<Dish>(model);
 
+        //    await _dbSet.AddAsync(dish);
+        //    await _context.SaveChangesAsync();
+
+        //    if (model.Ingredients != null && model.Ingredients.Any())
+        //    {
+        //        dish.DishIngredients = model.Ingredients.Select(i => new DishIngredient
+        //        {
+        //            DishId = dish.Id,
+        //            IngredientId = i.IngredientId,
+        //            QuantityNeeded = i.QuantityNeeded
+        //        }).ToList();
+        //    }
+
+        //    _context.Update(dish);
+        //    await _context.SaveChangesAsync();
+        //}
+
+        protected override async Task CreateRelationshipsAsync(Dish entity, DishViewModel model)
+        {
             if (model.Ingredients != null && model.Ingredients.Any())
             {
-                dish.DishIngredients = model.Ingredients.Select(i => new DishIngredient
-                {
-                    DishId = dish.Id,
-                    IngredientId = i.IngredientId,
-                    QuantityNeeded = i.QuantityNeeded
-                }).ToList();
+                var dishIngredients = model.Ingredients
+                    .Select(i => new DishIngredient
+                    {
+                        IngredientId = i.IngredientId,
+                        QuantityNeeded = i.QuantityNeeded
+                    }).ToList();
+                entity.DishIngredients = dishIngredients;
             }
-
-            await _dbSet.AddAsync(dish);
-            await _context.SaveChangesAsync();
         }
 
-        public override async Task UpdateAsync(DishViewModel model)
+        protected override async Task UpdateRelationshipsAsync(Dish entity, DishViewModel model)
         {
-            var dish = await _dbSet
-                .Include(d => d.DishIngredients)
-                .FirstOrDefaultAsync(d => d.Id == model.Id);
-
-            if (dish == null) throw new Exception($"{typeof(Dish).Name} not found");
-
-            _mapper.Map(model, dish); // ✅ Keeps the mapping consistent
-
-            // Update dish ingredients
-            if (model.Ingredients != null)
+            if (model.Ingredients == null || !model.Ingredients.Any())
             {
-                // Remove old ingredients
-                _context.DishIngredients.RemoveRange(dish.DishIngredients);
+                await _context.DishIngredients
+                    .Where(di => di.DishId == entity.Id)
+                    .ExecuteDeleteAsync();
 
-                // Add new ingredients
-                dish.DishIngredients = model.Ingredients.Select(i => new DishIngredient
+                var newIngredients = model.Ingredients.Select(i => new DishIngredient
                 {
-                    DishId = dish.Id,
+                    //DishId = entity.Id,
                     IngredientId = i.IngredientId,
                     QuantityNeeded = i.QuantityNeeded
                 }).ToList();
-            }
 
-            await _context.SaveChangesAsync();
+                await _context.DishIngredients.AddRangeAsync(newIngredients);
+            }
         }
 
         public override async Task<DishViewModel> GetByIdAsync(int id)

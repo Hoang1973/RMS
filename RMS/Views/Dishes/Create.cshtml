@@ -46,7 +46,6 @@
                 </select>
                 <span asp-validation-for="Type" class="text-danger"></span>
             </div>
-            <h5>Ingredients</h5>
             <div id="ingredient-list">
                 <div class="ingredient-item">
                     <select name="Ingredients[0].IngredientId" class="form-control">
@@ -59,13 +58,10 @@
                     <input name="Ingredients[0].QuantityNeeded" class="form-control" placeholder="Quantity" />
                 </div>
             </div>
-
-
             <button type="button" onclick="addIngredient()">Add More</button>
-
             <div class="form-group">
-                <button type="submit" class="btn btn-success">Create Dish</button>
-                @* <input type="submit" value="Create" class="btn btn-primary" /> *@
+                @* <button type="submit" class="btn btn-success">Create Dish</button> *@
+                <input type="submit" value="Create" class="btn btn-primary" />
             </div>
         </form>
     </div>

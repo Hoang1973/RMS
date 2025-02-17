@@ -52,12 +52,9 @@ namespace RMS.Controllers
         {
             var model = new DishViewModel
             {
-                Ingredients = new List<DishIngredientViewModel>(), // Initialize empty list
+                Ingredients = new List<DishViewModel.IngredientItem>(),
             };
-
-            // Pass ingredient list to the ViewModel (avoid ViewBag)
             ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
-
             return View(model);
         }
 
@@ -66,18 +63,22 @@ namespace RMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(DishViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                ModelState.AddModelError("", "Dish could not be added. Please check the details and try again.");
-
-                // Reload available ingredients if there's a validation error
-                ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
-                return View(model);
-            }
-
+            //if (!ModelState.IsValid)
+            //{
+            //    ModelState.AddModelError("", "Dish could not be added. Please check the details and try again.");
+            //    ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
+            //    return View(model);
+            //}
+            //foreach (var ingredient in model.Ingredients)
+            //{
+            //    var ingredientEntity = await _ingredientService.GetByIdAsync(ingredient.IngredientId);
+            //    if (ingredientEntity != null)
+            //    {
+            //        ingredient.IngredientName = ingredientEntity.Name;
+            //    }
+            //}
             await _dishService.CreateAsync(model);
             return RedirectToAction(nameof(Index));
-
         }
 
         // GET: Dishes/Edit/5
