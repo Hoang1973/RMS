@@ -50,12 +50,8 @@ namespace RMS.Controllers
         // GET: Dishes/Create
         public async Task<IActionResult> Create()
         {
-            var model = new DishViewModel
-            {
-                Ingredients = new List<DishViewModel.IngredientItem>(),
-            };
             ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
-            return View(model);
+            return View(new DishViewModel());
         }
 
         // POST: Dishes/Create
@@ -63,20 +59,12 @@ namespace RMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(DishViewModel model)
         {
-            //if (!ModelState.IsValid)
-            //{
-            //    ModelState.AddModelError("", "Dish could not be added. Please check the details and try again.");
-            //    ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
-            //    return View(model);
-            //}
-            //foreach (var ingredient in model.Ingredients)
-            //{
-            //    var ingredientEntity = await _ingredientService.GetByIdAsync(ingredient.IngredientId);
-            //    if (ingredientEntity != null)
-            //    {
-            //        ingredient.IngredientName = ingredientEntity.Name;
-            //    }
-            //}
+            if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError("", "Dish could not be added. Please check the details and try again.");
+                ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
+                return View(model);
+            }
             await _dishService.CreateAsync(model);
             return RedirectToAction(nameof(Index));
         }
@@ -94,6 +82,7 @@ namespace RMS.Controllers
             {
                 return NotFound();
             }
+            ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
 
             return View(model);
         }
@@ -155,7 +144,7 @@ namespace RMS.Controllers
             bool deleted = await _dishService.DeleteByIdAsync(id);
             if (!deleted)
             {
-                return NotFound();  // Handle case where dish was not found
+                return NotFound();
             }
 
             return RedirectToAction(nameof(Index));

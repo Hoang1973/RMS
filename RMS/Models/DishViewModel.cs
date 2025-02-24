@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using RMS.Data.Entities;
 using System.ComponentModel.DataAnnotations;
 
@@ -19,7 +20,7 @@ namespace RMS.Models
         public class IngredientItem
         {
             public int IngredientId { get; set; }
-            public string IngredientName { get; set; } 
+            public string? IngredientName { get; set; }
             public decimal QuantityNeeded { get; set; }
             public Ingredient.IngredientType IngredientType { get; set; }
             public Ingredient.IngredientUnit IngredientUnit { get; set; }
