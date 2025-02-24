@@ -38,9 +38,24 @@
                 </select>
                 <span asp-validation-for="Type" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+            <h4>Ingredients</h4>
+            <div id="ingredient-list">
+                <div class="ingredient-item">
+                    <select name="Ingredients[0].IngredientId" class="form-control">
+                        <option value="">Select Ingredient</option>
+                        @foreach (var item in (IEnumerable<SelectListItem>)ViewData["Ingredients"])
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                    <input type="number" name="Ingredients[0].QuantityNeeded" class="form-control" placeholder="Quantity" />
+                    <button type="button" class="btn btn-danger" onclick="removeIngredient(0)" >Delete</button>
+                </div>
             </div>
+
+            <button type="button" onclick="addIngredient()">[+]Add Ingredient</button>
+
+            <button type="submit" class="btn btn-primary mt-3">Create</button>
         </form>
     </div>
 </div>
@@ -51,4 +66,36 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        let ingredientIndex = 1;
+        function addIngredient() {
+            const container = document.getElementById('ingredient-list');
+            let options = `@Html.Raw(Json.Serialize(ViewData["Ingredients"]))`;
+            let parsedOptions = JSON.parse(options);
+            let optionHtml = parsedOptions.map(ing => `<option value="${ing.value}">${ing.text}</option>`).join('');
+
+            const ingredientId = `ingredient-${ingredientIndex}`; // Unique ID for each ingredient block
+
+            const html = `
+            <div class="ingredient-item" id="${ingredientId}">
+                <select name="Ingredients[${ingredientIndex}].IngredientId" class="form-control">
+                    <option value="">Select Ingredient</option>
+                    ${optionHtml}
+                </select>
+                <input type="number" name="Ingredients[${ingredientIndex}].QuantityNeeded" class="form-control" placeholder="Quantity" />
+                <button type="button" class="btn btn-danger" onclick="removeIngredient('${ingredientId}')">Delete</button>
+            </div>`;
+
+            container.insertAdjacentHTML('beforeend', html);
+            ingredientIndex++;
+        }
+
+        function removeIngredient(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.remove(); // Removes the ingredient block from the DOM
+            }
+        }
+    </script>
 }

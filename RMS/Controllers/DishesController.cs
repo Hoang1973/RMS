@@ -14,13 +14,13 @@ namespace RMS.Controllers
 {
     public class DishesController : Controller
     {
-        private readonly DishService _dishService;
-        //private readonly RMSDbContext _dbContext;
+        private readonly IDishService _dishService;
+        private readonly IIngredientService _ingredientService;
 
-        public DishesController(DishService dishService)
+        public DishesController(IDishService dishService, IIngredientService ingredientService)
         {
             _dishService = dishService;
-            //_dbContext = dbContext;
+            _ingredientService = ingredientService;
         }
 
         // GET: Dishes
@@ -48,9 +48,10 @@ namespace RMS.Controllers
         }
 
         // GET: Dishes/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View();
+            ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
+            return View(new DishViewModel());
         }
 
         // POST: Dishes/Create
@@ -61,12 +62,11 @@ namespace RMS.Controllers
             if (!ModelState.IsValid)
             {
                 ModelState.AddModelError("", "Dish could not be added. Please check the details and try again.");
+                ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
                 return View(model);
             }
-
             await _dishService.CreateAsync(model);
             return RedirectToAction(nameof(Index));
-
         }
 
         // GET: Dishes/Edit/5
@@ -82,6 +82,7 @@ namespace RMS.Controllers
             {
                 return NotFound();
             }
+            ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
 
             return View(model);
         }
@@ -143,7 +144,7 @@ namespace RMS.Controllers
             bool deleted = await _dishService.DeleteByIdAsync(id);
             if (!deleted)
             {
-                return NotFound();  // Handle case where dish was not found
+                return NotFound();
             }
 
             return RedirectToAction(nameof(Index));

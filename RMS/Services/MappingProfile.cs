@@ -14,6 +14,9 @@ namespace RMS.Services
             CreateMap<Dish, DishViewModel>()
                 .ReverseMap()
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+            CreateMap<DishIngredient, DishViewModel>()
+                .ReverseMap()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         }
     }
 }
