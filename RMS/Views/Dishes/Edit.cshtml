@@ -49,7 +49,7 @@
                             }
                         </select>
                         <input type="number" name="Ingredients[@i].QuantityNeeded" class="form-control" value="@Model.Ingredients[i].QuantityNeeded" placeholder="Quantity" />
-                        <button type="button" class="btn btn-danger" onclick="removeIngredient(@i)">Delete</button>
+                        <button type="button" class="btn btn-danger" onclick="removeIngredient('ingredient-@i')">Delete</button>
                     </div>
                 }
             </div>
@@ -72,15 +72,15 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 
     <script>
-        let ingredientIndex = @Model.Ingredients.Count;
-
         function addIngredient() {
             const container = document.getElementById('ingredient-list');
+
             let options = `@Html.Raw(Json.Serialize(ViewData["Ingredients"]))`;
             let parsedOptions = JSON.parse(options);
             let optionHtml = parsedOptions.map(ing => `<option value="${ing.value}">${ing.text}</option>`).join('');
 
-            const ingredientId = `ingredient-${ingredientIndex}`; // Unique ID for each ingredient block
+            const ingredientIndex = document.querySelectorAll('.ingredient-item').length; // Dynamically calculate index
+            const ingredientId = `ingredient-${ingredientIndex}`;
 
             const html = `
             <div class="ingredient-item" id="${ingredientId}">
@@ -93,13 +93,31 @@
             </div>`;
 
             container.insertAdjacentHTML('beforeend', html);
-            ingredientIndex++;
         }
 
         function removeIngredient(id) {
             const element = document.getElementById(id);
             if (element) {
-                element.remove(); // Removes the ingredient block from the DOM
+                element.remove();
+                updateIngredientIndexes(); // Recalculate indexes after deletion
+            }
+        }
+
+        function updateIngredientIndexes() {
+            const container = document.getElementById('ingredient-list');
+            const ingredientItems = container.getElementsByClassName('ingredient-item');
+
+            for (let i = 0; i < ingredientItems.length; i++) {
+                let item = ingredientItems[i];
+                item.id = `ingredient-${i}`; // Update ID
+
+                let select = item.querySelector("select");
+                let input = item.querySelector("input");
+                let button = item.querySelector("button");
+
+                select.name = `Ingredients[${i}].IngredientId`;
+                input.name = `Ingredients[${i}].QuantityNeeded`;
+                button.setAttribute("onclick", `removeIngredient('ingredient-${i}')`);
             }
         }
     </script>
