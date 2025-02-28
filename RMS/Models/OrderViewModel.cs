@@ -1,31 +1,34 @@
 ﻿using RMS.Data.Entities;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RMS.Models
 {
     public class OrderViewModel :BaseViewModel
     {
         public int Id { get; set; }
+        public int? CustomerId { get; set; }
 
-        [Required(ErrorMessage = "Customer is required")]
-        public int CustomerId { get; set; }
-
-        [Required(ErrorMessage = "Table is required")]
+        [Required(ErrorMessage = "Table selection is required")]
         public int TableId { get; set; }
-
-        [Required]
-        [Range(0, double.MaxValue, ErrorMessage = "Total amount must be positive")]
-        public decimal TotalAmount { get; set; }
-
-        [Required(ErrorMessage = "Order status is required")]
+        public decimal TotalAmount => Dishes.Sum(d => d.Price * d.Quantity);
         public Order.OrderStatus Status { get; set; }
-        public TableItem Table { get; set; } = new();
-        public class TableItem
+        public List<DishItem> Dishes { get; set; } = new();
+        public class DishItem
         {
-            public int TableId { get; set; }
-            public string? TableNumber { get; set; }
-            public int Capacity { get; set; }
-            public Table.TableStatus Status { get; set; }
+            public int DishId { get; set; }
+            public string? Name { get; set; }
+            public int Quantity { get; set; }
+            public decimal Price { get; set; }
         }
+        //public TableItem Table { get; set; } = new();
+        //public ICollection<TableItem> AvailableTables { get; set; } = new List<TableItem>();
+        //public class TableItem
+        //{
+        //    public int TableId { get; set; }
+        //    public string? TableNumber { get; set; }
+        //    public int Capacity { get; set; }
+        //    public Table.TableStatus Status { get; set; }
+        //}
     }
 }
