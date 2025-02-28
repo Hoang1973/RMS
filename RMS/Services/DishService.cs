@@ -33,24 +33,26 @@ namespace RMS.Services
 
         protected override async Task UpdateRelationshipsAsync(Dish entity, DishViewModel model)
         {
-            if (model.Ingredients == null || !model.Ingredients.Any())
-            {
-                await _context.DishIngredients
-                    .Where(di => di.DishId == entity.Id)
-                    .ExecuteDeleteAsync();
+            // Delete all existing relationships
+            await _context.DishIngredients
+                .Where(di => di.DishId == entity.Id)
+                .ExecuteDeleteAsync();
 
+            // Add the new ingredients
+            if (model.Ingredients != null && model.Ingredients.Any())
+            {
                 var newIngredients = model.Ingredients.Select(i => new DishIngredient
                 {
                     DishId = entity.Id,
                     IngredientId = i.IngredientId,
                     QuantityNeeded = i.QuantityNeeded
-                }).ToList();
+                });
 
                 await _context.DishIngredients.AddRangeAsync(newIngredients);
             }
         }
 
-        public override async Task<DishViewModel> GetByIdAsync(int id)
+        public override async Task<DishViewModel?> GetByIdAsync(int id)
         {
             var dish = await _context.Dishes
                 .Include(d => d.DishIngredients)

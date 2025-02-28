@@ -58,6 +58,12 @@ namespace RMS.Services
             return true;
         }
 
+        public async Task<bool> ExistsAsync(int id)
+        {
+            return await _dbSet.FindAsync(id) != null;
+        }
+
+        // 🔹 Protected virtual - can be overridden, but not required
         protected virtual Task CreateRelationshipsAsync(TEntity entity, TViewModel model)
         {
             return Task.CompletedTask;
@@ -66,11 +72,6 @@ namespace RMS.Services
         protected virtual Task UpdateRelationshipsAsync(TEntity entity, TViewModel model)
         {
             return Task.CompletedTask;
-        }
-
-        public async Task<bool> ExistsAsync(int id)
-        {
-            return await _dbSet.FindAsync(id) != null;
         }
     }
 }
