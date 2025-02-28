@@ -15,10 +15,12 @@ namespace RMS.Controllers
     public class OrdersController : Controller
     {
         private readonly IOrderService _orderService;
+        private readonly IDishService _dishService;
 
-        public OrdersController(IOrderService orderService)
+        public OrdersController(IOrderService orderService, IDishService dishService)
         {
             _orderService = orderService;
+            _dishService = dishService;
         }
 
         // GET: Orders
@@ -46,9 +48,10 @@ namespace RMS.Controllers
         }
 
         // GET: Orders/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View();
+            ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
+            return View(new OrderViewModel());
         }
 
         // POST: Orders/Create
@@ -59,12 +62,11 @@ namespace RMS.Controllers
             if (!ModelState.IsValid)
             {
                 ModelState.AddModelError("", "Order could not be added. Please check the details and try again.");
+                ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
                 return View(model);
             }
-
             await _orderService.CreateAsync(model);
             return RedirectToAction(nameof(Index));
-
         }
 
         // GET: Orders/Edit/5

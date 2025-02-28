@@ -14,15 +14,36 @@
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
-                <label asp-for="OrderNumber" class="control-label"></label>
-                <input asp-for="OrderNumber" class="form-control" />
-                <span asp-validation-for="OrderNumber" class="text-danger"></span>
+                <label asp-for="CustomerId" class="control-label"></label>
+                <input asp-for="CustomerId" class="form-control" />
+                <span asp-validation-for="CustomerId" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Capacity" class="control-label"></label>
-                <input asp-for="Capacity" class="form-control" />
-                <span asp-validation-for="Capacity" class="text-danger"></span>
+                <label asp-for="TableId" class="control-label"></label>
+                <input asp-for="TableId" class="form-control" />
+                <span asp-validation-for="TableId" class="text-danger"></span>
             </div>
+            <div class="form-group">
+                <label asp-for="TotalAmount" class="control-label"></label>
+                <input asp-for="TotalAmount" class="form-control" />
+                <span asp-validation-for="TotalAmount" class="text-danger"></span>
+            </div>
+            <h4>Dish</h4>
+            <div id="dish-list">
+                <div class="dish-item" id="dish-0">
+                    <select name="Dishs[0].DishId" class="form-control">
+                        <option value="">Select Dish</option>
+                        @foreach (var item in (IEnumerable<SelectListItem>)ViewData["Dishes"])
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                    <input type="number" name="Dishs[0].QuantityNeeded" class="form-control" placeholder="Quantity" />
+                    <button type="button" class="btn btn-danger" onclick="removeDish('dish-0')">Delete</button>
+                </div>
+            </div>
+            <button type="button" onclick="addDish()">[+]Add Dish</button>
+
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
             </div>
@@ -36,4 +57,58 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        let dishIndex = 1; // Start from 1 since 0 is already added
+
+        function addDish() {
+            const container = document.getElementById('dish-list');
+
+            // Retrieve dishes list correctly
+            let options = `@Html.Raw(Json.Serialize(ViewData["Dishes"]))`;
+            let parsedOptions = JSON.parse(options);
+            let optionHtml = parsedOptions.map(ing => `<option value="${ing.value}">${ing.text}</option>`).join('');
+
+            const dishId = `dish-${dishIndex}`;
+
+            const html = `
+            <div class="dish-item" id="${dishId}">
+                <select name="Dishes[${dishIndex}].DishId" class="form-control">
+                    <option value="">Select Dish</option>
+                    ${optionHtml}
+                </select>
+                <input type="number" name="Dishes[${dishIndex}].QuantityNeeded" class="form-control" placeholder="Quantity" />
+                <button type="button" class="btn btn-danger" onclick="removeDish('${dishId}')">Delete</button>
+            </div>`;
+
+            container.insertAdjacentHTML('beforeend', html);
+            dishIndex++;
+        }
+
+        function removeDish(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.remove();
+                updateDishIndexes();
+            }
+        }
+        function updateDishIndexes() {
+            const container = document.getElementById('dish-list');
+            const dishItems = container.getElementsByClassName('dish-item');
+
+            for (let i = 0; i < dishItems.length; i++) {
+                let item = dishItems[i];
+                item.id = `dish-${i}`; // Update ID
+
+                // Update name attributes to ensure ASP.NET receives sequential data
+                let select = item.querySelector("select");
+                let input = item.querySelector("input");
+                let button = item.querySelector("button");
+
+                select.name = `Dishes[${i}].DishId`;
+                input.name = `Dishes[${i}].QuantityNeeded`;
+                button.setAttribute("onclick", `removeDish('dish-${i}')`);
+            }
+        }
+    </script>
 }
