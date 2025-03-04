@@ -2,13 +2,27 @@
 
 @{
     ViewData["Title"] = "Index";
+    // Lấy danh sách các loại món ăn duy nhất
+    var dishTypes = Model.Select(d => d.Type).Distinct().Select(t => t.ToString()).ToList();
+
 }
 
-<h1>Index</h1>
+<h1>MENU</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create" class="btn btn-primary">Create New</a>
 </p>
+
+<!-- Nút phân loại -->
+<div class="mb-3">
+    <button type="button" class="btn btn-outline-secondary dish-filter active" data-type="all">All</button>
+    @foreach (var type in dishTypes)
+    {
+        <button type="button" class="btn btn-outline-secondary dish-filter" data-type="@type">@type</button>
+    }
+</div>
+
+
 <table class="table">
     <thead>
         <tr>
@@ -41,7 +55,7 @@
     </thead>
     <tbody>
 @foreach (var item in Model) {
-        <tr>
+        <tr class="dish-row" data-type="@item.Type.ToString()">
             <td>
                 @Html.DisplayFor(modelItem => item.Name)
             </td>
@@ -67,11 +81,45 @@
                 @Html.DisplayFor(modelItem => item.UpdatedBy)
             </td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                <div class="d-flex flex-wrap gap-1">
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-info btn-sm rounded-3 px-3">
+                        Edit
+                    </a>
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-primary btn-sm rounded-3 px-3">
+                        Details
+                    </a>
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm rounded-3 px-3">
+                        Delete
+                    </a>
+                </div>
             </td>
         </tr>
 }
     </tbody>
 </table>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Xử lý nút lọc
+            $(".dish-filter").click(function() {
+                var selectedType = $(this).data("type");
+
+                // Đánh dấu nút đang chọn
+                $(".dish-filter").removeClass("active btn-secondary").addClass("btn-outline-secondary");
+                $(this).removeClass("btn-outline-secondary").addClass("active btn-secondary");
+
+                // Lọc các hàng trong bảng
+                if (selectedType === "all") {
+                    // Hiển thị tất cả các hàng
+                    $(".dish-row").show();
+                } else {
+                    // Ẩn tất cả các hàng trước
+                    $(".dish-row").hide();
+                    // Hiển thị chỉ những hàng có type phù hợp
+                    $(".dish-row[data-type='" + selectedType + "']").show();
+                }
+            });
+        });
+    </script>
+}

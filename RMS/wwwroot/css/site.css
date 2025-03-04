@@ -1,4 +1,4 @@
-html {
+﻿html {
   font-size: 14px;
 }
 
@@ -19,4 +19,16 @@ html {
 
 body {
   margin-bottom: 60px;
+}
+
+.d-flex.gap-1 a {
+    transition: all 0.1s ease-in-out;
+    font-weight: 500;
+    padding: 8px 14px; /* Điều chỉnh padding để nút không quá lớn */
+    border-radius: 8px; /* Bo góc vừa phải */
+    white-space: nowrap; /* Giữ nút trên cùng một dòng */
+}
+
+.d-flex.gap-1 a:hover {
+    transform: scale(1.03);
 }
