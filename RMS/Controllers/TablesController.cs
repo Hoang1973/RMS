@@ -23,14 +23,14 @@ namespace RMS.Controllers
             _ingredientService = ingredientService;
         }
 
-        // GET: Tablees
+        // GET: Tables
         public async Task<IActionResult> Index()
         {
             var models = await _tableService.GetAllAsync();
             return View(models);
         }
 
-        // GET: Tablees/Details/5
+        // GET: Tables/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -47,14 +47,14 @@ namespace RMS.Controllers
             return View(model);
         }
 
-        // GET: Tablees/Create
+        // GET: Tables/Create
         public async Task<IActionResult> Create()
         {
             ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
             return View(new TableViewModel());
         }
 
-        // POST: Tablees/Create
+        // POST: Tables/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(TableViewModel model)
@@ -69,7 +69,7 @@ namespace RMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: Tablees/Edit/5
+        // GET: Tables/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -87,7 +87,7 @@ namespace RMS.Controllers
             return View(model);
         }
 
-        // POST: Tablees/Edit/5
+        // POST: Tables/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, TableViewModel model)
@@ -119,7 +119,7 @@ namespace RMS.Controllers
             return View(model);
         }
 
-        // GET: Tablees/Delete/5
+        // GET: Tables/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -136,7 +136,7 @@ namespace RMS.Controllers
             return View(model);
         }
 
-        // POST: Tablees/Delete/5
+        // POST: Tables/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

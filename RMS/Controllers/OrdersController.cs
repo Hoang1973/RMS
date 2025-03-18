@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using RMS.Data;
 using RMS.Data.Entities;
 using RMS.Models;
@@ -16,18 +17,29 @@ namespace RMS.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly IDishService _dishService;
+        private readonly RMSDbContext _context;    
 
-        public OrdersController(IOrderService orderService, IDishService dishService)
+        public OrdersController(IOrderService orderService, IDishService dishService, RMSDbContext context)
         {
             _orderService = orderService;
             _dishService = dishService;
+            _context = context;
         }
 
         // GET: Orders
         public async Task<IActionResult> Index()
         {
-            var models = await _orderService.GetAllAsync();
-            return View(models);
+            var orders = await _context.Orders
+            .Include(o => o.Table) // Include Table để lấy thông tin liên quan
+            .Select(o => new OrderViewModel
+            {
+                Id = o.Id,
+                TableId = o.TableId,
+                TableNumber = o.Table.TableNumber, // Lấy TableNumber trực tiếp từ navigation property
+                CustomerId = o.CustomerId,
+            })
+            .ToListAsync();
+            return View(orders);
         }
 
         // GET: Orders/Details/5
@@ -50,21 +62,45 @@ namespace RMS.Controllers
         // GET: Orders/Create
         public async Task<IActionResult> Create()
         {
+            var dishes = await _dishService.GetAllAsync();
             ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
-            return View(new OrderViewModel());
+            TempData["DishPrices"] = JsonConvert.SerializeObject(dishes.Select(d => new { Id = d.Id.ToString(), d.Price })); var model = new OrderViewModel
+            {
+                AvailableTables = new SelectList(_context.Set<Table>().Where(t => t.Status == Table.TableStatus.Available), "Id", "TableNumber")
+            };
+            return View(model);
         }
 
         // POST: Orders/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(OrderViewModel model)
+        public async Task<IActionResult> Create(OrderViewModel model, int[] selectedDishes)
         {
+            var dishes = await _dishService.GetAllAsync();
+            ViewData["Dishes"] = new SelectList(dishes, "Id", "Name");
+            TempData["DishPrices"] = JsonConvert.SerializeObject(dishes.Select(d => new { Id = d.Id.ToString(), d.Price }));
             if (!ModelState.IsValid)
             {
                 ModelState.AddModelError("", "Order could not be added. Please check the details and try again.");
-                ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
+                model.AvailableTables = new SelectList(_context.Set<Table>().Where(t => t.Status == Table.TableStatus.Available), "Id", "TableNumber",model.TableId);
                 return View(model);
             }
+
+            // Lấy danh sách Dish từ selectedDishes
+            if (selectedDishes == null || selectedDishes.Any())
+            {
+                foreach (var dish in model.Dishes)
+                {
+                    var dishData = dishes.FirstOrDefault(d => d.Id == dish.DishId);
+                    if (dishData != null) dish.Price = dishData.Price;
+                }
+                model.TotalAmount = model.Dishes.Sum(d => d.Price * d.Quantity);
+            }
+            else
+            {
+                model.TotalAmount = 0;
+            }
+
             await _orderService.CreateAsync(model);
             return RedirectToAction(nameof(Index));
         }

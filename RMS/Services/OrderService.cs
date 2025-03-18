@@ -15,16 +15,28 @@ namespace RMS.Services
         {
         }
 
-        //protected override async Task CreateRelationshipsAsync(Order entity, OrderViewModel model)
-        //{
-        //    var table = await _context.Tables.FindAsync(model.TableId);
-        //    if (table != null)
-        //    {
-        //        table.Status = Table.TableStatus.Occupied;
-        //    }
+        public override async Task CreateAsync(OrderViewModel model)
+        {
+            if(model.Dishes != null && model.Dishes.Any())
+            {
+                model.TotalAmount = model.Dishes.Sum(d => d.Price * d.Quantity);
+            }
+            else
+            {
+                model.TotalAmount = 0;
+            }
 
-        //    await _context.SaveChangesAsync();
-        //}
+            var order = _mapper.Map<Order>(model);
+            // Cập nhật trạng thái bàn
+            var table = await _context.Tables.FindAsync(model.TableId);
+            if (table != null)
+            {
+                table.Status = Table.TableStatus.Occupied;
+            }
+
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+        }
 
         protected override async Task CreateRelationshipsAsync(Order entity, OrderViewModel model)
         {
