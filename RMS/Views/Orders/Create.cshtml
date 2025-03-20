@@ -20,27 +20,26 @@
             </div>
             <div class="form-group">
                 <label asp-for="TableId" class="control-label">Select Table</label>
-                <select asp-for="TableId" class="form-control" asp-items="Model.AvailableTables">
+                <select asp-for="TableId" class="form-control" asp-items="@ViewData["Tables"] as IEnumerable<SelectListItem>">
                     <option value="">-- Choose a table --</option>
                 </select>
                 <span asp-validation-for="TableId" class="text-danger"></span>
             </div>
-            <!-- TotalAmount readonly -->
             <div class="form-group">
                 <label asp-for="TotalAmount" class="control-label">Total Amount</label>
-                <input asp-for="TotalAmount" class="form-control" readonly />
+                <input asp-for="TotalAmount" class="form-control" />
             </div>
             <h4>Dish</h4>
             <div id="dish-list">
                 <div class="dish-item" id="dish-0">
-                    <select name="Dishs[0].DishId" class="form-control">
+                    <select name="Dishes[0].DishId" class="form-control">
                         <option value="">Select Dish</option>
                         @foreach (var item in (IEnumerable<SelectListItem>)ViewData["Dishes"])
                         {
                             <option value="@item.Value">@item.Text</option>
                         }
                     </select>
-                    <input type="number" name="Dishs[0].QuantityNeeded" class="form-control" placeholder="Quantity" />
+                    <input type="number" name="Dishes[0].Quantity" class="form-control" placeholder="Quantity" />
                     <button type="button" class="btn btn-danger" onclick="removeDish('dish-0')">Delete</button>
                 </div>
             </div>
@@ -79,7 +78,7 @@
                     <option value="">Select Dish</option>
                     ${optionHtml}
                 </select>
-                <input type="number" name="Dishes[${dishIndex}].QuantityNeeded" class="form-control" placeholder="Quantity" />
+                <input type="number" name="Dishes[${dishIndex}].Quantity" class="form-control" placeholder="Quantity" />
                 <button type="button" class="btn btn-danger" onclick="removeDish('${dishId}')">Delete</button>
             </div>`;
 
@@ -108,57 +107,9 @@
                 let button = item.querySelector("button");
 
                 select.name = `Dishes[${i}].DishId`;
-                input.name = `Dishes[${i}].QuantityNeeded`;
+                input.name = `Dishes[${i}].Quantity`;
                 button.setAttribute("onclick", `removeDish('dish-${i}')`);
             }
         }
-    </script>
-
-    <!-- Script mới để tính TotalAmount -->
-    <script>
-        const dishPrices = @Html.Raw(TempData["DishPrices"] ?? "[]");
-
-        function calculateTotalAmount() {
-            let total = 0;
-            const dishItems = document.querySelectorAll('.dish-item');
-
-            dishItems.forEach(item => {
-                const dishId = item.querySelector('select').value;
-                const quantity = parseInt(item.querySelector('input').value) || 0;
-
-                if (dishId) {
-                    const dish = dishPrices.find(d => d.Id == dishId);
-                    if (dish) total += dish.Price * quantity;
-                }
-            });
-
-            document.getElementById('totalAmount').value = total.toFixed(2);
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const selects = document.querySelectorAll('.dish-item select');
-            const quantities = document.querySelectorAll('.dish-item input');
-
-            selects.forEach(select => select.addEventListener('change', calculateTotalAmount));
-            quantities.forEach(input => input.addEventListener('input', calculateTotalAmount));
-
-            calculateTotalAmount();
-        });
-
-        const originalAddDish = addDish;
-        addDish = function() {
-            originalAddDish();
-            const newSelect = document.querySelector(`#dish-${dishIndex - 1} select`);
-            const newQuantity = document.querySelector(`#dish-${dishIndex - 1} input`);
-            newSelect.addEventListener('change', calculateTotalAmount);
-            newQuantity.addEventListener('input', calculateTotalAmount);
-            calculateTotalAmount();
-        };
-
-        const originalRemoveDish = removeDish;
-        removeDish = function(id) {
-            originalRemoveDish(id);
-            calculateTotalAmount();
-        };
     </script>
 }

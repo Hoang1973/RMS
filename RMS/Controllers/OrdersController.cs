@@ -17,12 +17,14 @@ namespace RMS.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly IDishService _dishService;
+        private readonly ITableService _tableService;
         private readonly RMSDbContext _context;    
 
-        public OrdersController(IOrderService orderService, IDishService dishService, RMSDbContext context)
+        public OrdersController(IOrderService orderService, IDishService dishService, ITableService tableService, RMSDbContext context)
         {
             _orderService = orderService;
             _dishService = dishService;
+            _tableService = tableService;
             _context = context;
         }
 
@@ -62,45 +64,23 @@ namespace RMS.Controllers
         // GET: Orders/Create
         public async Task<IActionResult> Create()
         {
-            var dishes = await _dishService.GetAllAsync();
             ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
-            TempData["DishPrices"] = JsonConvert.SerializeObject(dishes.Select(d => new { Id = d.Id.ToString(), d.Price })); var model = new OrderViewModel
-            {
-                AvailableTables = new SelectList(_context.Set<Table>().Where(t => t.Status == Table.TableStatus.Available), "Id", "TableNumber")
-            };
-            return View(model);
+            ViewData["Tables"] = new SelectList(await _tableService.GetAvailableTablesAsync(), "Id", "TableNumber");
+            return View(new OrderViewModel());
         }
 
         // POST: Orders/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(OrderViewModel model, int[] selectedDishes)
+        public async Task<IActionResult> Create(OrderViewModel model)
         {
-            var dishes = await _dishService.GetAllAsync();
-            ViewData["Dishes"] = new SelectList(dishes, "Id", "Name");
-            TempData["DishPrices"] = JsonConvert.SerializeObject(dishes.Select(d => new { Id = d.Id.ToString(), d.Price }));
             if (!ModelState.IsValid)
             {
                 ModelState.AddModelError("", "Order could not be added. Please check the details and try again.");
-                model.AvailableTables = new SelectList(_context.Set<Table>().Where(t => t.Status == Table.TableStatus.Available), "Id", "TableNumber",model.TableId);
+                ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
+                ViewData["Tables"] = new SelectList(await _tableService.GetAvailableTablesAsync(), "Id", "TableNumber");
                 return View(model);
             }
-
-            // Lấy danh sách Dish từ selectedDishes
-            if (selectedDishes == null || selectedDishes.Any())
-            {
-                foreach (var dish in model.Dishes)
-                {
-                    var dishData = dishes.FirstOrDefault(d => d.Id == dish.DishId);
-                    if (dishData != null) dish.Price = dishData.Price;
-                }
-                model.TotalAmount = model.Dishes.Sum(d => d.Price * d.Quantity);
-            }
-            else
-            {
-                model.TotalAmount = 0;
-            }
-
             await _orderService.CreateAsync(model);
             return RedirectToAction(nameof(Index));
         }

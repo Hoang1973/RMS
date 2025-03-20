@@ -74,28 +74,5 @@ namespace RMS.Services
 
             return viewModel;
         }
-
-        /*
-        public override async Task CreateAsync(DishViewModel model)
-        {
-            var dish = _mapper.Map<Dish>(model);
-
-            await _dbSet.AddAsync(dish);
-            await _context.SaveChangesAsync();
-
-            if (model.Ingredients != null && model.Ingredients.Any())
-            {
-                dish.DishIngredients = model.Ingredients.Select(i => new DishIngredient
-                {
-                    DishId = dish.Id,
-                    IngredientId = i.IngredientId,
-                    QuantityNeeded = i.QuantityNeeded
-                }).ToList();
-            }
-
-            _context.Update(dish);
-            await _context.SaveChangesAsync();
-        }
-        */
     }
 }

@@ -6,7 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace RMS.Services
 {
-    public interface ITableService : IBaseService<TableViewModel, Table> { }
+    public interface ITableService : IBaseService<TableViewModel, Table> 
+    {
+        Task<List<Table>> GetAvailableTablesAsync();
+    }
 
     public class TableService : BaseService<TableViewModel, Table>, ITableService
     {
@@ -14,7 +17,11 @@ namespace RMS.Services
             : base(context, mapper)
         {
         }
-
-        
+        public async Task<List<Table>> GetAvailableTablesAsync()
+        {
+            return await _context.Set<Table>()
+                .Where(t => t.Status == Table.TableStatus.Available)
+                .ToListAsync();
+        }
     }
 }
