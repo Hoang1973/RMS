@@ -21,7 +21,9 @@ namespace RMS.Services
                 .ReverseMap()
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
             CreateMap<Order, OrderViewModel>()
+                .ForMember(dest => dest.TableNumber, opt => opt.MapFrom(src => src.Table.TableNumber)) // Chỉ map khi đọc dữ liệu
                 .ReverseMap()
+                .ForMember(dest => dest.Table, opt => opt.Ignore()) // Không map Table ngược lại
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         }
     }

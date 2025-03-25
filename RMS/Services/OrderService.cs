@@ -3,6 +3,7 @@ using RMS.Data;
 using RMS.Models;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
+using RMS.Controllers;
 
 namespace RMS.Services
 {
@@ -19,17 +20,30 @@ namespace RMS.Services
         {
             if (model.Dishes != null && model.Dishes.Any())
             {
-                var orderItems = model.Dishes
+                var dishIds = model.Dishes.Select(d => d.DishId).ToList();
+
+                // Lấy giá món ăn từ database
+                var dishPrices = await _context.Dishes
+                    .Where(d => dishIds.Contains(d.Id))
+                    .ToDictionaryAsync(d => d.Id, d => d.Price);
+
+                // Gộp món trùng nhau
+                var groupedDishes = model.Dishes
+                    .GroupBy(d => d.DishId)
+                    .Select(g => new { DishId = g.Key, Quantity = g.Sum(d => d.Quantity) })
+                    .ToList();
+
+                var orderItems = groupedDishes
                     .Select(i => new OrderItem
                     {
                         OrderId = entity.Id,
                         DishId = i.DishId,
                         Quantity = i.Quantity,
-                        Price = 70000
+                        Price = dishPrices.ContainsKey(i.DishId) ? dishPrices[i.DishId] * i.Quantity : 0
                     }).ToList();
+
                 entity.OrderItems = orderItems;
             }
-            await _context.SaveChangesAsync();
         }
 
         protected override async Task UpdateRelationshipsAsync(Order entity, OrderViewModel model)

@@ -6,7 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace RMS.Services
 {
-    public interface IDishService : IBaseService<DishViewModel, Dish> { }
+    public interface IDishService : IBaseService<DishViewModel, Dish> 
+    {
+        Task<DishViewModel?> GetByIdAsync(int id);
+    }
 
     public class DishService : BaseService<DishViewModel, Dish>, IDishService
     {

@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using RMS.Data;
-using RMS.Data.Entities;
 using RMS.Models;
 using RMS.Services;
 
@@ -18,29 +14,26 @@ namespace RMS.Controllers
         private readonly IOrderService _orderService;
         private readonly IDishService _dishService;
         private readonly ITableService _tableService;
-        private readonly RMSDbContext _context;    
+        private readonly RMSDbContext _context;
+        private readonly IMapper _mapper;
 
-        public OrdersController(IOrderService orderService, IDishService dishService, ITableService tableService, RMSDbContext context)
+        public OrdersController(IOrderService orderService, IDishService dishService, ITableService tableService, RMSDbContext context, IMapper mapper)
         {
             _orderService = orderService;
             _dishService = dishService;
             _tableService = tableService;
             _context = context;
+            _mapper = mapper;
         }
 
         // GET: Orders
         public async Task<IActionResult> Index()
         {
             var orders = await _context.Orders
-            .Include(o => o.Table) // Include Table để lấy thông tin liên quan
-            .Select(o => new OrderViewModel
-            {
-                Id = o.Id,
-                TableId = o.TableId,
-                TableNumber = o.Table.TableNumber, // Lấy TableNumber trực tiếp từ navigation property
-                CustomerId = o.CustomerId,
-            })
-            .ToListAsync();
+                .Include(o => o.Table)
+                .ProjectTo<OrderViewModel>(_mapper.ConfigurationProvider) // Tự động map theo cấu hình
+                .ToListAsync();
+
             return View(orders);
         }
 
@@ -66,6 +59,9 @@ namespace RMS.Controllers
         {
             ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
             ViewData["Tables"] = new SelectList(await _tableService.GetAvailableTablesAsync(), "Id", "TableNumber");
+
+            // Tạo dictionary chứa giá món ăn
+            ViewData["DishPrices"] = _context.Dishes.ToDictionary(d => d.Id.ToString(), d => d.Price);
             return View(new OrderViewModel());
         }
 

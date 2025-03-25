@@ -26,23 +26,24 @@
                 <span asp-validation-for="TableId" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="TotalAmount" class="control-label">Total Amount</label>
-                <input asp-for="TotalAmount" class="form-control" />
+                <label asp-for="TotalAmount" class="control-label"></label>
+                <input asp-for="TotalAmount" class="form-control" id="total-amount" readonly />
             </div>
             <h4>Dish</h4>
             <div id="dish-list">
                 <div class="dish-item" id="dish-0">
-                    <select name="Dishes[0].DishId" class="form-control">
+                    <select name="Dishes[0].DishId" class="form-control" onchange="updateTotalAmount()">
                         <option value="">Select Dish</option>
                         @foreach (var item in (IEnumerable<SelectListItem>)ViewData["Dishes"])
                         {
                             <option value="@item.Value">@item.Text</option>
                         }
                     </select>
-                    <input type="number" name="Dishes[0].Quantity" class="form-control" placeholder="Quantity" />
+                    <input type="number" name="Dishes[0].Quantity" class="form-control" placeholder="Quantity" oninput="updateTotalAmount()" min="1" />
                     <button type="button" class="btn btn-danger" onclick="removeDish('dish-0')">Delete</button>
                 </div>
             </div>
+
             <button type="button" onclick="addDish()">[+]Add Dish</button>
 
             <div class="form-group">
@@ -60,12 +61,14 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 
     <script>
-        let dishIndex = 1; // Start from 1 since 0 is already added
+        let dishIndex = 1; // Start từ 1 vì 0 đã có sẵn
+
+        // Biến chứa giá của từng món (lấy từ ViewData)
+        let dishPrices = @Html.Raw(Json.Serialize(ViewData["DishPrices"]));
 
         function addDish() {
             const container = document.getElementById('dish-list');
 
-            // Retrieve dishes list correctly
             let options = `@Html.Raw(Json.Serialize(ViewData["Dishes"]))`;
             let parsedOptions = JSON.parse(options);
             let optionHtml = parsedOptions.map(ing => `<option value="${ing.value}">${ing.text}</option>`).join('');
@@ -74,11 +77,11 @@
 
             const html = `
             <div class="dish-item" id="${dishId}">
-                <select name="Dishes[${dishIndex}].DishId" class="form-control">
+                <select name="Dishes[${dishIndex}].DishId" class="form-control" onchange="updateTotalAmount()">
                     <option value="">Select Dish</option>
                     ${optionHtml}
                 </select>
-                <input type="number" name="Dishes[${dishIndex}].Quantity" class="form-control" placeholder="Quantity" />
+                <input type="number" name="Dishes[${dishIndex}].Quantity" class="form-control" placeholder="Quantity" oninput="updateTotalAmount()" min="1" />
                 <button type="button" class="btn btn-danger" onclick="removeDish('${dishId}')">Delete</button>
             </div>`;
 
@@ -91,17 +94,18 @@
             if (element) {
                 element.remove();
                 updateDishIndexes();
+                updateTotalAmount(); // Cập nhật lại total khi xóa
             }
         }
+
         function updateDishIndexes() {
             const container = document.getElementById('dish-list');
             const dishItems = container.getElementsByClassName('dish-item');
 
             for (let i = 0; i < dishItems.length; i++) {
                 let item = dishItems[i];
-                item.id = `dish-${i}`; // Update ID
+                item.id = `dish-${i}`;
 
-                // Update name attributes to ensure ASP.NET receives sequential data
                 let select = item.querySelector("select");
                 let input = item.querySelector("input");
                 let button = item.querySelector("button");
@@ -111,5 +115,21 @@
                 button.setAttribute("onclick", `removeDish('dish-${i}')`);
             }
         }
+
+        function updateTotalAmount() {
+            let total = 0;
+            document.querySelectorAll('.dish-item').forEach(item => {
+                let dishId = item.querySelector("select").value;
+                let quantity = item.querySelector("input").value;
+
+                if (dishId && quantity) {
+                    let price = dishPrices[dishId] || 0; // Lấy giá từ dishPrices
+                    total += price * parseInt(quantity);
+                }
+            });
+
+            document.getElementById("total-amount").value = total.toFixed(2);
+        }
     </script>
+
 }
