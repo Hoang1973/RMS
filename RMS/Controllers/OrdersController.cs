@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RMS.Data;
-using RMS.Data.Entities;
 using RMS.Models;
 using RMS.Services;
 
@@ -16,18 +13,28 @@ namespace RMS.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly IDishService _dishService;
+        private readonly ITableService _tableService;
+        private readonly RMSDbContext _context;
+        private readonly IMapper _mapper;
 
-        public OrdersController(IOrderService orderService, IDishService dishService)
+        public OrdersController(IOrderService orderService, IDishService dishService, ITableService tableService, RMSDbContext context, IMapper mapper)
         {
             _orderService = orderService;
             _dishService = dishService;
+            _tableService = tableService;
+            _context = context;
+            _mapper = mapper;
         }
 
         // GET: Orders
         public async Task<IActionResult> Index()
         {
-            var models = await _orderService.GetAllAsync();
-            return View(models);
+            var orders = await _context.Orders
+                .Include(o => o.Table)
+                .ProjectTo<OrderViewModel>(_mapper.ConfigurationProvider) // Tự động map theo cấu hình
+                .ToListAsync();
+
+            return View(orders);
         }
 
         // GET: Orders/Details/5
@@ -51,6 +58,10 @@ namespace RMS.Controllers
         public async Task<IActionResult> Create()
         {
             ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
+            ViewData["Tables"] = new SelectList(await _tableService.GetAvailableTablesAsync(), "Id", "TableNumber");
+
+            // Tạo dictionary chứa giá món ăn
+            ViewData["DishPrices"] = _context.Dishes.ToDictionary(d => d.Id.ToString(), d => d.Price);
             return View(new OrderViewModel());
         }
 
@@ -63,6 +74,7 @@ namespace RMS.Controllers
             {
                 ModelState.AddModelError("", "Order could not be added. Please check the details and try again.");
                 ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
+                ViewData["Tables"] = new SelectList(await _tableService.GetAvailableTablesAsync(), "Id", "TableNumber");
                 return View(model);
             }
             await _orderService.CreateAsync(model);

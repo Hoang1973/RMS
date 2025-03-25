@@ -34,8 +34,8 @@ namespace RMS.Services
         public virtual async Task CreateAsync(TViewModel model)
         {
             var entity = _mapper.Map<TEntity>(model);
-            await CreateRelationshipsAsync(entity, model);
             await _dbSet.AddAsync(entity);
+            await CreateRelationshipsAsync(entity, model);
             await _context.SaveChangesAsync();
         }
 

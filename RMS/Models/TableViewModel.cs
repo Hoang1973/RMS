@@ -7,7 +7,7 @@ namespace RMS.Models
         public int Id { get; set; }
 
         [Required(ErrorMessage = "Table number is required")]
-        public string TableNumber { get; set; }
+        public string? TableNumber { get; set; }
 
         [Required(ErrorMessage = "Capacity is required")]
         [Range(1, int.MaxValue, ErrorMessage = "Capacity must be at least 1")]
