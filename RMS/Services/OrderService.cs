@@ -4,10 +4,14 @@ using RMS.Models;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using RMS.Controllers;
+using static RMS.Data.Entities.Table;
 
 namespace RMS.Services
 {
-    public interface IOrderService : IBaseService<OrderViewModel, Order> { }
+    public interface IOrderService : IBaseService<OrderViewModel, Order> 
+    {
+        Task<bool> CompletePaymentAsync(int orderId, int tableId);
+    }
 
     public class OrderService : BaseService<OrderViewModel, Order>, IOrderService
     {
@@ -64,6 +68,37 @@ namespace RMS.Services
                 await _context.OrderItems.AddRangeAsync(newDishes);
             }
         }
+
+        public override async Task CreateAsync(OrderViewModel model)
+        {
+            var entity = _mapper.Map<Order>(model);
+            await _dbSet.AddAsync(entity);
+
+            var table = await _context.Tables.FindAsync(model.TableId);
+            if (table != null)
+            {
+                table.Status = Table.TableStatus.Occupied;
+            }
+
+            await CreateRelationshipsAsync(entity, model);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> CompletePaymentAsync(int orderId, int tableId)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null) return false;
+
+            var table = await _context.Tables.FindAsync(tableId);
+            if (table == null) return false;
+
+            order.Status = Order.OrderStatus.Completed;
+            table.Status = TableStatus.Available;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
     }
 
 }

@@ -23,6 +23,6 @@ namespace RMS.Models
             public int Quantity { get; set; }
             public decimal Price { get; set; }
         }
-        public Order.OrderStatus Status = Order.OrderStatus.Pending;
+        public Order.OrderStatus Status { get; set; } = Order.OrderStatus.Pending;
     }
 }

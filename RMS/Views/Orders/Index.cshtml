@@ -4,7 +4,7 @@
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+<h1>ORDERS</h1>
 
 <p>
     <a asp-action="Create">Create New</a>
@@ -70,8 +70,38 @@
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
                 <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
                 <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    @if (item.Status == RMS.Data.Entities.Order.OrderStatus.Pending)
+                    {
+                        <button class="btn btn-success btn-sm" onclick="completePayment(@item.Id, @item.TableId)">
+                            Pay
+                        </button>
+                    }
             </td>
         </tr>
 }
     </tbody>
 </table>
+
+@section Scripts {
+    <script>
+        function completePayment(orderId, tableId) {
+            if (!confirm("Xác nhận thanh toán đơn hàng này?")) return;
+
+            fetch(`/Orders/CompletePayment?orderId=${orderId}&tableId=${tableId}`, {
+                method: "POST"
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Thanh toán thành công!");
+                    location.reload(); // Reload trang để cập nhật trạng thái mới
+                } else {
+                    alert("Lỗi khi thanh toán, vui lòng thử lại.");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Có lỗi xảy ra, vui lòng thử lại.");
+            });
+        }
+    </script>
+}
