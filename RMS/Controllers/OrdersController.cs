@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using RMS.Data;
 using RMS.Models;
 using RMS.Services;
+using static RMS.Data.Entities.Order;
+using static RMS.Data.Entities.Table;
 
 namespace RMS.Controllers
 {
@@ -94,7 +96,9 @@ namespace RMS.Controllers
             {
                 return NotFound();
             }
-
+            ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
+            ViewData["Tables"] = new SelectList(await _tableService.GetAvailableTablesAsync(), "Id", "TableNumber");
+            ViewData["DishPrices"] = _context.Dishes.ToDictionary(d => d.Id.ToString(), d => d.Price);
             return View(model);
         }
 
@@ -160,6 +164,16 @@ namespace RMS.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        [HttpPost]
+        public async Task<IActionResult> CompletePayment(int orderId, int tableId)
+        {
+            bool success = await _orderService.CompletePaymentAsync(orderId, tableId);
+            if (!success) return NotFound();
+
+            return RedirectToAction(nameof(Index));
+        }
+
 
     }
 }
