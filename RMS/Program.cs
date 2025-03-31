@@ -37,6 +37,7 @@ namespace RMS
             builder.Services.AddScoped<IDishService, DishService>();
             builder.Services.AddScoped<ITableService, TableService>();
             builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IUserService, UserService>();
 
             var app = builder.Build();
 

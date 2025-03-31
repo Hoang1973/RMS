@@ -7,22 +7,25 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RMS.Data;
 using RMS.Data.Entities;
+using RMS.Models;
+using RMS.Services;
 
 namespace RMS.Controllers
 {
     public class UsersController : Controller
     {
-        private readonly RMSDbContext _context;
+        private readonly IUserService _userService;
 
-        public UsersController(RMSDbContext context)
+        public UsersController(IUserService userService)
         {
-            _context = context;
+            _userService = userService;
         }
 
         // GET: Users
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Users.ToListAsync());
+            var models = await _userService.GetAllAsync();
+            return View(models);
         }
 
         // GET: Users/Details/5
@@ -33,8 +36,7 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var user = await _userService.GetByIdAsync(id.Value);
             if (user == null)
             {
                 return NotFound();
@@ -50,19 +52,18 @@ namespace RMS.Controllers
         }
 
         // POST: Users/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,UserRole,Id,CreatedAt,UpdatedAt,CreatedBy,UpdatedBy")] User user)
+        public async Task<IActionResult> Create(UserViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(user);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("", "User could not be added. Please check the details and try again.");
+                return View(model);
             }
-            return View(user);
+            
+            await _userService.CreateAsync(model);
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Users/Edit/5
@@ -73,7 +74,7 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userService.GetByIdAsync(id.Value);
             if (user == null)
             {
                 return NotFound();
@@ -82,27 +83,24 @@ namespace RMS.Controllers
         }
 
         // POST: Users/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Name,UserRole,Id,CreatedAt,UpdatedAt,CreatedBy,UpdatedBy")] User user)
+        public async Task<IActionResult> Edit(int id, UserViewModel model)
         {
-            if (id != user.Id)
+            if (id != model.Id)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 try
                 {
-                    _context.Update(user);
-                    await _context.SaveChangesAsync();
+                    await _userService.UpdateAsync(model);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!UserExists(user.Id))
+                    if (!await _userService.ExistsAsync(model.Id))
                     {
                         return NotFound();
                     }
@@ -113,7 +111,7 @@ namespace RMS.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(user);
+            return View(model);
         }
 
         // GET: Users/Delete/5
@@ -124,8 +122,7 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var user = await _userService.GetByIdAsync(id.Value);
             if (user == null)
             {
                 return NotFound();
@@ -139,19 +136,14 @@ namespace RMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user != null)
+            bool deleted = await _userService.DeleteByIdAsync(id);
+            if (!deleted)
             {
-                _context.Users.Remove(user);
+                return NotFound();
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool UserExists(int id)
-        {
-            return _context.Users.Any(e => e.Id == id);
-        }
     }
 }
