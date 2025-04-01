@@ -92,10 +92,11 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
                 try
                 {
+                    Console.WriteLine("Updating user");
                     await _userService.UpdateAsync(model);
                 }
                 catch (DbUpdateConcurrencyException)
