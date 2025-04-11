@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RMS.Models;
 using System.Diagnostics;
+using RMS.Data.Entities;
 
 namespace RMS.Controllers
 {
