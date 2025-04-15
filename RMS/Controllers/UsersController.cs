@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,7 @@ using RMS.Services;
 
 namespace RMS.Controllers
 {
+    [Authorize(Policy = "AdminOnly")]
     public class UsersController : Controller
     {
         private readonly IUserService _userService;
@@ -47,6 +49,11 @@ namespace RMS.Controllers
 
         // GET: Users/Create
         public IActionResult Create()
+        {
+            return View();
+        }
+
+        public IActionResult AccessDenied()
         {
             return View();
         }

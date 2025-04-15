@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RMS.Data;
 using RMS.Models;
@@ -29,15 +30,22 @@ namespace RMS.Services
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
 
-            if (user == null || user.Password != model.Password) // In production, use proper password hashing
+            if (user == null || string.IsNullOrEmpty(user.Password) || !IsValidBCryptHash(user.Password))
+            {
                 return null;
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(model.Password, user.Password))
+            {
+                return null;
+            }
 
             var claims = new[]
             {
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.UserRole.ToString()),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
-        };
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.UserRole.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+            };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -51,6 +59,20 @@ namespace RMS.Services
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private bool IsValidBCryptHash(string hash)
+        {
+            try
+            {
+                return !string.IsNullOrEmpty(hash) &&
+                       (hash.StartsWith("$2a$") || hash.StartsWith("$2b$")) &&
+                       hash.Length >= 59;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 

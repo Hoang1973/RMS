@@ -13,7 +13,6 @@ using RMS.Services;
 
 namespace RMS.Controllers
 {
-    [Authorize]
     public class IngredientsController : Controller
     {
         private readonly IIngredientService _ingredientService;
@@ -24,7 +23,6 @@ namespace RMS.Controllers
         }
 
         // GET: Ingredients
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
             var models = await _ingredientService.GetAllAsync();
