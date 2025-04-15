@@ -25,6 +25,11 @@ namespace RMS.Services
                 .ReverseMap()
                 .ForMember(dest => dest.Table, opt => opt.Ignore()) // Không map Table ngược lại
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+            CreateMap<User, UserViewModel>()
+                .ReverseMap()
+                .ForMember(dest => dest.Password, opt => opt.Ignore()) // Không map Password ngược lại
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
         }
     }
 }

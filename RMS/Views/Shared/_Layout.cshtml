@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - RMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/RMS.styles.css" asp-append-version="true" />
@@ -19,12 +20,12 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Users" asp-action="Index">User</a>
+                            </li>
+                        }
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Ingredients" asp-action="Index">Ingredient</a>
                         </li>
@@ -38,6 +39,23 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Tables" asp-action="Index">Table</a>
                         </li>
                     </ul>
+                    <ul class="navbar-nav">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item ms-auto d-flex align-items-center">
+                                <span class="badge bg-primary me-2">Role: @User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value</span>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Auth" asp-action="Logout">
+                                    <i class="bi bi-box-arrow-right me-1"></i> Logout
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item ms-auto">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Auth" asp-action="Login">Login</a>
+                            </li>
+                        }
+                    </ul>
                 </div>
             </div>
         </nav>
@@ -47,6 +65,22 @@
             @RenderBody()
         </main>
     </div>
+
+    <style>
+        .navbar-nav .nav-link i {
+            font-size: 1.1rem;
+            vertical-align: middle;
+        }
+
+        .navbar-nav .nav-link:hover i {
+            color: #ff6f61;
+        }
+
+        .navbar-nav .nav-link span {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+    </style>
 
     <footer class="border-top footer text-muted">
         <div class="container">

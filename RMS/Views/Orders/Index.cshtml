@@ -70,6 +70,7 @@
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
                 <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
                 <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    <button class="btn btn-info btn-sm" onclick="printInvoice(@item.Id)">🖨️ Print Invoice</button>
                     @if (item.Status == RMS.Data.Entities.Order.OrderStatus.Pending)
                     {
                         <button class="btn btn-success btn-sm" onclick="completePayment(@item.Id, @item.TableId)">
@@ -103,5 +104,14 @@
                 alert("Có lỗi xảy ra, vui lòng thử lại.");
             });
         }
+
+        function printInvoice(orderId) {
+            let printWindow = window.open(`/Orders/PrintInvoice/${orderId}`, "_blank");
+            printWindow.focus();
+            printWindow.onload = function () {
+                printWindow.print();
+            };
+        }
+
     </script>
 }

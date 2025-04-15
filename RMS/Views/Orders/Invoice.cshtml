@@ -1,0 +1,54 @@
+﻿@model OrderViewModel
+
+@{
+    ViewData["Title"] = "Invoice";
+}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Invoice</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .invoice-container { width: 80%; margin: auto; padding: 20px; border: 1px solid #ddd; }
+        .invoice-header { text-align: center; margin-bottom: 20px; }
+        .invoice-details { width: 100%; border-collapse: collapse; }
+        .invoice-details th, .invoice-details td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    </style>
+</head>
+<body onload="window.print();">
+    <div class="invoice-container">
+        <div class="invoice-header">
+            <h2>Restaurant Invoice</h2>
+            <p><strong>Order ID:</strong> @Model.Id</p>
+            <p><strong>Table:</strong> @Model.TableNumber</p>
+            <p><strong>Status:</strong> @Model.Status</p>
+        </div>
+
+        <table class="invoice-details">
+            <thead>
+                <tr>
+                    <th>Dish</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Dishes)
+                {
+                    <tr>
+                        <td>@item.Name</td>
+                        <td>@item.Quantity</td>
+                        <td>@item.Price.ToString("C")</td>
+                        <td>@(item.Quantity * item.Price)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @* <h3>Total Amount: @Model.TotalAmount.ToString("C")</h3> *@
+    </div>
+</body>
+</html>

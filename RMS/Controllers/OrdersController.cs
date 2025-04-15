@@ -28,6 +28,17 @@ namespace RMS.Controllers
             _mapper = mapper;
         }
 
+        public async Task<IActionResult> PrintInvoice(int orderId)
+        {
+            var order = await _orderService.GetInvoiceAsync(orderId);
+            if (order == null)
+            {
+                return NotFound();
+            }
+            return View("Invoice", order);
+        }
+
+
         // GET: Orders
         public async Task<IActionResult> Index()
         {

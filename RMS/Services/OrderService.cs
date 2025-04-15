@@ -11,6 +11,7 @@ namespace RMS.Services
     public interface IOrderService : IBaseService<OrderViewModel, Order> 
     {
         Task<bool> CompletePaymentAsync(int orderId, int tableId);
+        Task<OrderViewModel> GetInvoiceAsync(int orderId);
     }
 
     public class OrderService : BaseService<OrderViewModel, Order>, IOrderService
@@ -99,6 +100,26 @@ namespace RMS.Services
             return true;
         }
 
+        public async Task<OrderViewModel> GetInvoiceAsync(int orderId)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Dish)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order == null) throw new Exception("Order not found");
+
+            var orderVm = _mapper.Map<OrderViewModel>(order);
+            orderVm.Dishes = order.OrderItems.Select(oi => new OrderViewModel.DishItem
+            {
+                DishId = oi.DishId,
+                Name = oi.Dish.Name,
+                Quantity = oi.Quantity,
+                Price = oi.Dish.Price
+            }).ToList();
+
+            return orderVm;
+        }
     }
 
 }

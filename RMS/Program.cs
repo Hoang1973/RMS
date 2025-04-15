@@ -1,6 +1,12 @@
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using RMS.Data;
 using RMS.Services;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
 
 namespace RMS
 {
@@ -25,7 +31,15 @@ namespace RMS
 
 
             // Add services to the container.
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllersWithViews(options =>
+            {
+                // Yêu cầu xác thực cho tất cả controller/action, trừ các action được đánh dấu [AllowAnonymous]
+                var policy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
+                options.Filters.Add(new AuthorizeFilter(policy));
+            });
+
             builder.Services.AddDbContext<RMSDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("OfficeDB")));
 
@@ -37,6 +51,22 @@ namespace RMS
             builder.Services.AddScoped<IDishService, DishService>();
             builder.Services.AddScoped<ITableService, TableService>();
             builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
+
+            // Add these services in Program.cs
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Auth/Login";
+                    options.AccessDeniedPath = "/Auth/AccessDenied";
+                    options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+                });
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminOnly", policy =>
+                    policy.RequireRole("Admin"));
+            });
 
             var app = builder.Build();
 
@@ -53,11 +83,13 @@ namespace RMS
 
             app.UseRouting();
 
+            app.UseAuthentication();
+
             app.UseAuthorization();
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
+                pattern: "{controller=Auth}/{action=Login}/{id?}");
 
             app.Run();
         }
