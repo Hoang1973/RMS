@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using RMS.Data.Entities;
 using RMS.Models;
 
@@ -30,6 +30,12 @@ namespace RMS.Services
                 .ForMember(dest => dest.Password, opt => opt.Ignore()) // Không map Password ngược lại
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
+            CreateMap<Discount, DiscountViewModel>()
+                .ForMember(dest => dest.IngredientId, opt => opt.MapFrom(src => src.Ingredient != null ? src.Ingredient.Id : (int?)null))
+                .ForMember(dest => dest.IngredientName, opt => opt.MapFrom(src => src.Ingredient != null ? src.Ingredient.Name : null))
+                .ReverseMap()
+                .ForMember(dest => dest.Ingredient, opt => opt.Ignore()) // Ingredient handled separately
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         }
     }
 }
