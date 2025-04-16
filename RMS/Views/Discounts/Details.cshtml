@@ -1,0 +1,18 @@
+@model RMS.Models.DiscountViewModel
+@{
+    ViewData["Title"] = "Discount Details";
+}
+<h2>Discount Details</h2>
+<div>
+    <h4>@Model.Name</h4>
+    <dl class="row">
+        <dt class="col-sm-2">Type</dt>
+        <dd class="col-sm-10">@Model.DiscountType</dd>
+        <dt class="col-sm-2">Value</dt>
+        <dd class="col-sm-10">@Model.DiscountValue</dd>
+        <dt class="col-sm-2">Ingredient</dt>
+        <dd class="col-sm-10">@Model.IngredientName</dd>
+    </dl>
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>
