@@ -23,13 +23,7 @@
         <input asp-for="DiscountValue" class="form-control" />
         <span asp-validation-for="DiscountValue" class="text-danger"></span>
     </div>
-    <div class="form-group">
-        <label asp-for="IngredientId">Ingredient</label>
-        <select asp-for="IngredientId" class="form-control" asp-items="@(new SelectList(ViewBag.Ingredients, "Id", "Name"))">
-            <option value="">-- None --</option>
-        </select>
-        <span asp-validation-for="IngredientId" class="text-danger"></span>
-    </div>
+
     <button type="submit" class="btn btn-primary">Save</button>
     <a asp-action="Index" class="btn btn-secondary">Back to List</a>
 </form>

@@ -8,12 +8,10 @@ namespace RMS.Controllers
     public class DiscountsController : Controller
     {
         private readonly IDiscountService _discountService;
-        private readonly IIngredientService _ingredientService;
 
-        public DiscountsController(IDiscountService discountService, IIngredientService ingredientService)
+        public DiscountsController(IDiscountService discountService)
         {
             _discountService = discountService;
-            _ingredientService = ingredientService;
         }
 
         public async Task<IActionResult> Index()
@@ -31,8 +29,7 @@ namespace RMS.Controllers
 
         public async Task<IActionResult> Create()
         {
-            ViewBag.Ingredients = await _ingredientService.GetAllAsync();
-            return View();
+                        return View();
         }
 
         [HttpPost]
@@ -44,16 +41,14 @@ namespace RMS.Controllers
                 await _discountService.CreateAsync(model);
                 return RedirectToAction(nameof(Index));
             }
-            ViewBag.Ingredients = await _ingredientService.GetAllAsync();
-            return View(model);
+                        return View(model);
         }
 
         public async Task<IActionResult> Edit(int id)
         {
             var discount = await _discountService.GetByIdAsync(id);
             if (discount == null) return NotFound();
-            ViewBag.Ingredients = await _ingredientService.GetAllAsync();
-            return View(discount);
+                        return View(discount);
         }
 
         [HttpPost]
@@ -65,8 +60,7 @@ namespace RMS.Controllers
                 await _discountService.UpdateAsync(model);
                 return RedirectToAction(nameof(Index));
             }
-            ViewBag.Ingredients = await _ingredientService.GetAllAsync();
-            return View(model);
+                        return View(model);
         }
 
         public async Task<IActionResult> Delete(int id)

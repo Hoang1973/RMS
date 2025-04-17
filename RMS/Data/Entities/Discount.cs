@@ -11,8 +11,7 @@ namespace RMS.Data.Entities
         public DiscountTypeEnum DiscountType  { get; set; }
         public decimal DiscountValue { get; set; }
         public ICollection<BillDiscount> BillDiscounts { get; set; }
-        [ForeignKey("IngredientId")]
-        public Ingredient Ingredient { get; set; }
+
         public enum DiscountTypeEnum
         {
             Percentage,

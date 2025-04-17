@@ -14,7 +14,6 @@ namespace RMS.Models
         [Required]
         [Range(0, double.MaxValue)]
         public decimal DiscountValue { get; set; }
-        public int? IngredientId { get; set; }
-        public string IngredientName { get; set; }
+
     }
 }
