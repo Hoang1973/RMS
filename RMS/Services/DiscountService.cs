@@ -23,7 +23,6 @@ namespace RMS.Services
         public async Task<DiscountViewModel?> GetByIdAsync(int id)
         {
             var discount = await _context.Discounts
-                .Include(d => d.Ingredient)
                 .FirstOrDefaultAsync(d => d.Id == id);
             if (discount == null) return null;
             var viewModel = _mapper.Map<DiscountViewModel>(discount);
