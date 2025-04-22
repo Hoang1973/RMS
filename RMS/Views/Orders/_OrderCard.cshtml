@@ -14,8 +14,21 @@
     </div>
     <div class="mb-2">
         <div class="flex justify-between">
-            <span class="text-gray-500 dark:text-gray-400">Khách:</span>
-            <span class="font-semibold">@Model.CustomerId</span>
+            <span class="text-gray-500 dark:text-gray-400">Món:</span>
+            <span class="truncate font-semibold" title="@string.Join(", ", Model.Dishes.Select(d => d.Name + " x" + d.Quantity))">
+                @{
+                    var dishString = string.Join(", ", Model.Dishes.Select(d => d.Name + " x" + d.Quantity));
+                    var maxLen = 40;
+                    @if (dishString.Length > maxLen)
+                    {
+                        @(dishString.Substring(0, maxLen) + "...")
+                    }
+                    else
+                    {
+                        @dishString
+                    }
+                }
+            </span>
         </div>
         <div class="flex justify-between">
             <span class="text-gray-500 dark:text-gray-400">Tổng tiền:</span>
@@ -32,7 +45,7 @@
         </button>
         @if (isCurrent)
         {
-            <button type="button" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-semibold flex items-center" onclick="payOrder(@Model.Id, @Model.TableId)">
+            <button type="button" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-semibold flex items-center" onclick="showOrderDetail(@Model.Id); document.getElementById('order-detail-modal').scrollIntoView({behavior: 'smooth'});">
                 <i class="fas fa-money-bill-wave mr-1"></i> Thanh toán
             </button>
         }

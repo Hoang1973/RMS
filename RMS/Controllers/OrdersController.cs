@@ -67,6 +67,7 @@ namespace RMS.Controllers
 
             return Json(new {
                 id = model.Id,
+                tableId = model.TableId,
                 tableNumber = model.TableNumber,
                 customerId = model.CustomerId,
                 status = model.Status.ToString(),

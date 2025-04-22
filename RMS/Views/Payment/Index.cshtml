@@ -1,0 +1,32 @@
+@model IEnumerable<RMS.Models.PaymentViewModel>
+@{
+    ViewData["Title"] = "Thanh toán";
+}
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-2xl font-bold mb-4">Danh sách đơn chờ thanh toán</h2>
+    <table class="w-full table-auto border mb-4">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="p-2">Bàn</th>
+                <th class="p-2">Thời gian tạo</th>
+                <th class="p-2">Tổng tiền</th>
+                <th class="p-2">Trạng thái</th>
+                <th class="p-2">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var order in Model)
+        {
+            <tr>
+                <td class="p-2 font-semibold">@order.TableNumber</td>
+                <td class="p-2">@order.CreatedAt.ToString("HH:mm dd/MM/yyyy")</td>
+                <td class="p-2 text-green-600 font-bold">@order.Total.ToString("N0") ₫</td>
+                <td class="p-2">@((order.Total > 0) ? "Chờ thanh toán" : "Đã thanh toán")</td>
+                <td class="p-2">
+                    <a href="/Payment/Order/@order.OrderId" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold">Thanh toán</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

@@ -255,6 +255,7 @@
                 }
             })
             .catch(() => {
+                console.error('Lỗi fetch:', err);
                 showToast('Có lỗi xảy ra, vui lòng thử lại.', 'error');
                 btn.disabled = false;
                 btn.textContent = 'Hoàn tất thanh toán';
