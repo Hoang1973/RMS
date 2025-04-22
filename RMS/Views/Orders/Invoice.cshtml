@@ -1,38 +1,35 @@
-﻿@model OrderViewModel
-
+@model OrderViewModel
 @{
-    ViewData["Title"] = "Invoice";
+    ViewData["Title"] = "Hóa đơn";
+    var vatRate = 0.08M;
+    var subtotal = Model.Dishes.Sum(d => d.Price * d.Quantity);
+    var vat = Math.Round(subtotal * vatRate, 0);
+    var discount = 0M; // Nếu có giảm giá thì truyền vào Model
+    var total = subtotal + vat - discount;
 }
-
-
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>Invoice</title>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        .invoice-container { width: 80%; margin: auto; padding: 20px; border: 1px solid #ddd; }
-        .invoice-header { text-align: center; margin-bottom: 20px; }
-        .invoice-details { width: 100%; border-collapse: collapse; }
-        .invoice-details th, .invoice-details td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    </style>
+    <meta charset="utf-8" />
+    <title>Hóa đơn thanh toán</title>
+    <script src="/js/invoice-style.js"></script>
 </head>
-<body onload="window.print();">
+<body>
     <div class="invoice-container">
-        <div class="invoice-header">
-            <h2>Restaurant Invoice</h2>
-            <p><strong>Order ID:</strong> @Model.Id</p>
-            <p><strong>Table:</strong> @Model.TableNumber</p>
-            <p><strong>Status:</strong> @Model.Status</p>
+        <div class="header">
+            <img src="/images/logo.png" alt="Restaurant Logo" class="logo" onerror="this.style.display='none'" />
+            <div class="title">HÓA ĐƠN THANH TOÁN</div>
+            <div class="address">Nhà hàng ABC, 123 Đường Lớn, Quận 1, TP.HCM</div>
+            <div class="meta">Mã đơn: <b>#@Model.Id</b> | Bàn: <b>@Model.TableNumber</b></div>
+            <div class="meta">Thời gian: <b>@(Model.CreatedAt?.ToString("HH:mm dd/MM/yyyy") ?? "-")</b></div>
         </div>
-
         <table class="invoice-details">
             <thead>
                 <tr>
-                    <th>Dish</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Subtotal</th>
+                    <th>Món</th>
+                    <th>SL</th>
+                    <th>Đơn giá</th>
+                    <th>Thành tiền</th>
                 </tr>
             </thead>
             <tbody>
@@ -41,14 +38,35 @@
                     <tr>
                         <td>@item.Name</td>
                         <td>@item.Quantity</td>
-                        <td>@item.Price.ToString("C")</td>
-                        <td>@(item.Quantity * item.Price)</td>
+                        <td>@item.Price.ToString("N0") ₫</td>
+                        <td>@((item.Price * item.Quantity).ToString("N0")) ₫</td>
                     </tr>
                 }
             </tbody>
         </table>
-
-        @* <h3>Total Amount: @Model.TotalAmount.ToString("C")</h3> *@
+        <table style="width:100%; margin-bottom: 10px;">
+            <tr class="totals-row">
+                <td class="label" colspan="3">Tạm tính:</td>
+                <td class="value">@subtotal.ToString("N0") ₫</td>
+            </tr>
+            <tr class="totals-row">
+                <td class="label" colspan="3">VAT (8%):</td>
+                <td class="value">@vat.ToString("N0") ₫</td>
+            </tr>
+            @if (discount > 0)
+            {
+            <tr class="totals-row">
+                <td class="label" colspan="3">Giảm giá:</td>
+                <td class="value">-@discount.ToString("N0") ₫</td>
+            </tr>
+            }
+            <tr class="totals-row">
+                <td class="label" colspan="3">TỔNG CỘNG:</td>
+                <td class="value" style="font-size:1.2rem; color:#e53e3e;">@total.ToString("N0") ₫</td>
+            </tr>
+        </table>
+        <div style="text-align:center; color:#4a5568; font-size:0.98rem; margin-top:18px;">Cảm ơn quý khách và hẹn gặp lại!</div>
+        <button class="print-btn" onclick="window.print()">In hóa đơn</button>
     </div>
 </body>
 </html>
