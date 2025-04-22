@@ -1,117 +1,44 @@
-﻿@model IEnumerable<RMS.Models.OrderViewModel>
+@model IEnumerable<RMS.Models.OrderViewModel>
 
 @{
     ViewData["Title"] = "Index";
 }
 
-<h1>ORDERS</h1>
-
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.CustomerId)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.TableNumber)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.TotalAmount)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Status)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CreatedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.UpdatedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CreatedBy)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.UpdatedBy)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.CustomerId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.TableNumber)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.TotalAmount)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Status)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedAt)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.UpdatedAt)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedBy)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.UpdatedBy)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-                    <button class="btn btn-info btn-sm" onclick="printInvoice(@item.Id)">🖨️ Print Invoice</button>
-                    @if (item.Status == RMS.Data.Entities.Order.OrderStatus.Pending)
-                    {
-                        <button class="btn btn-success btn-sm" onclick="completePayment(@item.Id, @item.TableId)">
-                            Pay
-                        </button>
-                    }
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+<h1 class="text-2xl font-bold text-primary mb-6">Quản lý đơn hàng</h1>
+<div class="mb-4 flex justify-end">
+    <a asp-action="Create" class="inline-block bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
+        <i class="fas fa-plus mr-2"></i> Tạo đơn mới
+    </a>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
+        <h3 class="font-bold text-lg mb-4">Đơn hàng hiện tại</h3>
+        <div id="current-orders" class="space-y-3">
+            @foreach (var order in Model.Where(o => o.Status == RMS.Data.Entities.Order.OrderStatus.Pending))
+            {
+                @Html.Partial("_OrderCard", order)
+            }
+            @if (!Model.Any(o => o.Status == RMS.Data.Entities.Order.OrderStatus.Pending))
+            {
+                <div class="text-gray-400 italic">Không có đơn hàng nào đang phục vụ.</div>
+            }
+        </div>
+    </div>
+    <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
+        <h3 class="font-bold text-lg mb-4">Lịch sử đơn hàng</h3>
+        <div id="order-history" class="space-y-3">
+            @foreach (var order in Model.Where(o => o.Status != RMS.Data.Entities.Order.OrderStatus.Pending))
+            {
+                @Html.Partial("_OrderCard", order)
+            }
+            @if (!Model.Any(o => o.Status != RMS.Data.Entities.Order.OrderStatus.Pending))
+            {
+                <div class="text-gray-400 italic">Chưa có đơn hàng nào đã thanh toán.</div>
+            }
+        </div>
+    </div>
+</div>
 
 @section Scripts {
-    <script>
-        function completePayment(orderId, tableId) {
-            if (!confirm("Xác nhận thanh toán đơn hàng này?")) return;
-
-            fetch(`/Orders/CompletePayment?orderId=${orderId}&tableId=${tableId}`, {
-                method: "POST"
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert("Thanh toán thành công!");
-                    location.reload(); // Reload trang để cập nhật trạng thái mới
-                } else {
-                    alert("Lỗi khi thanh toán, vui lòng thử lại.");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("Có lỗi xảy ra, vui lòng thử lại.");
-            });
-        }
-
-        function printInvoice(orderId) {
-            let printWindow = window.open(`/Orders/PrintInvoice/${orderId}`, "_blank");
-            printWindow.focus();
-            printWindow.onload = function () {
-                printWindow.print();
-            };
-        }
-
-    </script>
+    <script src="~/js/order.js"></script>
 }

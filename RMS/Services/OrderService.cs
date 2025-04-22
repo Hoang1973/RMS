@@ -1,4 +1,4 @@
-﻿using RMS.Data.Entities;
+using RMS.Data.Entities;
 using RMS.Data;
 using RMS.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +11,6 @@ namespace RMS.Services
     public interface IOrderService : IBaseService<OrderViewModel, Order> 
     {
         Task<bool> CompletePaymentAsync(int orderId, int tableId);
-        Task<OrderViewModel> GetInvoiceAsync(int orderId);
     }
 
     public class OrderService : BaseService<OrderViewModel, Order>, IOrderService
@@ -19,6 +18,28 @@ namespace RMS.Services
         public OrderService(RMSDbContext context, IMapper mapper)
             : base(context, mapper)
         {
+        }
+
+        public override async Task<OrderViewModel?> GetByIdAsync(int id)
+        {
+            var order = await _context.Orders
+                .Include(o => o.Table)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Dish)
+                .FirstOrDefaultAsync(o => o.Id == id);
+            if (order == null) return null;
+            var viewModel = _mapper.Map<OrderViewModel>(order);
+            // TableNumber
+            viewModel.TableNumber = order.Table?.TableNumber;
+            // Dishes
+            viewModel.Dishes = order.OrderItems.Select(oi => new OrderViewModel.DishItem
+            {
+                DishId = oi.DishId,
+                Name = oi.Dish?.Name ?? string.Empty,
+                Quantity = oi.Quantity,
+                Price = oi.Dish?.Price ?? 0
+            }).ToList();
+            return viewModel;
         }
 
         protected override async Task CreateRelationshipsAsync(Order entity, OrderViewModel model)
@@ -100,26 +121,7 @@ namespace RMS.Services
             return true;
         }
 
-        public async Task<OrderViewModel> GetInvoiceAsync(int orderId)
-        {
-            var order = await _context.Orders
-                .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Dish)
-                .FirstOrDefaultAsync(o => o.Id == orderId);
 
-            if (order == null) throw new Exception("Order not found");
-
-            var orderVm = _mapper.Map<OrderViewModel>(order);
-            orderVm.Dishes = order.OrderItems.Select(oi => new OrderViewModel.DishItem
-            {
-                DishId = oi.DishId,
-                Name = oi.Dish.Name,
-                Quantity = oi.Quantity,
-                Price = oi.Dish.Price
-            }).ToList();
-
-            return orderVm;
-        }
     }
 
 }

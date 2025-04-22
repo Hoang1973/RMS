@@ -1,0 +1,15 @@
+@* Notification/Toast partial view *@
+<div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+<script>
+    // Simple notification function
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('notification-container');
+        if (!container) return;
+        const div = document.createElement('div');
+        div.className = `notification px-4 py-2 rounded shadow text-white font-semibold animate-slideIn ${type === 'error' ? 'bg-red-500' : (type === 'success' ? 'bg-green-500' : 'bg-primary')}`;
+        div.innerText = message;
+        container.appendChild(div);
+        setTimeout(() => div.remove(), 3000);
+    }
+</script>
+<link rel="stylesheet" href="~/css/notification.css" />

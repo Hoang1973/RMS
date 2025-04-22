@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -28,17 +28,6 @@ namespace RMS.Controllers
             _mapper = mapper;
         }
 
-        public async Task<IActionResult> PrintInvoice(int orderId)
-        {
-            var order = await _orderService.GetInvoiceAsync(orderId);
-            if (order == null)
-            {
-                return NotFound();
-            }
-            return View("Invoice", order);
-        }
-
-
         // GET: Orders
         public async Task<IActionResult> Index()
         {
@@ -65,6 +54,31 @@ namespace RMS.Controllers
             }
 
             return View(model);
+        }
+
+        // GET: Orders/DetailsJson/5
+        [HttpGet]
+        public async Task<IActionResult> DetailsJson(int id)
+        {
+            // Lấy thông tin đơn hàng đúng ViewModel, không dùng GetInvoiceAsync
+            var model = await _orderService.GetByIdAsync(id);
+            if (model == null)
+                return NotFound();
+
+            return Json(new {
+                id = model.Id,
+                tableNumber = model.TableNumber,
+                customerId = model.CustomerId,
+                status = model.Status.ToString(),
+                createdAt = model.CreatedAt?.ToString("HH:mm dd/MM/yyyy"),
+                totalAmount = model.TotalAmount,
+                dishes = model.Dishes?.Select(d => new {
+                    name = d.Name,
+                    quantity = d.Quantity,
+                    price = d.Price,
+                    subtotal = d.Quantity * d.Price
+                })
+            });
         }
 
         // GET: Orders/Create
