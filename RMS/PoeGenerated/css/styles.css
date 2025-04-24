@@ -1,0 +1,93 @@
+
+        /* Base styles */
+        .table-icon {
+            transition: all 0.3s ease;
+        }
+
+        .table-available {
+            @apply bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-2 border-green-500;
+        }
+
+        .table-occupied {
+            @apply bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-2 border-red-500;
+        }
+
+        /* Dark mode support */
+        .dark body {
+            @apply bg-dark-bg text-dark-text;
+        }
+
+        .dark .card {
+            @apply bg-dark-card border-dark-border;
+        }
+
+        /* Animation for notifications */
+        @keyframes slideIn {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .notification {
+            animation: slideIn 0.3s forwards;
+        }
+
+        /* Loader animation */
+        .loader {
+            border-top-color: #5D5CDE;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Table layout grid */
+        .table-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Kitchen display transition */
+        .kitchen-item {
+            transition: all 0.3s ease;
+        }
+
+            .kitchen-item.completed {
+                @apply bg-green-100 dark:bg-green-900;
+            }
+
+        /* Category badges */
+        .category-badge {
+            @apply px-2 py-1 rounded-full text-xs font-medium;
+        }
+
+        .category-main {
+            @apply bg-red-500 text-white;
+        }
+
+        .category-side {
+            @apply bg-blue-500 text-white;
+        }
+
+        .category-drink {
+            @apply bg-purple-500 text-white;
+        }
+
+        .category-dessert {
+            @apply bg-yellow-500 text-white;
+        }
+    
