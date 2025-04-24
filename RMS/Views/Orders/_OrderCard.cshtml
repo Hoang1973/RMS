@@ -43,6 +43,76 @@
         <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold flex items-center" onclick="showOrderDetail(@Model.Id)">
             <i class="fas fa-info-circle mr-1"></i> Xem chi tiết
         </button>
+        @if (!isCurrent)
+        {
+            <button type="button" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-semibold flex items-center" onclick="printOrderBill(@Model.Id)">
+                <i class="fas fa-print mr-1"></i> In hóa đơn
+            </button>
+        }
+    </div>
+    <!-- Template hóa đơn ẩn -->
+    <div id="order-bill-@Model.Id" class="hidden">
+        <div class="max-w-md mx-auto bg-white p-6 rounded shadow text-black text-base font-sans" style="font-family: Arial, sans-serif;">
+            <div class="text-center mb-4">
+                <div class="text-2xl font-bold text-primary">HÓA ĐƠN THANH TOÁN</div>
+                <div class="text-sm text-gray-700">Nhà hàng RMS</div>
+            </div>
+            <div class="mb-2 flex justify-between">
+                <span class="font-semibold">Bàn:</span> <span>@Model.TableNumber</span>
+            </div>
+            <div class="mb-2 flex justify-between">
+                <span class="font-semibold">Mã hóa đơn:</span> <span>#@Model.Id</span>
+            </div>
+            <div class="mb-2 flex justify-between">
+                <span class="font-semibold">Thời gian:</span> <span>@Model.CreatedAt.Value.ToString("HH:mm dd/MM/yyyy")</span>
+            </div>
+            <div class="mb-2 flex justify-between">
+                <span class="font-semibold">Trạng thái:</span> <span>@(isCurrent ? "Đang phục vụ" : "Đã thanh toán")</span>
+            </div>
+            <div class="my-4">
+                <table class="w-full border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border px-2 py-1 text-left">Món</th>
+                            <th class="border px-2 py-1">SL</th>
+                            <th class="border px-2 py-1">Đơn giá</th>
+                            <th class="border px-2 py-1">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var dish in Model.Dishes)
+                        {
+                            <tr>
+                                <td class="border px-2 py-1">@dish.Name</td>
+                                <td class="border px-2 py-1 text-center">@dish.Quantity</td>
+                                <td class="border px-2 py-1 text-right">@dish.Price.ToString("N0") ₫</td>
+                                <td class="border px-2 py-1 text-right">@(dish.Quantity * dish.Price).ToString("N0") ₫</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex justify-between mt-4 text-lg font-bold">
+                <span>Tổng cộng:</span>
+                <span class="text-green-600">@Model.TotalAmount.Value.ToString("N0") ₫</span>
+            </div>
+            <div class="text-center mt-6 text-xs text-gray-500">Cảm ơn quý khách và hẹn gặp lại!</div>
+        </div>
     </div>
 </div>
 <script src="~/js/order.js" defer></script>
+<script>
+function printOrderBill(orderId) {
+    var billContent = document.getElementById('order-bill-' + orderId).innerHTML;
+    var printWindow = window.open('', '', 'width=800,height=600');
+    printWindow.document.write('<html><head><title>In hóa đơn</title>');
+    printWindow.document.write('<link href="https://cdn.tailwindcss.com" rel="stylesheet" />');
+    printWindow.document.write('<style>body{background:white;}</style>');
+    printWindow.document.write('</head><body >');
+    printWindow.document.write(billContent);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(function(){ printWindow.print(); printWindow.close(); }, 500);
+}
+</script>

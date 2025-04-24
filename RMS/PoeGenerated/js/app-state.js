@@ -1,0 +1,3554 @@
+tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#4B4BA8',
+                        light: {
+                            bg: '#FFFFFF',
+                            text: '#333333',
+                            card: '#F8F8F8',
+                            border: '#E5E5E5'
+                        },
+                        dark: {
+                            bg: '#181818',
+                            text: '#E5E5E5',
+                            card: '#262626',
+                            border: '#404040'
+                        }
+                    }
+                }
+            }
+        }
+    
+
+
+        // Default to light mode - no dark mode detection
+        document.documentElement.classList.remove('dark');
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function () {
+            // Application state
+            const appState = {
+                currentUser: null,
+                currentRole: null,
+                activeView: null,
+                // Sample data for demo
+                staff: [
+                    { id: 1, name: 'Nguyễn Văn A', username: 'admin', password: 'password', role: 'admin', status: 'active' },
+                    { id: 2, name: 'Trần Thị B', username: 'cashier1', password: 'password', role: 'cashier', status: 'active' },
+                    { id: 3, name: 'Lê Văn C', username: 'chef1', password: 'password', role: 'chef', status: 'active' }
+                ],
+                menuItems: [
+                    { id: 1, name: 'Bò bít tết', price: 150000, description: 'Bò bít tết sốt tiêu đen, mềm thơm', image: '', category: 'main', ingredients: [{ id: 1, quantity: 0.3 }, { id: 3, quantity: 0.1 }], available: true },
+                    { id: 2, name: 'Gà nướng sốt cay', price: 120000, description: 'Gà nướng sốt cay hương thơm đặc trưng', image: '', category: 'main', ingredients: [{ id: 2, quantity: 0.5 }], available: true },
+                    { id: 3, name: 'Salad trộn dầu giấm', price: 50000, description: 'Salad rau tươi trộn dầu giấm', image: '', category: 'side', ingredients: [{ id: 4, quantity: 0.2 }, { id: 5, quantity: 0.1 }], available: true },
+                    { id: 4, name: 'Coca Cola', price: 20000, description: 'Nước giải khát có ga', image: '', category: 'drink', ingredients: [], available: true },
+                    { id: 5, name: 'Bánh Tiramisu', price: 40000, description: 'Bánh ngọt vị cà phê', image: '', category: 'dessert', ingredients: [], available: true },
+                ],
+                inventory: [
+                    { id: 1, name: 'Thịt bò', unit: 'kg', quantity: 10, minQuantity: 3, status: 'normal', lastRestocked: '2024-03-18' },
+                    { id: 2, name: 'Thịt gà', unit: 'kg', quantity: 15, minQuantity: 5, status: 'normal', lastRestocked: '2024-03-17' },
+                    { id: 3, name: 'Bơ', unit: 'kg', quantity: 2, minQuantity: 1, status: 'low', lastRestocked: '2024-03-15' },
+                    { id: 4, name: 'Rau salad', unit: 'kg', quantity: 3, minQuantity: 2, status: 'low', lastRestocked: '2024-03-16' },
+                    { id: 5, name: 'Dầu giấm', unit: 'chai', quantity: 5, minQuantity: 2, status: 'normal', lastRestocked: '2024-03-14' },
+                ],
+                tables: [
+                    { id: 1, name: 'Bàn 1', capacity: 4, status: 'available', startTime: null },
+                    { id: 2, name: 'Bàn 2', capacity: 2, status: 'available', startTime: null },
+                    { id: 3, name: 'Bàn 3', capacity: 6, status: 'available', startTime: null },
+                    { id: 4, name: 'Bàn 4', capacity: 4, status: 'available', startTime: null },
+                    { id: 5, name: 'Bàn 5', capacity: 8, status: 'available', startTime: null },
+                ],
+                orders: [
+                    // Sample orders will be added dynamically
+                ],
+                kitchenOrders: [
+                    // Sample kitchen orders will be added dynamically
+                ]
+            };
+
+            // DOM elements
+            const elements = {
+                // Login elements
+                loginScreen: document.getElementById('login-screen'),
+                loginBtn: document.getElementById('login-btn'),
+                usernameInput: document.getElementById('username'),
+                passwordInput: document.getElementById('password'),
+                roleOptions: document.querySelectorAll('.role-option'),
+
+                // Main app elements
+                mainApp: document.getElementById('main-app'),
+                sidebar: document.getElementById('sidebar'),
+                sidebarToggle: document.getElementById('sidebar-toggle'),
+                navLinks: document.querySelectorAll('.nav-link'),
+                viewContainers: document.querySelectorAll('.view-container'),
+                logoutBtn: document.getElementById('logout-btn'),
+                currentUserDisplay: document.getElementById('current-user'),
+                sidebarUserRole: document.getElementById('sidebar-user-role'),
+
+                // Modal elements
+                modalOverlay: document.getElementById('modal-overlay'),
+                modalContainer: document.getElementById('modal-container'),
+
+                // Toast container
+                toastContainer: document.getElementById('toast-container'),
+            };
+
+            // Initialize weekly revenue chart data
+            const weeklyRevenueData = {
+                labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+                datasets: [{
+                    label: 'Doanh thu (nghìn VND)',
+                    data: [580, 650, 750, 620, 890, 920, 800],
+                    backgroundColor: 'rgba(93, 92, 222, 0.2)',
+                    borderColor: '#5D5CDE',
+                    borderWidth: 2,
+                    tension: 0.4
+                }]
+            };
+
+            // Helper Functions
+            function formatCurrency(amount) {
+                return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
+                    .format(amount)
+                    .replace('₫', 'VND');
+            }
+
+            // Calculate minutes elapsed since a given date
+            function getMinutesElapsed(startDate) {
+                if (!startDate) return 0;
+                const elapsed = Math.floor((new Date() - new Date(startDate)) / 60000);
+                return elapsed;
+            }
+
+            function showToast(message, type = 'success', duration = 3000) {
+                const toastId = 'toast-' + Date.now();
+                const toastEl = document.createElement('div');
+                toastEl.id = toastId;
+                toastEl.className = `notification p-4 mb-4 min-w-[300px] max-w-md rounded-lg shadow-lg flex items-center justify-between ${type === 'success' ? 'bg-green-500 text-white' :
+                        type === 'error' ? 'bg-red-500 text-white' :
+                            type === 'warning' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'
+                    }`;
+
+                toastEl.innerHTML = `
+                        <div class="flex items-center">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' :
+                        type === 'error' ? 'exclamation-circle' :
+                            type === 'warning' ? 'exclamation-triangle' : 'info-circle'
+                    } mr-3 text-xl"></i>
+                            <span>${message}</span>
+                        </div>
+                        <button class="text-white text-xl toast-close">&times;</button>
+                    `;
+
+                elements.toastContainer.appendChild(toastEl);
+
+                // Close button functionality
+                toastEl.querySelector('.toast-close').addEventListener('click', function () {
+                    toastEl.remove();
+                });
+
+                // Auto-close after duration
+                setTimeout(() => {
+                    if (document.getElementById(toastId)) {
+                        toastEl.remove();
+                    }
+                }, duration);
+            }
+
+            function openModal(title, content, onClose = null) {
+                const modalHeader = `
+                        <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <h3 class="text-xl font-bold">${title}</h3>
+                            <button id="modal-close" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl">&times;</button>
+                        </div>
+                    `;
+
+                const modalContent = `
+                        <div class="p-6">
+                            ${content}
+                        </div>
+                    `;
+
+                elements.modalContainer.innerHTML = modalHeader + modalContent;
+                elements.modalOverlay.classList.remove('hidden');
+
+                // Add close functionality
+                document.getElementById('modal-close').addEventListener('click', () => {
+                    closeModal();
+                    if (onClose) onClose();
+                });
+
+                // Close when clicking outside
+                elements.modalOverlay.addEventListener('click', (e) => {
+                    if (e.target === elements.modalOverlay) {
+                        closeModal();
+                        if (onClose) onClose();
+                    }
+                });
+            }
+
+            function closeModal() {
+                elements.modalOverlay.classList.add('hidden');
+                elements.modalContainer.innerHTML = '';
+            }
+
+            function showView(viewId) {
+                appState.activeView = viewId;
+
+                // Hide all views
+                elements.viewContainers.forEach(container => {
+                    container.classList.add('hidden');
+                });
+
+                // Show the selected view
+                document.getElementById(`${viewId}-view`).classList.remove('hidden');
+
+                // Update navigation highlight
+                elements.navLinks.forEach(link => {
+                    if (link.dataset.view === viewId) {
+                        link.classList.add('bg-primary', 'text-white');
+                    } else {
+                        link.classList.remove('bg-primary', 'text-white');
+                    }
+                });
+
+                // Mobile: auto-close sidebar after navigation
+                if (window.innerWidth < 768) {
+                    elements.sidebar.classList.add('-translate-x-full');
+                }
+
+                // Load view-specific data
+                loadViewData(viewId);
+            }
+
+            function loadViewData(viewId) {
+                switch (viewId) {
+                    case 'dashboard':
+                        renderDashboard();
+                        break;
+                    case 'staff':
+                        renderStaffTable();
+                        break;
+                    case 'menu':
+                        renderMenuItems();
+                        break;
+                    case 'inventory':
+                        renderInventory();
+                        break;
+                    case 'tables':
+                        renderTables();
+                        break;
+                    case 'orders':
+                        renderOrders();
+                        break;
+                    case 'payment':
+                        renderPaymentTables();
+                        break;
+                    case 'kitchen':
+                        renderKitchen();
+                        break;
+                    case 'overall':
+                        renderOverall();
+                        break;
+                }
+            }
+
+            // Authentication functions
+            function login(username, role) {
+                // Set current user and role
+                const user = appState.staff.find(s => s.username === username);
+                appState.currentUser = user || { name: 'Demo User', username, role };
+                appState.currentRole = role;
+
+                // Update UI for logged in user
+                elements.currentUserDisplay.textContent = appState.currentUser.name;
+                elements.sidebarUserRole.textContent = `${appState.currentUser.name} (${role.charAt(0).toUpperCase() + role.slice(1)})`;
+
+                // Hide login, show main app
+                elements.loginScreen.classList.add('hidden');
+                elements.mainApp.classList.remove('hidden');
+
+                // Show/hide menu items based on role
+                document.querySelectorAll('.admin-access').forEach(el => {
+                    el.style.display = role === 'admin' ? 'block' : 'none';
+                });
+                document.querySelectorAll('.cashier-access').forEach(el => {
+                    el.style.display = (role === 'admin' || role === 'cashier') ? 'block' : 'none';
+                });
+                document.querySelectorAll('.chef-access').forEach(el => {
+                    el.style.display = (role === 'admin' || role === 'chef') ? 'block' : 'none';
+                });
+
+                // Show default view based on role
+                if (role === 'admin') {
+                    showView('dashboard');
+                } else if (role === 'cashier') {
+                    showView('tables');
+                } else if (role === 'chef') {
+                    showView('kitchen');
+                }
+
+                showToast(`Đăng nhập thành công với vai trò ${role.charAt(0).toUpperCase() + role.slice(1)}`, 'success');
+            }
+
+            function logout() {
+                // Reset app state
+                appState.currentUser = null;
+                appState.currentRole = null;
+
+                // Reset UI
+                elements.mainApp.classList.add('hidden');
+                elements.loginScreen.classList.remove('hidden');
+                elements.usernameInput.value = '';
+                elements.passwordInput.value = '';
+                elements.roleOptions.forEach(option => {
+                    option.classList.remove('bg-primary', 'text-white');
+                });
+
+                showToast('Đăng xuất thành công', 'success');
+            }
+
+            // Data rendering functions
+            function renderDashboard() {
+                // Update summary cards
+                document.getElementById('daily-revenue').textContent = formatCurrency(750000);
+                document.getElementById('daily-orders').textContent = '5';
+                document.getElementById('items-sold').textContent = '15';
+                document.getElementById('customers-served').textContent = '12';
+
+                // Initialize weekly revenue chart
+                const revenueChart = new Chart(
+                    document.getElementById('revenue-chart').getContext('2d'),
+                    {
+                        type: 'line',
+                        data: weeklyRevenueData,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Doanh thu (nghìn VND)'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                );
+
+                // Render popular items
+                const popularItemsContainer = document.getElementById('popular-items');
+                popularItemsContainer.innerHTML = '';
+
+                const samplePopularItems = [
+                    { id: 1, name: 'Bò bít tết', count: 8, price: 150000 },
+                    { id: 2, name: 'Gà nướng sốt cay', count: 6, price: 120000 },
+                    { id: 4, name: 'Coca Cola', count: 10, price: 20000 },
+                    { id: 3, name: 'Salad trộn dầu giấm', count: 5, price: 50000 },
+                    { id: 5, name: 'Bánh Tiramisu', count: 4, price: 40000 }
+                ];
+
+                // Calculate percentages and revenue
+                const totalItems = samplePopularItems.reduce((sum, item) => sum + item.count, 0);
+                samplePopularItems.forEach(item => {
+                    item.percentage = Math.round((item.count / totalItems) * 100);
+                    item.revenue = item.count * item.price;
+                });
+
+                samplePopularItems.forEach(item => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'mb-3';
+                    itemEl.innerHTML = `
+                            <div class="flex justify-between mb-1">
+                                <span>${item.name}</span>
+                                <div class="text-right">
+                                    <span class="font-medium">${item.count} món</span>
+                                    <span class="text-gray-500 dark:text-gray-400 text-sm ml-2">${formatCurrency(item.revenue)}</span>
+                                </div>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                                <div class="bg-primary h-2.5 rounded-full" style="width: ${item.percentage}%"></div>
+                            </div>
+                        `;
+                    popularItemsContainer.appendChild(itemEl);
+                });
+            }
+
+            function renderStaffTable() {
+                const tableBody = document.getElementById('staff-table-body');
+                tableBody.innerHTML = '';
+
+                appState.staff.forEach(staff => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b';
+                    row.innerHTML = `
+                            <td class="px-4 py-3">${staff.id}</td>
+                            <td class="px-4 py-3">${staff.name}</td>
+                            <td class="px-4 py-3">${staff.username}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded-full text-xs ${staff.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
+                            staff.role === 'cashier' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                                'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        }">
+                                    ${staff.role.charAt(0).toUpperCase() + staff.role.slice(1)}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded-full text-xs ${staff.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                        }">
+                                    ${staff.status === 'active' ? 'Đang hoạt động' : 'Đã khóa'}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <button class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-2 edit-staff" data-id="${staff.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 delete-staff" data-id="${staff.id}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        `;
+                    tableBody.appendChild(row);
+                });
+
+                // Add staff button handler
+                document.getElementById('add-staff-btn').addEventListener('click', () => {
+                    const modalContent = `
+                            <form id="add-staff-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="staff-name">Tên nhân viên</label>
+                                    <input type="text" id="staff-name" class="w-full border rounded px-3 py-2 text-base" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="staff-username">Tên đăng nhập</label>
+                                    <input type="text" id="staff-username" class="w-full border rounded px-3 py-2 text-base" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="staff-password">Mật khẩu</label>
+                                    <input type="password" id="staff-password" class="w-full border rounded px-3 py-2 text-base" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="staff-role">Vai trò</label>
+                                    <select id="staff-role" class="w-full border rounded px-3 py-2 text-base" required>
+                                        <option value="admin">Admin</option>
+                                        <option value="cashier">Cashier - Waiter</option>
+                                        <option value="chef">Chef</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="staff-status">Trạng thái</label>
+                                    <select id="staff-status" class="w-full border rounded px-3 py-2 text-base" required>
+                                        <option value="active">Đang hoạt động</option>
+                                        <option value="inactive">Đã khóa</option>
+                                    </select>
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-add-staff" class="px-4 py-2 border rounded">Hủy</button>
+                                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Thêm nhân viên</button>
+                                </div>
+                            </form>
+                        `;
+
+                    openModal('Thêm nhân viên mới', modalContent);
+
+                    document.getElementById('cancel-add-staff').addEventListener('click', closeModal);
+                    document.getElementById('add-staff-form').addEventListener('submit', function (e) {
+                        e.preventDefault();
+
+                        const newStaff = {
+                            id: appState.staff.length > 0 ? Math.max(...appState.staff.map(s => s.id)) + 1 : 1,
+                            name: document.getElementById('staff-name').value,
+                            username: document.getElementById('staff-username').value,
+                            password: document.getElementById('staff-password').value,
+                            role: document.getElementById('staff-role').value,
+                            status: document.getElementById('staff-status').value
+                        };
+
+                        appState.staff.push(newStaff);
+                        renderStaffTable();
+                        closeModal();
+                        showToast('Đã thêm nhân viên mới thành công', 'success');
+                    });
+                });
+
+                // Edit staff handlers
+                document.querySelectorAll('.edit-staff').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const staffId = parseInt(this.dataset.id);
+                        const staff = appState.staff.find(s => s.id === staffId);
+
+                        if (!staff) return;
+
+                        const modalContent = `
+                                <form id="edit-staff-form" class="space-y-4" data-id="${staffId}">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="edit-staff-name">Tên nhân viên</label>
+                                        <input type="text" id="edit-staff-name" class="w-full border rounded px-3 py-2 text-base" value="${staff.name}" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="edit-staff-username">Tên đăng nhập</label>
+                                        <input type="text" id="edit-staff-username" class="w-full border rounded px-3 py-2 text-base" value="${staff.username}" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="edit-staff-password">Mật khẩu (để trống nếu không thay đổi)</label>
+                                        <input type="password" id="edit-staff-password" class="w-full border rounded px-3 py-2 text-base">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="edit-staff-role">Vai trò</label>
+                                        <select id="edit-staff-role" class="w-full border rounded px-3 py-2 text-base" required>
+                                            <option value="admin" ${staff.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                            <option value="cashier" ${staff.role === 'cashier' ? 'selected' : ''}>Cashier - Waiter</option>
+                                            <option value="chef" ${staff.role === 'chef' ? 'selected' : ''}>Chef</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="edit-staff-status">Trạng thái</label>
+                                        <select id="edit-staff-status" class="w-full border rounded px-3 py-2 text-base" required>
+                                            <option value="active" ${staff.status === 'active' ? 'selected' : ''}>Đang hoạt động</option>
+                                            <option value="inactive" ${staff.status === 'inactive' ? 'selected' : ''}>Đã khóa</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex justify-end space-x-2">
+                                        <button type="button" id="cancel-edit-staff" class="px-4 py-2 border rounded">Hủy</button>
+                                        <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Cập nhật</button>
+                                    </div>
+                                </form>
+                            `;
+
+                        openModal('Chỉnh sửa nhân viên', modalContent);
+
+                        document.getElementById('cancel-edit-staff').addEventListener('click', closeModal);
+                        document.getElementById('edit-staff-form').addEventListener('submit', function (e) {
+                            e.preventDefault();
+
+                            const staffId = parseInt(this.dataset.id);
+                            const staffIndex = appState.staff.findIndex(s => s.id === staffId);
+
+                            if (staffIndex !== -1) {
+                                const updatedStaff = {
+                                    ...appState.staff[staffIndex],
+                                    name: document.getElementById('edit-staff-name').value,
+                                    username: document.getElementById('edit-staff-username').value,
+                                    role: document.getElementById('edit-staff-role').value,
+                                    status: document.getElementById('edit-staff-status').value
+                                };
+
+                                const newPassword = document.getElementById('edit-staff-password').value;
+                                if (newPassword) {
+                                    updatedStaff.password = newPassword;
+                                }
+
+                                appState.staff[staffIndex] = updatedStaff;
+                                renderStaffTable();
+                                closeModal();
+                                showToast('Cập nhật thông tin nhân viên thành công', 'success');
+                            }
+                        });
+                    });
+                });
+
+                // Delete staff handlers
+                document.querySelectorAll('.delete-staff').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const staffId = parseInt(this.dataset.id);
+                        const staff = appState.staff.find(s => s.id === staffId);
+
+                        if (!staff) return;
+
+                        const modalContent = `
+                                <div class="text-center">
+                                    <div class="flex justify-center mb-4">
+                                        <i class="fas fa-exclamation-triangle text-5xl text-yellow-500"></i>
+                                    </div>
+                                    <p class="mb-4">Bạn có chắc chắn muốn xóa nhân viên <strong>${staff.name}</strong>?</p>
+                                    <div class="flex justify-center space-x-3">
+                                        <button id="cancel-delete-staff" class="px-4 py-2 border rounded">Hủy</button>
+                                        <button id="confirm-delete-staff" data-id="${staffId}" class="px-4 py-2 bg-red-600 text-white rounded">Xóa</button>
+                                    </div>
+                                </div>
+                            `;
+
+                        openModal('Xóa nhân viên', modalContent);
+
+                        document.getElementById('cancel-delete-staff').addEventListener('click', closeModal);
+                        document.getElementById('confirm-delete-staff').addEventListener('click', function () {
+                            const staffId = parseInt(this.dataset.id);
+                            appState.staff = appState.staff.filter(s => s.id !== staffId);
+                            renderStaffTable();
+                            closeModal();
+                            showToast('Đã xóa nhân viên thành công', 'success');
+                        });
+                    });
+                });
+            }
+
+            function renderMenuItems(category = 'all') {
+                const container = document.getElementById('menu-items-container');
+                container.innerHTML = '';
+
+                // Filter menu items by category if needed
+                let items = appState.menuItems;
+                if (category !== 'all') {
+                    items = items.filter(item => item.category === category);
+                }
+
+                // Update category filter buttons
+                document.querySelectorAll('.menu-filter').forEach(btn => {
+                    if (btn.dataset.category === category) {
+                        btn.classList.add('bg-primary', 'text-white');
+                        btn.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                    } else {
+                        btn.classList.remove('bg-primary', 'text-white');
+                        btn.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                    }
+                });
+
+                // Render menu items
+                items.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'card bg-white dark:bg-dark-card shadow rounded-lg overflow-hidden border border-light-border dark:border-dark-border flex flex-col';
+
+                    // Generate placeholder image based on name
+                    const colorHue = (item.id * 60) % 360;
+                    const placeholderImg = `
+                            <div class="h-40 bg-gradient-to-r from-blue-${(item.id % 5) * 100 + 300} to-purple-${(item.id % 5) * 100 + 300} flex items-center justify-center relative">
+                                <span class="text-3xl font-bold text-white">${item.name.charAt(0)}</span>
+                                <span class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium
+                                    ${item.category === 'main' ? 'bg-red-500 text-white' :
+                            item.category === 'side' ? 'bg-blue-500 text-white' :
+                                item.category === 'drink' ? 'bg-purple-500 text-white' :
+                                    'bg-yellow-500 text-white'}">
+                                    ${item.category === 'main' ? 'Món chính' :
+                            item.category === 'side' ? 'Món phụ' :
+                                item.category === 'drink' ? 'Đồ uống' :
+                                    'Tráng miệng'}
+                                </span>
+                            </div>
+                        `;
+
+                    card.innerHTML = `
+                            ${placeholderImg}
+                            <div class="p-4 flex-1 flex flex-col">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="font-bold">${item.name}</h3>
+                                    <span class="text-sm font-medium px-2 py-1 rounded-full ${item.available ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}">
+                                        ${item.available ? 'Có sẵn' : 'Hết'}
+                                    </span>
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm mb-2">${item.description}</p>
+                                <div class="flex justify-between items-center mt-auto">
+                                    <span class="font-bold text-lg">${formatCurrency(item.price)}</span>
+                                    <div>
+                                        <button class="edit-menu-item text-blue-600 hover:text-blue-800 dark:text-blue-400 mr-2" data-id="${item.id}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="delete-menu-item text-red-600 hover:text-red-800 dark:text-red-400" data-id="${item.id}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                    container.appendChild(card);
+                });
+
+                // Add menu item handler
+                document.getElementById('add-menu-item-btn').addEventListener('click', () => {
+                    const modalContent = `
+                            <form id="add-menu-form" class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="menu-name">Tên món</label>
+                                        <input type="text" id="menu-name" class="w-full border rounded px-3 py-2 text-base" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="menu-price">Giá (VND)</label>
+                                        <input type="number" id="menu-price" class="w-full border rounded px-3 py-2 text-base" min="0" required>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="menu-description">Mô tả</label>
+                                    <textarea id="menu-description" class="w-full border rounded px-3 py-2 text-base" rows="3" required></textarea>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="menu-category">Nhóm món</label>
+                                        <select id="menu-category" class="w-full border rounded px-3 py-2 text-base" required>
+                                            <option value="main">Món chính</option>
+                                            <option value="side">Món phụ</option>
+                                            <option value="drink">Đồ uống</option>
+                                            <option value="dessert">Tráng miệng</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="menu-availability">Trạng thái</label>
+                                        <select id="menu-availability" class="w-full border rounded px-3 py-2 text-base" required>
+                                            <option value="true">Có sẵn</option>
+                                            <option value="false">Tạm ngừng phục vụ</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Nguyên liệu:</label>
+                                    <div id="ingredients-container" class="space-y-2">
+                                        <div class="ingredient-row flex space-x-2">
+                                            <select class="ingredient-select flex-1 border rounded px-3 py-2 text-base">
+                                                <option value="">Chọn nguyên liệu</option>
+                                                ${appState.inventory.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('')}
+                                            </select>
+                                            <input type="number" class="ingredient-quantity w-24 border rounded px-3 py-2 text-base" placeholder="Số lượng" min="0" step="0.1">
+                                            <button type="button" class="remove-ingredient px-2 bg-red-100 text-red-600 rounded">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="add-ingredient" class="mt-2 text-sm text-primary">
+                                        <i class="fas fa-plus mr-1"></i>Thêm nguyên liệu
+                                    </button>
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-add-menu" class="px-4 py-2 border rounded">Hủy</button>
+                                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Thêm món</button>
+                                </div>
+                            </form>
+                        `;
+
+                    openModal('Thêm món mới', modalContent);
+
+                    // Add ingredient row
+                    document.getElementById('add-ingredient').addEventListener('click', function () {
+                        const newRow = document.createElement('div');
+                        newRow.className = 'ingredient-row flex space-x-2';
+                        newRow.innerHTML = `
+                                <select class="ingredient-select flex-1 border rounded px-3 py-2 text-base">
+                                    <option value="">Chọn nguyên liệu</option>
+                                    ${appState.inventory.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('')}
+                                </select>
+                                <input type="number" class="ingredient-quantity w-24 border rounded px-3 py-2 text-base" placeholder="Số lượng" min="0" step="0.1">
+                                <button type="button" class="remove-ingredient px-2 bg-red-100 text-red-600 rounded">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            `;
+                        document.getElementById('ingredients-container').appendChild(newRow);
+
+                        // Add remove handler to the new row
+                        newRow.querySelector('.remove-ingredient').addEventListener('click', function () {
+                            newRow.remove();
+                        });
+                    });
+
+                    // Remove ingredient row
+                    document.querySelectorAll('.remove-ingredient').forEach(btn => {
+                        btn.addEventListener('click', function () {
+                            this.closest('.ingredient-row').remove();
+                        });
+                    });
+
+                    document.getElementById('cancel-add-menu').addEventListener('click', closeModal);
+                    document.getElementById('add-menu-form').addEventListener('submit', function (e) {
+                        e.preventDefault();
+
+                        // Collect ingredients
+                        const ingredients = [];
+                        document.querySelectorAll('.ingredient-row').forEach(row => {
+                            const ingredientId = parseInt(row.querySelector('.ingredient-select').value);
+                            const quantity = parseFloat(row.querySelector('.ingredient-quantity').value);
+
+                            if (ingredientId && quantity) {
+                                ingredients.push({
+                                    id: ingredientId,
+                                    quantity: quantity
+                                });
+                            }
+                        });
+
+                        const newMenuItem = {
+                            id: appState.menuItems.length > 0 ? Math.max(...appState.menuItems.map(m => m.id)) + 1 : 1,
+                            name: document.getElementById('menu-name').value,
+                            price: parseInt(document.getElementById('menu-price').value),
+                            description: document.getElementById('menu-description').value,
+                            category: document.getElementById('menu-category').value,
+                            available: document.getElementById('menu-availability').value === 'true',
+                            image: '',
+                            ingredients: ingredients
+                        };
+
+                        appState.menuItems.push(newMenuItem);
+                        renderMenuItems(document.querySelector('.menu-filter.bg-primary').dataset.category);
+                        closeModal();
+                        showToast('Đã thêm món mới thành công', 'success');
+                    });
+                });
+
+                // Menu filter handlers
+                document.querySelectorAll('.menu-filter').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const category = this.dataset.category;
+                        renderMenuItems(category);
+                    });
+                });
+
+                // Menu search handler
+                document.getElementById('menu-search').addEventListener('input', function () {
+                    const searchTerm = this.value.trim().toLowerCase();
+                    const currentCategory = document.querySelector('.menu-filter.bg-primary').dataset.category;
+
+                    // Filter items based on search and category
+                    const container = document.getElementById('menu-items-container');
+                    container.innerHTML = '';
+
+                    let filteredItems = appState.menuItems;
+
+                    // Filter by category if not 'all'
+                    if (currentCategory !== 'all') {
+                        filteredItems = filteredItems.filter(item => item.category === currentCategory);
+                    }
+
+                    // Filter by search term
+                    if (searchTerm) {
+                        filteredItems = filteredItems.filter(item =>
+                            item.name.toLowerCase().includes(searchTerm) ||
+                            item.description.toLowerCase().includes(searchTerm)
+                        );
+                    }
+
+                    // Render filtered items
+                    filteredItems.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'card bg-white dark:bg-dark-card shadow rounded-lg overflow-hidden border border-light-border dark:border-dark-border flex flex-col';
+
+                        // Generate placeholder image based on name
+                        const colorHue = (item.id * 60) % 360;
+                        const placeholderImg = `
+                                <div class="h-40 bg-gradient-to-r from-blue-${(item.id % 5) * 100 + 300} to-purple-${(item.id % 5) * 100 + 300} flex items-center justify-center relative">
+                                    <span class="text-3xl font-bold text-white">${item.name.charAt(0)}</span>
+                                    <span class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium
+                                        ${item.category === 'main' ? 'bg-red-500 text-white' :
+                                item.category === 'side' ? 'bg-blue-500 text-white' :
+                                    item.category === 'drink' ? 'bg-purple-500 text-white' :
+                                        'bg-yellow-500 text-white'}">
+                                        ${item.category === 'main' ? 'Món chính' :
+                                item.category === 'side' ? 'Món phụ' :
+                                    item.category === 'drink' ? 'Đồ uống' :
+                                        'Tráng miệng'}
+                                    </span>
+                                </div>
+                            `;
+
+                        card.innerHTML = `
+                                ${placeholderImg}
+                                <div class="p-4 flex-1 flex flex-col">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h3 class="font-bold">${item.name}</h3>
+                                        <span class="text-sm font-medium px-2 py-1 rounded-full ${item.available ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}">
+                                            ${item.available ? 'Có sẵn' : 'Hết'}
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-600 dark:text-gray-400 text-sm mb-2">${item.description}</p>
+                                    <div class="flex justify-between items-center mt-auto">
+                                        <span class="font-bold text-lg">${formatCurrency(item.price)}</span>
+                                        <div>
+                                            <button class="edit-menu-item text-blue-600 hover:text-blue-800 dark:text-blue-400 mr-2" data-id="${item.id}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="delete-menu-item text-red-600 hover:text-red-800 dark:text-red-400" data-id="${item.id}">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+
+                        container.appendChild(card);
+                    });
+
+                    // Re-attach edit/delete handlers
+                    attachMenuItemHandlers();
+                });
+
+                // Edit and delete menu item handlers
+                attachMenuItemHandlers();
+            }
+
+            function attachMenuItemHandlers() {
+                // Edit menu item handlers
+                document.querySelectorAll('.edit-menu-item').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const itemId = parseInt(this.dataset.id);
+                        const menuItem = appState.menuItems.find(m => m.id === itemId);
+
+                        if (!menuItem) return;
+
+                        const modalContent = `
+                                <form id="edit-menu-form" class="space-y-4" data-id="${itemId}">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="edit-menu-name">Tên món</label>
+                                            <input type="text" id="edit-menu-name" class="w-full border rounded px-3 py-2 text-base" value="${menuItem.name}" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="edit-menu-price">Giá (VND)</label>
+                                            <input type="number" id="edit-menu-price" class="w-full border rounded px-3 py-2 text-base" value="${menuItem.price}" min="0" required>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="edit-menu-description">Mô tả</label>
+                                        <textarea id="edit-menu-description" class="w-full border rounded px-3 py-2 text-base" rows="3" required>${menuItem.description}</textarea>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="edit-menu-category">Nhóm món</label>
+                                            <select id="edit-menu-category" class="w-full border rounded px-3 py-2 text-base" required>
+                                                <option value="main" ${menuItem.category === 'main' ? 'selected' : ''}>Món chính</option>
+                                                <option value="side" ${menuItem.category === 'side' ? 'selected' : ''}>Món phụ</option>
+                                                <option value="drink" ${menuItem.category === 'drink' ? 'selected' : ''}>Đồ uống</option>
+                                                <option value="dessert" ${menuItem.category === 'dessert' ? 'selected' : ''}>Tráng miệng</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="edit-menu-availability">Trạng thái</label>
+                                            <select id="edit-menu-availability" class="w-full border rounded px-3 py-2 text-base" required>
+                                                <option value="true" ${menuItem.available ? 'selected' : ''}>Có sẵn</option>
+                                                <option value="false" ${!menuItem.available ? 'selected' : ''}>Tạm ngừng phục vụ</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">Nguyên liệu:</label>
+                                        <div id="edit-ingredients-container" class="space-y-2">
+                                            ${menuItem.ingredients.map(ing => {
+                            const ingredient = appState.inventory.find(i => i.id === ing.id);
+                            return `
+                                                    <div class="ingredient-row flex space-x-2">
+                                                        <select class="ingredient-select flex-1 border rounded px-3 py-2 text-base">
+                                                            <option value="">Chọn nguyên liệu</option>
+                                                            ${appState.inventory.map(i =>
+                                `<option value="${i.id}" ${i.id === ing.id ? 'selected' : ''}>${i.name} (${i.unit})</option>`
+                            ).join('')}
+                                                        </select>
+                                                        <input type="number" class="ingredient-quantity w-24 border rounded px-3 py-2 text-base" placeholder="Số lượng" min="0" step="0.1" value="${ing.quantity}">
+                                                        <button type="button" class="remove-ingredient px-2 bg-red-100 text-red-600 rounded">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                `;
+                        }).join('') || `
+                                                <div class="ingredient-row flex space-x-2">
+                                                    <select class="ingredient-select flex-1 border rounded px-3 py-2 text-base">
+                                                        <option value="">Chọn nguyên liệu</option>
+                                                        ${appState.inventory.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('')}
+                                                    </select>
+                                                    <input type="number" class="ingredient-quantity w-24 border rounded px-3 py-2 text-base" placeholder="Số lượng" min="0" step="0.1">
+                                                    <button type="button" class="remove-ingredient px-2 bg-red-100 text-red-600 rounded">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            `}
+                                        </div>
+                                        <button type="button" id="edit-add-ingredient" class="mt-2 text-sm text-primary">
+                                            <i class="fas fa-plus mr-1"></i>Thêm nguyên liệu
+                                        </button>
+                                    </div>
+                                    <div class="flex justify-end space-x-2">
+                                        <button type="button" id="cancel-edit-menu" class="px-4 py-2 border rounded">Hủy</button>
+                                        <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Cập nhật</button>
+                                    </div>
+                                </form>
+                            `;
+
+                        openModal('Chỉnh sửa món', modalContent);
+
+                        // Add ingredient row
+                        document.getElementById('edit-add-ingredient').addEventListener('click', function () {
+                            const newRow = document.createElement('div');
+                            newRow.className = 'ingredient-row flex space-x-2';
+                            newRow.innerHTML = `
+                                    <select class="ingredient-select flex-1 border rounded px-3 py-2 text-base">
+                                        <option value="">Chọn nguyên liệu</option>
+                                        ${appState.inventory.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('')}
+                                    </select>
+                                    <input type="number" class="ingredient-quantity w-24 border rounded px-3 py-2 text-base" placeholder="Số lượng" min="0" step="0.1">
+                                    <button type="button" class="remove-ingredient px-2 bg-red-100 text-red-600 rounded">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                `;
+                            document.getElementById('edit-ingredients-container').appendChild(newRow);
+
+                            // Add remove handler to the new row
+                            newRow.querySelector('.remove-ingredient').addEventListener('click', function () {
+                                newRow.remove();
+                            });
+                        });
+
+                        // Remove ingredient row
+                        document.querySelectorAll('.remove-ingredient').forEach(btn => {
+                            btn.addEventListener('click', function () {
+                                this.closest('.ingredient-row').remove();
+                            });
+                        });
+
+                        document.getElementById('cancel-edit-menu').addEventListener('click', closeModal);
+                        document.getElementById('edit-menu-form').addEventListener('submit', function (e) {
+                            e.preventDefault();
+
+                            const itemId = parseInt(this.dataset.id);
+                            const itemIndex = appState.menuItems.findIndex(m => m.id === itemId);
+
+                            if (itemIndex !== -1) {
+                                // Collect ingredients
+                                const ingredients = [];
+                                document.querySelectorAll('#edit-ingredients-container .ingredient-row').forEach(row => {
+                                    const ingredientId = parseInt(row.querySelector('.ingredient-select').value);
+                                    const quantity = parseFloat(row.querySelector('.ingredient-quantity').value);
+
+                                    if (ingredientId && quantity) {
+                                        ingredients.push({
+                                            id: ingredientId,
+                                            quantity: quantity
+                                        });
+                                    }
+                                });
+
+                                const updatedMenuItem = {
+                                    ...appState.menuItems[itemIndex],
+                                    name: document.getElementById('edit-menu-name').value,
+                                    price: parseInt(document.getElementById('edit-menu-price').value),
+                                    description: document.getElementById('edit-menu-description').value,
+                                    category: document.getElementById('edit-menu-category').value,
+                                    available: document.getElementById('edit-menu-availability').value === 'true',
+                                    ingredients: ingredients
+                                };
+
+                                appState.menuItems[itemIndex] = updatedMenuItem;
+                                renderMenuItems(document.querySelector('.menu-filter.bg-primary').dataset.category);
+                                closeModal();
+                                showToast('Cập nhật món thành công', 'success');
+                            }
+                        });
+                    });
+                });
+
+                // Delete menu item handlers
+                document.querySelectorAll('.delete-menu-item').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const itemId = parseInt(this.dataset.id);
+                        const menuItem = appState.menuItems.find(m => m.id === itemId);
+
+                        if (!menuItem) return;
+
+                        const modalContent = `
+                                <div class="text-center">
+                                    <div class="flex justify-center mb-4">
+                                        <i class="fas fa-exclamation-triangle text-5xl text-yellow-500"></i>
+                                    </div>
+                                    <p class="mb-4">Bạn có chắc chắn muốn xóa món <strong>${menuItem.name}</strong>?</p>
+                                    <div class="flex justify-center space-x-3">
+                                        <button id="cancel-delete-menu" class="px-4 py-2 border rounded">Hủy</button>
+                                        <button id="confirm-delete-menu" data-id="${itemId}" class="px-4 py-2 bg-red-600 text-white rounded">Xóa</button>
+                                    </div>
+                                </div>
+                            `;
+
+                        openModal('Xóa món', modalContent);
+
+                        document.getElementById('cancel-delete-menu').addEventListener('click', closeModal);
+                        document.getElementById('confirm-delete-menu').addEventListener('click', function () {
+                            const itemId = parseInt(this.dataset.id);
+                            appState.menuItems = appState.menuItems.filter(m => m.id !== itemId);
+                            renderMenuItems(document.querySelector('.menu-filter.bg-primary').dataset.category);
+                            closeModal();
+                            showToast('Đã xóa món thành công', 'success');
+                        });
+                    });
+                });
+            }
+
+            function renderInventory() {
+                // Update inventory counts
+                document.getElementById('total-inventory-items').textContent = appState.inventory.length;
+
+                const lowStockItems = appState.inventory.filter(item => item.quantity <= item.minQuantity && item.quantity > 0);
+                document.getElementById('low-stock-count').textContent = lowStockItems.length;
+
+                const outOfStockItems = appState.inventory.filter(item => item.quantity === 0);
+                document.getElementById('out-of-stock-count').textContent = outOfStockItems.length;
+
+                // Render inventory table
+                const tableBody = document.getElementById('inventory-table-body');
+                tableBody.innerHTML = '';
+
+                appState.inventory.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b';
+
+                    // Determine status class
+                    let statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                    let statusText = 'Đủ hàng';
+
+                    if (item.quantity === 0) {
+                        statusClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                        statusText = 'Hết hàng';
+                    } else if (item.quantity <= item.minQuantity) {
+                        statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                        statusText = 'Sắp hết';
+                    }
+
+                    row.innerHTML = `
+                            <td class="px-4 py-3">${item.id}</td>
+                            <td class="px-4 py-3">${item.name}</td>
+                            <td class="px-4 py-3">${item.unit}</td>
+                            <td class="px-4 py-3">${item.quantity}</td>
+                            <td class="px-4 py-3">${item.minQuantity}</td>
+                            <td class="px-4 py-3">${item.lastRestocked || 'N/A'}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded-full text-xs ${statusClass}">
+                                    ${statusText}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <button class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-2 edit-inventory" data-id="${item.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 delete-inventory" data-id="${item.id}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        `;
+
+                    tableBody.appendChild(row);
+                });
+
+                // Add inventory button handler
+                document.getElementById('add-inventory-btn').addEventListener('click', () => {
+                    const modalContent = `
+                            <form id="add-inventory-form" class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="inventory-name">Tên nguyên liệu</label>
+                                        <input type="text" id="inventory-name" class="w-full border rounded px-3 py-2 text-base" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="inventory-unit">Đơn vị</label>
+                                        <input type="text" id="inventory-unit" class="w-full border rounded px-3 py-2 text-base" required>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="inventory-quantity">Số lượng ban đầu</label>
+                                        <input type="number" id="inventory-quantity" class="w-full border rounded px-3 py-2 text-base" min="0" step="0.1" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="inventory-min-quantity">Ngưỡng cảnh báo</label>
+                                        <input type="number" id="inventory-min-quantity" class="w-full border rounded px-3 py-2 text-base" min="0" step="0.1" required>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-add-inventory" class="px-4 py-2 border rounded">Hủy</button>
+                                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Thêm nguyên liệu</button>
+                                </div>
+                            </form>
+                        `;
+
+                    openModal('Thêm nguyên liệu mới', modalContent);
+
+                    document.getElementById('cancel-add-inventory').addEventListener('click', closeModal);
+                    document.getElementById('add-inventory-form').addEventListener('submit', function (e) {
+                        e.preventDefault();
+
+                        const quantity = parseFloat(document.getElementById('inventory-quantity').value);
+                        const minQuantity = parseFloat(document.getElementById('inventory-min-quantity').value);
+
+                        let status = 'normal';
+                        if (quantity === 0) {
+                            status = 'out';
+                        } else if (quantity <= minQuantity) {
+                            status = 'low';
+                        }
+
+                        const today = new Date().toISOString().split('T')[0];
+
+                        const newInventoryItem = {
+                            id: appState.inventory.length > 0 ? Math.max(...appState.inventory.map(i => i.id)) + 1 : 1,
+                            name: document.getElementById('inventory-name').value,
+                            unit: document.getElementById('inventory-unit').value,
+                            quantity: quantity,
+                            minQuantity: minQuantity,
+                            status: status,
+                            lastRestocked: today
+                        };
+
+                        appState.inventory.push(newInventoryItem);
+                        renderInventory();
+                        closeModal();
+                        showToast('Đã thêm nguyên liệu mới thành công', 'success');
+                    });
+                });
+
+                // Inventory import/export handlers
+                document.getElementById('inventory-import-btn').addEventListener('click', () => {
+                    const modalContent = `
+                            <form id="import-inventory-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="import-inventory-item">Nguyên liệu</label>
+                                    <select id="import-inventory-item" class="w-full border rounded px-3 py-2 text-base" required>
+                                        <option value="">Chọn nguyên liệu</option>
+                                        ${appState.inventory.map(item => `<option value="${item.id}">${item.name} (${item.unit})</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="import-quantity">Số lượng nhập</label>
+                                    <input type="number" id="import-quantity" class="w-full border rounded px-3 py-2 text-base" min="0.1" step="0.1" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="import-note">Ghi chú</label>
+                                    <textarea id="import-note" class="w-full border rounded px-3 py-2 text-base" rows="2"></textarea>
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-import" class="px-4 py-2 border rounded">Hủy</button>
+                                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Nhập kho</button>
+                                </div>
+                            </form>
+                        `;
+
+                    openModal('Nhập kho', modalContent);
+
+                    document.getElementById('cancel-import').addEventListener('click', closeModal);
+                    document.getElementById('import-inventory-form').addEventListener('submit', function (e) {
+                        e.preventDefault();
+
+                        const itemId = parseInt(document.getElementById('import-inventory-item').value);
+                        const quantity = parseFloat(document.getElementById('import-quantity').value);
+
+                        const itemIndex = appState.inventory.findIndex(i => i.id === itemId);
+
+                        if (itemIndex !== -1) {
+                            // Update quantity
+                            appState.inventory[itemIndex].quantity += quantity;
+
+                            // Update status based on new quantity
+                            if (appState.inventory[itemIndex].quantity === 0) {
+                                appState.inventory[itemIndex].status = 'out';
+                            } else if (appState.inventory[itemIndex].quantity <= appState.inventory[itemIndex].minQuantity) {
+                                appState.inventory[itemIndex].status = 'low';
+                            } else {
+                                appState.inventory[itemIndex].status = 'normal';
+                            }
+
+                            // Update last restocked date
+                            appState.inventory[itemIndex].lastRestocked = new Date().toISOString().split('T')[0];
+
+                            renderInventory();
+                            closeModal();
+                            showToast(`Đã nhập kho ${quantity} ${appState.inventory[itemIndex].unit} ${appState.inventory[itemIndex].name}`, 'success');
+                        }
+                    });
+                });
+
+                document.getElementById('inventory-export-btn').addEventListener('click', () => {
+                    const modalContent = `
+                            <form id="export-inventory-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="export-inventory-item">Nguyên liệu</label>
+                                    <select id="export-inventory-item" class="w-full border rounded px-3 py-2 text-base" required>
+                                        <option value="">Chọn nguyên liệu</option>
+                                        ${appState.inventory.filter(item => item.quantity > 0).map(item =>
+                        `<option value="${item.id}">${item.name} (${item.unit}) - Hiện có: ${item.quantity}</option>`
+                    ).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="export-quantity">Số lượng xuất</label>
+                                    <input type="number" id="export-quantity" class="w-full border rounded px-3 py-2 text-base" min="0.1" step="0.1" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="export-note">Ghi chú</label>
+                                    <textarea id="export-note" class="w-full border rounded px-3 py-2 text-base" rows="2"></textarea>
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-export" class="px-4 py-2 border rounded">Hủy</button>
+                                    <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded">Xuất kho</button>
+                                </div>
+                            </form>
+                        `;
+
+                    openModal('Xuất kho', modalContent);
+
+                    document.getElementById('cancel-export').addEventListener('click', closeModal);
+                    document.getElementById('export-inventory-form').addEventListener('submit', function (e) {
+                        e.preventDefault();
+
+                        const itemId = parseInt(document.getElementById('export-inventory-item').value);
+                        const quantity = parseFloat(document.getElementById('export-quantity').value);
+
+                        const itemIndex = appState.inventory.findIndex(i => i.id === itemId);
+
+                        if (itemIndex !== -1) {
+                            const item = appState.inventory[itemIndex];
+
+                            // Check if there's enough quantity
+                            if (quantity > item.quantity) {
+                                showToast(`Không đủ số lượng. Hiện chỉ có ${item.quantity} ${item.unit} ${item.name}`, 'error');
+                                return;
+                            }
+
+                            // Update quantity
+                            item.quantity -= quantity;
+
+                            // Update status based on new quantity
+                            if (item.quantity === 0) {
+                                item.status = 'out';
+                            } else if (item.quantity <= item.minQuantity) {
+                                item.status = 'low';
+                            } else {
+                                item.status = 'normal';
+                            }
+
+                            renderInventory();
+                            closeModal();
+                            showToast(`Đã xuất kho ${quantity} ${item.unit} ${item.name}`, 'success');
+                        }
+                    });
+                });
+
+                // Edit inventory handlers
+                document.querySelectorAll('.edit-inventory').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const itemId = parseInt(this.dataset.id);
+                        const inventoryItem = appState.inventory.find(i => i.id === itemId);
+
+                        if (!inventoryItem) return;
+
+                        const modalContent = `
+                                <form id="edit-inventory-form" class="space-y-4" data-id="${itemId}">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="edit-inventory-name">Tên nguyên liệu</label>
+                                            <input type="text" id="edit-inventory-name" class="w-full border rounded px-3 py-2 text-base" value="${inventoryItem.name}" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="edit-inventory-unit">Đơn vị</label>
+                                            <input type="text" id="edit-inventory-unit" class="w-full border rounded px-3 py-2 text-base" value="${inventoryItem.unit}" required>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="edit-inventory-quantity">Số lượng hiện tại</label>
+                                            <input type="number" id="edit-inventory-quantity" class="w-full border rounded px-3 py-2 text-base" value="${inventoryItem.quantity}" min="0" step="0.1" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="edit-inventory-min-quantity">Ngưỡng cảnh báo</label>
+                                            <input type="number" id="edit-inventory-min-quantity" class="w-full border rounded px-3 py-2 text-base" value="${inventoryItem.minQuantity}" min="0" step="0.1" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="edit-inventory-last-restocked">Lần cuối nhập kho</label>
+                                            <input type="date" id="edit-inventory-last-restocked" class="w-full border rounded px-3 py-2 text-base" value="${inventoryItem.lastRestocked || new Date().toISOString().split('T')[0]}">
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-end space-x-2">
+                                        <button type="button" id="cancel-edit-inventory" class="px-4 py-2 border rounded">Hủy</button>
+                                        <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Cập nhật</button>
+                                    </div>
+                                </form>
+                            `;
+
+                        openModal('Chỉnh sửa nguyên liệu', modalContent);
+
+                        document.getElementById('cancel-edit-inventory').addEventListener('click', closeModal);
+                        document.getElementById('edit-inventory-form').addEventListener('submit', function (e) {
+                            e.preventDefault();
+
+                            const itemId = parseInt(this.dataset.id);
+                            const itemIndex = appState.inventory.findIndex(i => i.id === itemId);
+
+                            if (itemIndex !== -1) {
+                                const quantity = parseFloat(document.getElementById('edit-inventory-quantity').value);
+                                const minQuantity = parseFloat(document.getElementById('edit-inventory-min-quantity').value);
+                                const lastRestocked = document.getElementById('edit-inventory-last-restocked').value;
+
+                                let status = 'normal';
+                                if (quantity === 0) {
+                                    status = 'out';
+                                } else if (quantity <= minQuantity) {
+                                    status = 'low';
+                                }
+
+                                appState.inventory[itemIndex] = {
+                                    ...appState.inventory[itemIndex],
+                                    name: document.getElementById('edit-inventory-name').value,
+                                    unit: document.getElementById('edit-inventory-unit').value,
+                                    quantity: quantity,
+                                    minQuantity: minQuantity,
+                                    status: status,
+                                    lastRestocked: lastRestocked
+                                };
+
+                                renderInventory();
+                                closeModal();
+                                showToast('Cập nhật nguyên liệu thành công', 'success');
+                            }
+                        });
+                    });
+                });
+
+                // Delete inventory handlers
+                document.querySelectorAll('.delete-inventory').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const itemId = parseInt(this.dataset.id);
+                        const inventoryItem = appState.inventory.find(i => i.id === itemId);
+
+                        if (!inventoryItem) return;
+
+                        const modalContent = `
+                                <div class="text-center">
+                                    <div class="flex justify-center mb-4">
+                                        <i class="fas fa-exclamation-triangle text-5xl text-yellow-500"></i>
+                                    </div>
+                                    <p class="mb-4">Bạn có chắc chắn muốn xóa nguyên liệu <strong>${inventoryItem.name}</strong>?</p>
+                                    <div class="flex justify-center space-x-3">
+                                        <button id="cancel-delete-inventory" class="px-4 py-2 border rounded">Hủy</button>
+                                        <button id="confirm-delete-inventory" data-id="${itemId}" class="px-4 py-2 bg-red-600 text-white rounded">Xóa</button>
+                                    </div>
+                                </div>
+                            `;
+
+                        openModal('Xóa nguyên liệu', modalContent);
+
+                        document.getElementById('cancel-delete-inventory').addEventListener('click', closeModal);
+                        document.getElementById('confirm-delete-inventory').addEventListener('click', function () {
+                            const itemId = parseInt(this.dataset.id);
+                            appState.inventory = appState.inventory.filter(i => i.id !== itemId);
+                            renderInventory();
+                            closeModal();
+                            showToast('Đã xóa nguyên liệu thành công', 'success');
+                        });
+                    });
+                });
+
+                // Inventory search handler
+                document.getElementById('inventory-search').addEventListener('input', function () {
+                    const searchTerm = this.value.trim().toLowerCase();
+                    const tableBody = document.getElementById('inventory-table-body');
+                    tableBody.innerHTML = '';
+
+                    // Filter inventory items by search term
+                    const filteredItems = searchTerm
+                        ? appState.inventory.filter(item =>
+                            item.name.toLowerCase().includes(searchTerm) ||
+                            item.unit.toLowerCase().includes(searchTerm))
+                        : appState.inventory;
+
+                    // Render filtered items
+                    filteredItems.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b';
+
+                        // Determine status class
+                        let statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                        let statusText = 'Đủ hàng';
+
+                        if (item.quantity === 0) {
+                            statusClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                            statusText = 'Hết hàng';
+                        } else if (item.quantity <= item.minQuantity) {
+                            statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                            statusText = 'Sắp hết';
+                        }
+
+                        row.innerHTML = `
+                                <td class="px-4 py-3">${item.id}</td>
+                                <td class="px-4 py-3">${item.name}</td>
+                                <td class="px-4 py-3">${item.unit}</td>
+                                <td class="px-4 py-3">${item.quantity}</td>
+                                <td class="px-4 py-3">${item.minQuantity}</td>
+                                <td class="px-4 py-3">${item.lastRestocked || 'N/A'}</td>
+                                <td class="px-4 py-3">
+                                    <span class="px-2 py-1 rounded-full text-xs ${statusClass}">
+                                        ${statusText}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    <button class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-2 edit-inventory" data-id="${item.id}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 delete-inventory" data-id="${item.id}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            `;
+
+                        tableBody.appendChild(row);
+                    });
+
+                    // Re-attach handlers
+                    document.querySelectorAll('.edit-inventory').forEach(btn => {
+                        btn.addEventListener('click', function () {
+                            // Edit inventory handler (same as above)
+                        });
+                    });
+
+                    document.querySelectorAll('.delete-inventory').forEach(btn => {
+                        btn.addEventListener('click', function () {
+                            // Delete inventory handler (same as above)
+                        });
+                    });
+                });
+            }
+
+            function renderTables() {
+                const tablesLayout = document.getElementById('tables-layout');
+                tablesLayout.innerHTML = '';
+
+                appState.tables.forEach(table => {
+                    const tableCard = document.createElement('div');
+                    tableCard.className = `table-icon rounded-lg p-4 text-center cursor-pointer transform transition-all hover:scale-105 ${table.status === 'available' ? 'table-available' : 'table-occupied'
+                        }`;
+                    tableCard.dataset.id = table.id;
+
+                    // Calculate time elapsed for occupied tables
+                    let timeDisplay = '';
+                    if (table.status === 'occupied' && table.startTime) {
+                        const minutesElapsed = getMinutesElapsed(table.startTime);
+                        timeDisplay = `<p class="text-sm mt-1 font-medium">Đang phục vụ: ${minutesElapsed}:00 (phút)</p>`;
+                    } else {
+                        timeDisplay = `<p class="text-sm mt-1 font-medium">Trống</p>`;
+                    }
+
+                    tableCard.innerHTML = `
+                            <i class="fas fa-chair text-3xl mb-2"></i>
+                            <p class="font-medium">${table.name}</p>
+                            <p class="text-sm">${table.capacity} ghế</p>
+                            ${timeDisplay}
+                        `;
+
+                    tablesLayout.appendChild(tableCard);
+
+                    // Table click handler
+                    tableCard.addEventListener('click', function () {
+                        const tableId = parseInt(this.dataset.id);
+                        const table = appState.tables.find(t => t.id === tableId);
+
+                        if (table.status === 'available') {
+                            // Create order for available table
+                            createNewOrderForTable(table);
+                        } else {
+                            // View existing order for occupied table
+                            viewTableOrder(table);
+                        }
+                    });
+                });
+
+                // Add table button handler
+                document.getElementById('add-table-btn').addEventListener('click', () => {
+                    const modalContent = `
+                            <form id="add-table-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="table-name">Tên bàn</label>
+                                    <input type="text" id="table-name" class="w-full border rounded px-3 py-2 text-base" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="table-capacity">Số ghế</label>
+                                    <input type="number" id="table-capacity" class="w-full border rounded px-3 py-2 text-base" min="1" required>
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-add-table" class="px-4 py-2 border rounded">Hủy</button>
+                                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Thêm bàn</button>
+                                </div>
+                            </form>
+                        `;
+
+                    openModal('Thêm bàn mới', modalContent);
+
+                    document.getElementById('cancel-add-table').addEventListener('click', closeModal);
+                    document.getElementById('add-table-form').addEventListener('submit', function (e) {
+                        e.preventDefault();
+
+                        const newTable = {
+                            id: appState.tables.length > 0 ? Math.max(...appState.tables.map(t => t.id)) + 1 : 1,
+                            name: document.getElementById('table-name').value,
+                            capacity: parseInt(document.getElementById('table-capacity').value),
+                            status: 'available',
+                            startTime: null
+                        };
+
+                        appState.tables.push(newTable);
+                        renderTables();
+                        closeModal();
+                        showToast('Đã thêm bàn mới thành công', 'success');
+                    });
+                });
+
+                // Update time display for occupied tables every minute
+                setInterval(() => {
+                    if (appState.activeView === 'tables') {
+                        renderTables();
+                    }
+                }, 60000);
+            }
+
+            function createNewOrderForTable(table) {
+                // Set the table as occupied and record start time
+                const tableIndex = appState.tables.findIndex(t => t.id === table.id);
+                if (tableIndex !== -1) {
+                    appState.tables[tableIndex].status = 'occupied';
+                    appState.tables[tableIndex].startTime = new Date();
+                }
+
+                // Create a new order for the table
+                const newOrder = {
+                    id: Date.now(), // Using timestamp as unique ID
+                    tableId: table.id,
+                    tableName: table.name,
+                    items: [],
+                    status: 'new',
+                    created: new Date(),
+                    total: 0
+                };
+
+                appState.orders.push(newOrder);
+
+                // Open order creation screen
+                const modalContent = `
+                        <div class="max-h-[80vh] overflow-y-auto">
+                            <div class="border-b pb-4 mb-4">
+                                <h4 class="font-medium mb-1">Thông tin đơn hàng</h4>
+                                <p>Bàn: <strong>${table.name}</strong></p>
+                                <p>Thời gian: <strong>${new Date().toLocaleTimeString()}</strong></p>
+                            </div>
+
+                            <div class="mb-4">
+                                <h4 class="font-medium mb-2">Danh sách món</h4>
+                                <div id="order-items-list" class="mb-4 max-h-48 overflow-y-auto">
+                                    <div class="text-center text-gray-500 dark:text-gray-400 py-4">
+                                        Chưa có món nào trong đơn
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between font-medium">
+                                    <span>Tổng tiền:</span>
+                                    <span id="order-total">0 VND</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <h4 class="font-medium mb-2">Thêm món</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div class="relative">
+                                        <input type="text" id="menu-quick-search" placeholder="Tìm món..." class="w-full border rounded px-3 py-2 pr-10 text-base">
+                                        <i class="fas fa-search absolute top-3 right-3 text-gray-400"></i>
+                                    </div>
+                                    <div>
+                                        <select id="menu-category-filter" class="w-full border rounded px-3 py-2 text-base">
+                                            <option value="all">Tất cả các món</option>
+                                            <option value="main">Món chính</option>
+                                            <option value="side">Món phụ</option>
+                                            <option value="drink">Đồ uống</option>
+                                            <option value="dessert">Tráng miệng</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div id="menu-items-selection" class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+                                    <!-- Menu items will be populated here -->
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between mt-6">
+                                <button id="cancel-order" class="px-4 py-2 border rounded text-red-600">Hủy đơn</button>
+                                <div>
+                                    <button id="save-order" class="px-4 py-2 bg-blue-600 text-white rounded mr-2">Lưu đơn</button>
+                                    <button id="send-to-kitchen" class="px-4 py-2 bg-primary text-white rounded">Gửi cho bếp</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                openModal(`Tạo đơn hàng mới - ${table.name}`, modalContent, () => {
+                    // If modal is closed without submitting, reset table status
+                    if (appState.orders.find(o => o.id === newOrder.id && o.items.length === 0)) {
+                        // Remove the empty order
+                        appState.orders = appState.orders.filter(o => o.id !== newOrder.id);
+
+                        // Reset table status
+                        const tableIndex = appState.tables.findIndex(t => t.id === table.id);
+                        if (tableIndex !== -1) {
+                            appState.tables[tableIndex].status = 'available';
+                            appState.tables[tableIndex].startTime = null;
+                        }
+
+                        renderTables();
+                    }
+                });
+
+                // Load menu items for selection
+                loadMenuItemsForOrder(newOrder);
+
+                // Cancel order button handler
+                document.getElementById('cancel-order').addEventListener('click', function () {
+                    // Remove the order
+                    appState.orders = appState.orders.filter(o => o.id !== newOrder.id);
+
+                    // Reset table status
+                    const tableIndex = appState.tables.findIndex(t => t.id === table.id);
+                    if (tableIndex !== -1) {
+                        appState.tables[tableIndex].status = 'available';
+                        appState.tables[tableIndex].startTime = null;
+                    }
+
+                    renderTables();
+                    closeModal();
+                    showToast('Đã hủy đơn hàng', 'info');
+                });
+
+                // Save order button handler
+                document.getElementById('save-order').addEventListener('click', function () {
+                    const orderIndex = appState.orders.findIndex(o => o.id === newOrder.id);
+
+                    if (orderIndex !== -1) {
+                        // Check if the order has any items
+                        if (appState.orders[orderIndex].items.length === 0) {
+                            showToast('Vui lòng thêm ít nhất một món vào đơn hàng', 'warning');
+                            return;
+                        }
+
+                        closeModal();
+                        renderTables();
+                        showToast('Đã lưu đơn hàng', 'success');
+                    }
+                });
+
+                // Send to kitchen button handler
+                document.getElementById('send-to-kitchen').addEventListener('click', function () {
+                    const orderIndex = appState.orders.findIndex(o => o.id === newOrder.id);
+
+                    if (orderIndex !== -1) {
+                        // Check if the order has any items
+                        if (appState.orders[orderIndex].items.length === 0) {
+                            showToast('Vui lòng thêm ít nhất một món vào đơn hàng', 'warning');
+                            return;
+                        }
+
+                        // Update order status
+                        appState.orders[orderIndex].status = 'kitchen';
+
+                        // Create a kitchen order
+                        const kitchenOrder = {
+                            id: newOrder.id,
+                            tableId: table.id,
+                            tableName: table.name,
+                            items: [...appState.orders[orderIndex].items],
+                            status: 'pending',
+                            created: new Date()
+                        };
+
+                        appState.kitchenOrders.push(kitchenOrder);
+
+                        closeModal();
+                        renderTables();
+                        showToast('Đã gửi đơn hàng cho bếp', 'success');
+                    }
+                });
+
+                // Category filter change handler
+                document.getElementById('menu-category-filter').addEventListener('change', function () {
+                    loadMenuItemsForOrder(newOrder, this.value);
+                });
+
+                // Menu search handler
+                document.getElementById('menu-quick-search').addEventListener('input', function () {
+                    const category = document.getElementById('menu-category-filter').value;
+                    loadMenuItemsForOrder(newOrder, category, this.value);
+                });
+            }
+
+            function loadMenuItemsForOrder(order, category = 'all', searchTerm = '') {
+                const menuItemsContainer = document.getElementById('menu-items-selection');
+                menuItemsContainer.innerHTML = '';
+
+                // Filter menu items
+                let filteredItems = appState.menuItems.filter(item => item.available);
+
+                if (category !== 'all') {
+                    filteredItems = filteredItems.filter(item => item.category === category);
+                }
+
+                if (searchTerm) {
+                    const search = searchTerm.toLowerCase();
+                    filteredItems = filteredItems.filter(item =>
+                        item.name.toLowerCase().includes(search) ||
+                        item.description.toLowerCase().includes(search)
+                    );
+                }
+
+                // Render menu items
+                filteredItems.forEach(item => {
+                    const menuItem = document.createElement('div');
+                    menuItem.className = 'border rounded p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition relative';
+                    menuItem.dataset.id = item.id;
+
+                    // Add category badge to each menu item
+                    let categoryBadge = '';
+                    if (item.category === 'main') {
+                        categoryBadge = '<span class="absolute top-1 right-1 px-1 py-0.5 rounded-full text-xs font-medium bg-red-500 text-white">Món chính</span>';
+                    } else if (item.category === 'side') {
+                        categoryBadge = '<span class="absolute top-1 right-1 px-1 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white">Món phụ</span>';
+                    } else if (item.category === 'drink') {
+                        categoryBadge = '<span class="absolute top-1 right-1 px-1 py-0.5 rounded-full text-xs font-medium bg-purple-500 text-white">Đồ uống</span>';
+                    } else if (item.category === 'dessert') {
+                        categoryBadge = '<span class="absolute top-1 right-1 px-1 py-0.5 rounded-full text-xs font-medium bg-yellow-500 text-white">Tráng miệng</span>';
+                    }
+
+                    menuItem.innerHTML = `
+                            ${categoryBadge}
+                            <div class="font-medium pt-4">${item.name}</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">${formatCurrency(item.price)}</div>
+                        `;
+
+                    menuItemsContainer.appendChild(menuItem);
+
+                    // Menu item click handler to add to order
+                    menuItem.addEventListener('click', function () {
+                        const itemId = parseInt(this.dataset.id);
+                        const menuItem = appState.menuItems.find(m => m.id === itemId);
+
+                        if (!menuItem) return;
+
+                        // Check if item already exists in order
+                        const orderIndex = appState.orders.findIndex(o => o.id === order.id);
+
+                        if (orderIndex !== -1) {
+                            const existingItemIndex = appState.orders[orderIndex].items.findIndex(i => i.itemId === itemId);
+
+                            if (existingItemIndex !== -1) {
+                                // Increment quantity if item already exists
+                                appState.orders[orderIndex].items[existingItemIndex].quantity++;
+                                appState.orders[orderIndex].total += menuItem.price;
+                            } else {
+                                // Add new item to order
+                                appState.orders[orderIndex].items.push({
+                                    itemId: menuItem.id,
+                                    name: menuItem.name,
+                                    price: menuItem.price,
+                                    quantity: 1,
+                                    notes: ''
+                                });
+                                appState.orders[orderIndex].total += menuItem.price;
+                            }
+
+                            // Refresh order items display
+                            updateOrderItemsList(order.id);
+                        }
+                    });
+                });
+            }
+
+            function updateOrderItemsList(orderId) {
+                const orderItemsList = document.getElementById('order-items-list');
+                const orderTotal = document.getElementById('order-total');
+
+                const order = appState.orders.find(o => o.id === orderId);
+
+                if (!order) {
+                    orderItemsList.innerHTML = '<div class="text-center text-gray-500 py-4">Đơn hàng không tồn tại</div>';
+                    return;
+                }
+
+                if (order.items.length === 0) {
+                    orderItemsList.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Chưa có món nào trong đơn</div>';
+                    orderTotal.textContent = '0 VND';
+                    return;
+                }
+
+                orderItemsList.innerHTML = '';
+                let total = 0;
+
+                order.items.forEach(item => {
+                    const itemRow = document.createElement('div');
+                    itemRow.className = 'flex justify-between items-center py-2 border-b';
+
+                    const itemTotal = item.price * item.quantity;
+                    total += itemTotal;
+
+                    itemRow.innerHTML = `
+                            <div class="flex-1">
+                                <div class="font-medium">${item.name}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">${formatCurrency(item.price)} x ${item.quantity}</div>
+                                ${item.notes ? `<div class="text-xs italic text-gray-500 dark:text-gray-400">Ghi chú: ${item.notes}</div>` : ''}
+                            </div>
+                            <div class="font-medium">${formatCurrency(itemTotal)}</div>
+                            <div class="ml-2 flex space-x-1">
+                                <button class="edit-item-note text-blue-600 hover:text-blue-800 dark:text-blue-400 p-1" data-id="${item.itemId}">
+                                    <i class="fas fa-comment-alt"></i>
+                                </button>
+                                <button class="edit-item-quantity text-blue-600 hover:text-blue-800 dark:text-blue-400 p-1" data-id="${item.itemId}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="remove-item text-red-600 hover:text-red-800 dark:text-red-400 p-1" data-id="${item.itemId}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `;
+
+                    orderItemsList.appendChild(itemRow);
+
+                    // Add note button handler
+                    itemRow.querySelector('.edit-item-note').addEventListener('click', function () {
+                        const itemId = parseInt(this.dataset.id);
+                        const orderIndex = appState.orders.findIndex(o => o.id === orderId);
+                        const itemIndex = appState.orders[orderIndex].items.findIndex(i => i.itemId === itemId);
+
+                        if (orderIndex !== -1 && itemIndex !== -1) {
+                            const currentNote = appState.orders[orderIndex].items[itemIndex].notes || '';
+
+                            const noteModal = `
+                                    <div class="p-4">
+                                        <label class="block text-sm font-medium mb-1" for="item-note">Ghi chú đặc biệt</label>
+                                        <textarea id="item-note" class="w-full border rounded px-3 py-2 text-base" rows="3" placeholder="Ví dụ: Ít đường, không mì chính...">${currentNote}</textarea>
+                                        <div class="flex justify-end mt-4">
+                                            <button id="save-note" class="px-4 py-2 bg-primary text-white rounded" data-id="${itemId}">Lưu ghi chú</button>
+                                        </div>
+                                    </div>
+                                `;
+
+                            // Create a nested modal
+                            const noteContainer = document.createElement('div');
+                            noteContainer.className = 'bg-white dark:bg-dark-card rounded-lg shadow-lg';
+                            noteContainer.innerHTML = noteModal;
+
+                            document.getElementById('modal-container').appendChild(noteContainer);
+
+                            document.getElementById('save-note').addEventListener('click', function () {
+                                const itemId = parseInt(this.dataset.id);
+                                const orderIndex = appState.orders.findIndex(o => o.id === orderId);
+                                const itemIndex = appState.orders[orderIndex].items.findIndex(i => i.itemId === itemId);
+
+                                if (orderIndex !== -1 && itemIndex !== -1) {
+                                    appState.orders[orderIndex].items[itemIndex].notes = document.getElementById('item-note').value;
+
+                                    // Remove the nested modal
+                                    noteContainer.remove();
+
+                                    // Update the order items list
+                                    updateOrderItemsList(orderId);
+                                }
+                            });
+                        }
+                    });
+
+                    // Edit quantity button handler
+                    itemRow.querySelector('.edit-item-quantity').addEventListener('click', function () {
+                        const itemId = parseInt(this.dataset.id);
+                        const orderIndex = appState.orders.findIndex(o => o.id === orderId);
+                        const itemIndex = appState.orders[orderIndex].items.findIndex(i => i.itemId === itemId);
+
+                        if (orderIndex !== -1 && itemIndex !== -1) {
+                            const currentQuantity = appState.orders[orderIndex].items[itemIndex].quantity;
+
+                            const quantityModal = `
+                                    <div class="p-4">
+                                        <label class="block text-sm font-medium mb-1" for="item-quantity">Số lượng</label>
+                                        <input type="number" id="item-quantity" class="w-full border rounded px-3 py-2 text-base" min="1" value="${currentQuantity}">
+                                        <div class="flex justify-end mt-4">
+                                            <button id="save-quantity" class="px-4 py-2 bg-primary text-white rounded" data-id="${itemId}">Cập nhật</button>
+                                        </div>
+                                    </div>
+                                `;
+
+                            // Create a nested modal
+                            const quantityContainer = document.createElement('div');
+                            quantityContainer.className = 'bg-white dark:bg-dark-card rounded-lg shadow-lg';
+                            quantityContainer.innerHTML = quantityModal;
+
+                            document.getElementById('modal-container').appendChild(quantityContainer);
+
+                            document.getElementById('save-quantity').addEventListener('click', function () {
+                                const itemId = parseInt(this.dataset.id);
+                                const orderIndex = appState.orders.findIndex(o => o.id === orderId);
+                                const itemIndex = appState.orders[orderIndex].items.findIndex(i => i.itemId === itemId);
+
+                                if (orderIndex !== -1 && itemIndex !== -1) {
+                                    const newQuantity = parseInt(document.getElementById('item-quantity').value);
+
+                                    if (newQuantity < 1) {
+                                        showToast('Số lượng phải lớn hơn 0', 'warning');
+                                        return;
+                                    }
+
+                                    const item = appState.orders[orderIndex].items[itemIndex];
+                                    const previousTotal = item.price * item.quantity;
+                                    const newTotal = item.price * newQuantity;
+
+                                    // Update order total
+                                    appState.orders[orderIndex].total = appState.orders[orderIndex].total - previousTotal + newTotal;
+
+                                    // Update item quantity
+                                    appState.orders[orderIndex].items[itemIndex].quantity = newQuantity;
+
+                                    // Remove the nested modal
+                                    quantityContainer.remove();
+
+                                    // Update the order items list
+                                    updateOrderItemsList(orderId);
+                                }
+                            });
+                        }
+                    });
+
+                    // Remove item button handler
+                    itemRow.querySelector('.remove-item').addEventListener('click', function () {
+                        const itemId = parseInt(this.dataset.id);
+                        const orderIndex = appState.orders.findIndex(o => o.id === orderId);
+
+                        if (orderIndex !== -1) {
+                            const itemIndex = appState.orders[orderIndex].items.findIndex(i => i.itemId === itemId);
+
+                            if (itemIndex !== -1) {
+                                const item = appState.orders[orderIndex].items[itemIndex];
+                                const itemTotal = item.price * item.quantity;
+
+                                // Update order total
+                                appState.orders[orderIndex].total -= itemTotal;
+
+                                // Remove the item
+                                appState.orders[orderIndex].items.splice(itemIndex, 1);
+
+                                // Update the order items list
+                                updateOrderItemsList(orderId);
+                            }
+                        }
+                    });
+                });
+
+                // Update order total
+                order.total = total;
+                orderTotal.textContent = formatCurrency(total);
+            }
+
+            function viewTableOrder(table) {
+                // Find the associated order
+                const order = appState.orders.find(o => o.tableId === table.id && o.status !== 'completed');
+
+                if (!order) {
+                    showToast('Không tìm thấy đơn hàng cho bàn này', 'error');
+                    return;
+                }
+
+                // Calculate time elapsed
+                const minutesElapsed = getMinutesElapsed(table.startTime);
+                const timeDisplay = minutesElapsed > 0 ?
+                    `<p>Thời gian phục vụ: <strong>${minutesElapsed}:00 (phút)</strong></p>` : '';
+
+                const modalContent = `
+                        <div class="max-h-[80vh] overflow-y-auto">
+                            <div class="border-b pb-4 mb-4">
+                                <h4 class="font-medium mb-1">Thông tin đơn hàng</h4>
+                                <p>Bàn: <strong>${table.name}</strong></p>
+                                <p>Thời gian tạo: <strong>${new Date(order.created).toLocaleTimeString()}</strong></p>
+                                ${timeDisplay}
+                                <p>Trạng thái: <strong class="${order.status === 'new' ? 'text-blue-600 dark:text-blue-400' :
+                        order.status === 'kitchen' ? 'text-yellow-600 dark:text-yellow-400' :
+                            order.status === 'ready' ? 'text-green-600 dark:text-green-400' : 'text-purple-600 dark:text-purple-400'
+                    }">${order.status === 'new' ? 'Đơn mới' :
+                        order.status === 'kitchen' ? 'Đang chế biến' :
+                            order.status === 'ready' ? 'Sẵn sàng phục vụ' : 'Đang phục vụ'
+                    }</strong></p>
+                            </div>
+
+                            <div class="mb-4">
+                                <h4 class="font-medium mb-2">Danh sách món</h4>
+                                <div id="view-order-items-list" class="mb-4 max-h-48 overflow-y-auto">
+                                    <!-- Order items will be populated here -->
+                                </div>
+
+                                <div class="flex justify-between font-medium">
+                                    <span>Tổng tiền:</span>
+                                    <span id="view-order-total">${formatCurrency(order.total)}</span>
+                                </div>
+                            </div>
+
+                            ${order.status === 'new' ? `
+                                <div class="mb-4">
+                                    <h4 class="font-medium mb-2">Thêm món</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <div class="relative">
+                                            <input type="text" id="menu-quick-search" placeholder="Tìm món..." class="w-full border rounded px-3 py-2 pr-10 text-base">
+                                            <i class="fas fa-search absolute top-3 right-3 text-gray-400"></i>
+                                        </div>
+                                        <div>
+                                            <select id="menu-category-filter" class="w-full border rounded px-3 py-2 text-base">
+                                                <option value="all">Tất cả các món</option>
+                                                <option value="main">Món chính</option>
+                                                <option value="side">Món phụ</option>
+                                                <option value="drink">Đồ uống</option>
+                                                <option value="dessert">Tráng miệng</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div id="menu-items-selection" class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+                                        <!-- Menu items will be populated here -->
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <div class="flex justify-between mt-6">
+                                <button id="close-view-order" class="px-4 py-2 border rounded">Đóng</button>
+                                <div>
+                                    ${order.status === 'new' ? `
+                                        <button id="send-to-kitchen-view" class="px-4 py-2 bg-primary text-white rounded">Gửi cho bếp</button>
+                                    ` : ''}
+                                    <button id="go-to-payment" class="px-4 py-2 bg-green-600 text-white rounded ml-2">Thanh toán</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                openModal(`Đơn hàng - ${table.name}`, modalContent);
+
+                // Render order items
+                const orderItemsList = document.getElementById('view-order-items-list');
+                orderItemsList.innerHTML = '';
+
+                if (order.items.length === 0) {
+                    orderItemsList.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Chưa có món nào trong đơn</div>';
+                } else {
+                    order.items.forEach(item => {
+                        const itemRow = document.createElement('div');
+                        itemRow.className = 'flex justify-between items-center py-2 border-b';
+
+                        const itemTotal = item.price * item.quantity;
+
+                        itemRow.innerHTML = `
+                                <div class="flex-1">
+                                    <div class="font-medium">${item.name}</div>
+                                    <div class="text-sm text-gray-600 dark:text-gray-400">${formatCurrency(item.price)} x ${item.quantity}</div>
+                                    ${item.notes ? `<div class="text-xs italic text-gray-500 dark:text-gray-400">Ghi chú: ${item.notes}</div>` : ''}
+                                </div>
+                                <div class="font-medium">${formatCurrency(itemTotal)}</div>
+                                ${order.status === 'new' ? `
+                                    <div class="ml-2 flex space-x-1">
+                                        <button class="edit-item-note text-blue-600 hover:text-blue-800 dark:text-blue-400 p-1" data-id="${item.itemId}">
+                                            <i class="fas fa-comment-alt"></i>
+                                        </button>
+                                        <button class="edit-item-quantity text-blue-600 hover:text-blue-800 dark:text-blue-400 p-1" data-id="${item.itemId}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="remove-item text-red-600 hover:text-red-800 dark:text-red-400 p-1" data-id="${item.itemId}">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                ` : ''}
+                            `;
+
+                        orderItemsList.appendChild(itemRow);
+
+                        if (order.status === 'new') {
+                            // Add note, edit quantity, and remove item handlers (similar to updateOrderItemsList)
+                        }
+                    });
+                }
+
+                // Close button handler
+                document.getElementById('close-view-order').addEventListener('click', closeModal);
+
+                // Send to kitchen button handler (if available)
+                if (order.status === 'new') {
+                    // Load menu items for selection
+                    loadMenuItemsForOrder(order);
+
+                    // Menu category filter and search handlers (similar to createNewOrderForTable)
+
+                    // Send to kitchen button handler
+                    document.getElementById('send-to-kitchen-view').addEventListener('click', function () {
+                        const orderIndex = appState.orders.findIndex(o => o.id === order.id);
+
+                        if (orderIndex !== -1) {
+                            // Check if the order has any items
+                            if (appState.orders[orderIndex].items.length === 0) {
+                                showToast('Vui lòng thêm ít nhất một món vào đơn hàng', 'warning');
+                                return;
+                            }
+
+                            // Update order status
+                            appState.orders[orderIndex].status = 'kitchen';
+
+                            // Create a kitchen order
+                            const kitchenOrder = {
+                                id: order.id,
+                                tableId: table.id,
+                                tableName: table.name,
+                                items: [...appState.orders[orderIndex].items],
+                                status: 'pending',
+                                created: new Date()
+                            };
+
+                            appState.kitchenOrders.push(kitchenOrder);
+
+                            closeModal();
+                            showToast('Đã gửi đơn hàng cho bếp', 'success');
+                        }
+                    });
+                }
+
+                // Go to payment button handler
+                document.getElementById('go-to-payment').addEventListener('click', function () {
+                    closeModal();
+                    showView('payment');
+
+                    // Find the order in the payment tables and select it
+                    setTimeout(() => {
+                        const paymentTableBtn = document.querySelector(`.payment-table-btn[data-id="${table.id}"]`);
+                        if (paymentTableBtn) {
+                            paymentTableBtn.click();
+                        }
+                    }, 100);
+                });
+            }
+
+            function renderOrders() {
+                const currentOrdersContainer = document.getElementById('current-orders');
+                const orderHistoryContainer = document.getElementById('order-history');
+
+                currentOrdersContainer.innerHTML = '';
+                orderHistoryContainer.innerHTML = '';
+
+                // Filter current and completed orders
+                const currentOrders = appState.orders.filter(order => order.status !== 'completed');
+                const completedOrders = appState.orders.filter(order => order.status === 'completed');
+
+                // Render current orders
+                if (currentOrders.length === 0) {
+                    currentOrdersContainer.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Không có đơn hàng nào đang hoạt động</div>';
+                } else {
+                    currentOrders.forEach(order => {
+                        const table = appState.tables.find(t => t.id === order.tableId);
+                        const orderCard = document.createElement('div');
+                        orderCard.className = 'bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-light-border dark:border-dark-border';
+
+                        let statusText = 'Đơn mới';
+                        let statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+
+                        if (order.status === 'kitchen') {
+                            statusText = 'Đang chế biến';
+                            statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                        } else if (order.status === 'ready') {
+                            statusText = 'Sẵn sàng phục vụ';
+                            statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                        } else if (order.status === 'serving') {
+                            statusText = 'Đang phục vụ';
+                            statusClass = 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+                        }
+
+                        // Calculate time elapsed if table is occupied
+                        let timeInfo = '';
+                        if (table && table.startTime) {
+                            const minutesElapsed = getMinutesElapsed(table.startTime);
+                            timeInfo = `<p class="text-xs text-gray-500 dark:text-gray-400">Thời gian phục vụ: ${minutesElapsed}:00 (phút)</p>`;
+                        }
+
+                        orderCard.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-medium">${order.tableName || 'Mang về'}</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            ${new Date(order.created).toLocaleTimeString()}, ${order.items.length} món
+                                        </p>
+                                        ${timeInfo}
+                                    </div>
+                                    <span class="px-2 py-1 text-xs rounded-full ${statusClass}">
+                                        ${statusText}
+                                    </span>
+                                </div>
+                                <div class="mt-2">
+                                    <div class="text-sm truncate">
+                                        ${order.items.slice(0, 2).map(item => `${item.name} x${item.quantity}`).join(', ')}
+                                        ${order.items.length > 2 ? '...' : ''}
+                                    </div>
+                                    <div class="mt-1 font-medium">${formatCurrency(order.total)}</div>
+                                </div>
+                                <div class="mt-3 pt-2 border-t flex justify-end">
+                                    <button class="view-order-btn text-primary px-3 py-1 rounded" data-id="${order.id}">
+                                        Xem chi tiết
+                                    </button>
+                                </div>
+                            `;
+
+                        currentOrdersContainer.appendChild(orderCard);
+                    });
+
+                    // View order button handlers
+                    document.querySelectorAll('.view-order-btn').forEach(btn => {
+                        btn.addEventListener('click', function () {
+                            const orderId = parseInt(this.dataset.id);
+                            const order = appState.orders.find(o => o.id === orderId);
+
+                            if (order) {
+                                const table = appState.tables.find(t => t.id === order.tableId);
+                                if (table) {
+                                    viewTableOrder(table);
+                                } else {
+                                    // Handle takeaway orders
+                                    showToast('Xem đơn hàng mang về', 'info');
+                                }
+                            }
+                        });
+                    });
+                }
+
+                // Render order history (most recent 5)
+                const recentOrders = completedOrders.sort((a, b) => new Date(b.created) - new Date(a.created)).slice(0, 5);
+
+                if (recentOrders.length === 0) {
+                    orderHistoryContainer.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Không có lịch sử đơn hàng</div>';
+                } else {
+                    recentOrders.forEach(order => {
+                        const orderCard = document.createElement('div');
+                        orderCard.className = 'bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-light-border dark:border-dark-border';
+
+                        orderCard.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-medium">${order.tableName || 'Mang về'}</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            ${new Date(order.created).toLocaleDateString()}, ${new Date(order.created).toLocaleTimeString()}
+                                        </p>
+                                    </div>
+                                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                        Hoàn thành
+                                    </span>
+                                </div>
+                                <div class="mt-2">
+                                    <div class="text-sm truncate">
+                                        ${order.items.slice(0, 2).map(item => `${item.name} x${item.quantity}`).join(', ')}
+                                        ${order.items.length > 2 ? '...' : ''}
+                                    </div>
+                                    <div class="mt-1 font-medium">${formatCurrency(order.total)}</div>
+                                </div>
+                            `;
+
+                        orderHistoryContainer.appendChild(orderCard);
+                    });
+                }
+
+                // Create order button handler
+                document.getElementById('create-order-btn').addEventListener('click', function () {
+                    const modalContent = `
+                            <form id="create-order-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="order-type">Loại đơn hàng</label>
+                                    <select id="order-type" class="w-full border rounded px-3 py-2 text-base" required>
+                                        <option value="table">Tại bàn</option>
+                                        <option value="takeaway">Mang về</option>
+                                    </select>
+                                </div>
+                                <div id="table-selection" class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
+                                    ${appState.tables.filter(t => t.status === 'available').map(table => `
+                                        <div class="table-selection-item cursor-pointer border rounded p-2 text-center" data-id="${table.id}">
+                                            <div class="font-medium">${table.name}</div>
+                                            <div class="text-sm text-gray-600 dark:text-gray-400">${table.capacity} ghế</div>
+                                        </div>
+                                    `).join('') || '<div class="col-span-3 text-center py-2 text-gray-500">Không có bàn trống</div>'}
+                                </div>
+                                <div id="takeaway-info" class="hidden space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="customer-name">Tên khách hàng</label>
+                                        <input type="text" id="customer-name" class="w-full border rounded px-3 py-2 text-base">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1" for="customer-phone">Số điện thoại</label>
+                                        <input type="text" id="customer-phone" class="w-full border rounded px-3 py-2 text-base">
+                                    </div>
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-create-order" class="px-4 py-2 border rounded">Hủy</button>
+                                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Tạo đơn</button>
+                                </div>
+                            </form>
+                        `;
+
+                    openModal('Tạo đơn hàng mới', modalContent);
+
+                    // Order type change handler
+                    document.getElementById('order-type').addEventListener('change', function () {
+                        if (this.value === 'table') {
+                            document.getElementById('table-selection').classList.remove('hidden');
+                            document.getElementById('takeaway-info').classList.add('hidden');
+                        } else {
+                            document.getElementById('table-selection').classList.add('hidden');
+                            document.getElementById('takeaway-info').classList.remove('hidden');
+                        }
+                    });
+
+                    // Table selection item handler
+                    document.querySelectorAll('.table-selection-item').forEach(item => {
+                        item.addEventListener('click', function () {
+                            document.querySelectorAll('.table-selection-item').forEach(i => {
+                                i.classList.remove('bg-primary', 'text-white');
+                            });
+                            this.classList.add('bg-primary', 'text-white');
+                        });
+                    });
+
+                    document.getElementById('cancel-create-order').addEventListener('click', closeModal);
+                    document.getElementById('create-order-form').addEventListener('submit', function (e) {
+                        e.preventDefault();
+
+                        const orderType = document.getElementById('order-type').value;
+
+                        if (orderType === 'table') {
+                            const selectedTable = document.querySelector('.table-selection-item.bg-primary');
+
+                            if (!selectedTable) {
+                                showToast('Vui lòng chọn bàn', 'warning');
+                                return;
+                            }
+
+                            const tableId = parseInt(selectedTable.dataset.id);
+                            const table = appState.tables.find(t => t.id === tableId);
+
+                            if (table) {
+                                closeModal();
+                                createNewOrderForTable(table);
+                            }
+                        } else {
+                            // Create a takeaway order
+                            const customerName = document.getElementById('customer-name').value;
+                            const customerPhone = document.getElementById('customer-phone').value;
+
+                            const takeawayOrder = {
+                                id: Date.now(),
+                                tableId: null,
+                                tableName: `Mang về${customerName ? ' - ' + customerName : ''}`,
+                                customerName,
+                                customerPhone,
+                                items: [],
+                                status: 'new',
+                                created: new Date(),
+                                total: 0
+                            };
+
+                            appState.orders.push(takeawayOrder);
+
+                            closeModal();
+
+                            // Open the takeaway order creation modal
+                            const modalContent = `
+                                    <div class="max-h-[80vh] overflow-y-auto">
+                                        <div class="border-b pb-4 mb-4">
+                                            <h4 class="font-medium mb-1">Thông tin đơn hàng mang về</h4>
+                                            ${customerName ? `<p>Khách hàng: <strong>${customerName}</strong></p>` : ''}
+                                            ${customerPhone ? `<p>SĐT: <strong>${customerPhone}</strong></p>` : ''}
+                                            <p>Thời gian: <strong>${new Date().toLocaleTimeString()}</strong></p>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <h4 class="font-medium mb-2">Danh sách món</h4>
+                                            <div id="order-items-list" class="mb-4 max-h-48 overflow-y-auto">
+                                                <div class="text-center text-gray-500 dark:text-gray-400 py-4">
+                                                    Chưa có món nào trong đơn
+                                                </div>
+                                            </div>
+
+                                            <div class="flex justify-between font-medium">
+                                                <span>Tổng tiền:</span>
+                                                <span id="order-total">0 VND</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <h4 class="font-medium mb-2">Thêm món</h4>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                <div class="relative">
+                                                    <input type="text" id="menu-quick-search" placeholder="Tìm món..." class="w-full border rounded px-3 py-2 pr-10 text-base">
+                                                    <i class="fas fa-search absolute top-3 right-3 text-gray-400"></i>
+                                                </div>
+                                                <div>
+                                                    <select id="menu-category-filter" class="w-full border rounded px-3 py-2 text-base">
+                                                        <option value="all">Tất cả các món</option>
+                                                        <option value="main">Món chính</option>
+                                                        <option value="side">Món phụ</option>
+                                                        <option value="drink">Đồ uống</option>
+                                                        <option value="dessert">Tráng miệng</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div id="menu-items-selection" class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+                                                <!-- Menu items will be populated here -->
+                                            </div>
+                                        </div>
+
+                                        <div class="flex justify-between mt-6">
+                                            <button id="cancel-order" class="px-4 py-2 border rounded text-red-600">Hủy đơn</button>
+                                            <div>
+                                                <button id="save-order" class="px-4 py-2 bg-blue-600 text-white rounded mr-2">Lưu đơn</button>
+                                                <button id="send-to-kitchen" class="px-4 py-2 bg-primary text-white rounded">Gửi cho bếp</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+
+                            openModal('Tạo đơn hàng mang về', modalContent, () => {
+                                // If modal is closed without submitting, remove the empty order
+                                if (appState.orders.find(o => o.id === takeawayOrder.id && o.items.length === 0)) {
+                                    // Remove the empty order
+                                    appState.orders = appState.orders.filter(o => o.id !== takeawayOrder.id);
+                                }
+                            });
+
+                            // Load menu items for selection
+                            loadMenuItemsForOrder(takeawayOrder);
+
+                            // Cancel order button handler
+                            document.getElementById('cancel-order').addEventListener('click', function () {
+                                // Remove the order
+                                appState.orders = appState.orders.filter(o => o.id !== takeawayOrder.id);
+
+                                closeModal();
+                                renderOrders();
+                                showToast('Đã hủy đơn hàng', 'info');
+                            });
+
+                            // Save order button handler
+                            document.getElementById('save-order').addEventListener('click', function () {
+                                const orderIndex = appState.orders.findIndex(o => o.id === takeawayOrder.id);
+
+                                if (orderIndex !== -1) {
+                                    // Check if the order has any items
+                                    if (appState.orders[orderIndex].items.length === 0) {
+                                        showToast('Vui lòng thêm ít nhất một món vào đơn hàng', 'warning');
+                                        return;
+                                    }
+
+                                    closeModal();
+                                    renderOrders();
+                                    showToast('Đã lưu đơn hàng', 'success');
+                                }
+                            });
+
+                            // Send to kitchen button handler
+                            document.getElementById('send-to-kitchen').addEventListener('click', function () {
+                                const orderIndex = appState.orders.findIndex(o => o.id === takeawayOrder.id);
+
+                                if (orderIndex !== -1) {
+                                    // Check if the order has any items
+                                    if (appState.orders[orderIndex].items.length === 0) {
+                                        showToast('Vui lòng thêm ít nhất một món vào đơn hàng', 'warning');
+                                        return;
+                                    }
+
+                                    // Update order status
+                                    appState.orders[orderIndex].status = 'kitchen';
+
+                                    // Create a kitchen order
+                                    const kitchenOrder = {
+                                        id: takeawayOrder.id,
+                                        tableId: null,
+                                        tableName: takeawayOrder.tableName,
+                                        items: [...appState.orders[orderIndex].items],
+                                        status: 'pending',
+                                        created: new Date()
+                                    };
+
+                                    appState.kitchenOrders.push(kitchenOrder);
+
+                                    closeModal();
+                                    renderOrders();
+                                    showToast('Đã gửi đơn hàng cho bếp', 'success');
+                                }
+                            });
+
+                            // Category filter change handler
+                            document.getElementById('menu-category-filter').addEventListener('change', function () {
+                                loadMenuItemsForOrder(takeawayOrder, this.value);
+                            });
+
+                            // Menu search handler
+                            document.getElementById('menu-quick-search').addEventListener('input', function () {
+                                const category = document.getElementById('menu-category-filter').value;
+                                loadMenuItemsForOrder(takeawayOrder, category, this.value);
+                            });
+                        }
+                    });
+                });
+            }
+
+            function renderPaymentTables() {
+                // Find tables with active orders
+                const tablesWithOrders = appState.tables.filter(table => {
+                    return appState.orders.some(order => order.tableId === table.id && order.status !== 'completed');
+                });
+
+                const tablesForPayment = document.getElementById('tables-for-payment');
+                tablesForPayment.innerHTML = '';
+
+                if (tablesWithOrders.length === 0) {
+                    tablesForPayment.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Không có bàn nào cần thanh toán</div>';
+                } else {
+                    tablesWithOrders.forEach(table => {
+                        const order = appState.orders.find(o => o.tableId === table.id && o.status !== 'completed');
+
+                        if (!order) return;
+
+                        // Calculate time elapsed
+                        let timeDisplay = '';
+                        if (table.startTime) {
+                            const minutesElapsed = getMinutesElapsed(table.startTime);
+                            timeDisplay = `<p class="text-xs text-gray-500 dark:text-gray-400">Thời gian phục vụ: ${minutesElapsed}:00 (phút)</p>`;
+                        }
+
+                        const paymentTableCard = document.createElement('div');
+                        paymentTableCard.className = 'bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-light-border dark:border-dark-border cursor-pointer hover:border-primary payment-table-btn';
+                        paymentTableCard.dataset.id = table.id;
+
+                        paymentTableCard.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-medium">${table.name}</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            ${new Date(order.created).toLocaleTimeString()}, ${order.items.length} món
+                                        </p>
+                                        ${timeDisplay}
+                                    </div>
+                                    <div class="font-medium">${formatCurrency(order.total)}</div>
+                                </div>
+                            `;
+
+                        tablesForPayment.appendChild(paymentTableCard);
+
+                        // Table click handler
+                        paymentTableCard.addEventListener('click', function () {
+                            // Highlight the selected table
+                            document.querySelectorAll('.payment-table-btn').forEach(btn => {
+                                btn.classList.remove('border-primary');
+                            });
+                            this.classList.add('border-primary');
+
+                            // Load the order details for payment
+                            loadPaymentDetails(table.id);
+                        });
+                    });
+                }
+
+                // Also show takeaway orders
+                const takeawayOrders = appState.orders.filter(order => !order.tableId && order.status !== 'completed');
+
+                if (takeawayOrders.length > 0) {
+                    takeawayOrders.forEach(order => {
+                        const paymentTakeawayCard = document.createElement('div');
+                        paymentTakeawayCard.className = 'bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-light-border dark:border-dark-border cursor-pointer hover:border-primary payment-takeaway-btn';
+                        paymentTakeawayCard.dataset.id = order.id;
+
+                        paymentTakeawayCard.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-medium">${order.tableName}</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            ${new Date(order.created).toLocaleTimeString()}, ${order.items.length} món
+                                        </p>
+                                    </div>
+                                    <div class="font-medium">${formatCurrency(order.total)}</div>
+                                </div>
+                            `;
+
+                        tablesForPayment.appendChild(paymentTakeawayCard);
+
+                        // Takeaway order click handler
+                        paymentTakeawayCard.addEventListener('click', function () {
+                            // Highlight the selected order
+                            document.querySelectorAll('.payment-table-btn, .payment-takeaway-btn').forEach(btn => {
+                                btn.classList.remove('border-primary');
+                            });
+                            this.classList.add('border-primary');
+
+                            // Load the order details for payment (use order ID instead of table ID)
+                            loadPaymentDetailsByOrderId(order.id);
+                        });
+                    });
+                }
+            }
+
+            function loadPaymentDetails(tableId) {
+                const paymentDetails = document.getElementById('payment-details');
+                const noPaymentSelected = document.getElementById('no-payment-selected');
+
+                // Find the table and its order
+                const table = appState.tables.find(t => t.id === tableId);
+                const order = appState.orders.find(o => o.tableId === tableId && o.status !== 'completed');
+
+                if (!table || !order) {
+                    return;
+                }
+
+                // Show payment details, hide the "no selection" message
+                paymentDetails.classList.remove('hidden');
+                noPaymentSelected.classList.add('hidden');
+
+                // Set table name and time
+                document.getElementById('payment-table-name').textContent = table.name;
+                document.getElementById('payment-time').textContent = new Date(order.created).toLocaleString();
+
+                // Populate order items
+                const paymentItems = document.getElementById('payment-items');
+                paymentItems.innerHTML = '';
+
+                order.items.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b';
+
+                    const itemTotal = item.price * item.quantity;
+
+                    row.innerHTML = `
+                            <td class="py-2">${item.name}</td>
+                            <td class="py-2 text-right">${item.quantity}</td>
+                            <td class="py-2 text-right">${formatCurrency(item.price)}</td>
+                            <td class="py-2 text-right">${formatCurrency(itemTotal)}</td>
+                        `;
+
+                    paymentItems.appendChild(row);
+                });
+
+                // Set subtotal and total
+                const subtotal = order.total;
+                const tax = subtotal * 0.08; // 8% tax
+                document.getElementById('payment-subtotal').textContent = formatCurrency(subtotal);
+                document.getElementById('payment-tax').textContent = formatCurrency(tax);
+
+                // Reset discount
+                document.getElementById('discount-type').value = 'percent';
+                document.getElementById('discount-value').value = '0';
+
+                updatePaymentTotal(subtotal, tax, 0);
+
+                // Payment method selection
+                document.querySelectorAll('.payment-method').forEach(method => {
+                    method.classList.remove('bg-primary', 'text-white');
+
+                    method.addEventListener('click', function () {
+                        document.querySelectorAll('.payment-method').forEach(m => {
+                            m.classList.remove('bg-primary', 'text-white');
+                        });
+                        this.classList.add('bg-primary', 'text-white');
+
+                        // Enable the payment button once a method is selected
+                        document.getElementById('complete-payment-btn').removeAttribute('disabled');
+                    });
+                });
+
+                // Discount change handlers
+                document.getElementById('discount-type').addEventListener('change', updatePaymentTotalFromInputs);
+                document.getElementById('discount-value').addEventListener('input', updatePaymentTotalFromInputs);
+
+                function updatePaymentTotalFromInputs() {
+                    const discountType = document.getElementById('discount-type').value;
+                    const discountValue = parseFloat(document.getElementById('discount-value').value) || 0;
+
+                    let discount = 0;
+                    if (discountType === 'percent') {
+                        discount = (subtotal * discountValue) / 100;
+                    } else {
+                        discount = discountValue;
+                    }
+
+                    updatePaymentTotal(subtotal, tax, discount);
+                }
+
+                // Complete payment button handler
+                document.getElementById('complete-payment-btn').addEventListener('click', function () {
+                    if (this.hasAttribute('disabled')) {
+                        return;
+                    }
+
+                    const selectedMethod = document.querySelector('.payment-method.bg-primary');
+                    if (!selectedMethod) {
+                        showToast('Vui lòng chọn phương thức thanh toán', 'warning');
+                        return;
+                    }
+
+                    const paymentMethod = selectedMethod.dataset.method;
+                    const discountType = document.getElementById('discount-type').value;
+                    const discountValue = parseFloat(document.getElementById('discount-value').value) || 0;
+
+                    let discount = 0;
+                    if (discountType === 'percent') {
+                        discount = (subtotal * discountValue) / 100;
+                    } else {
+                        discount = discountValue;
+                    }
+
+                    const totalWithTax = subtotal + tax - discount;
+
+                    // Confirm payment
+                    const modalContent = `
+                            <div class="text-center">
+                                <div class="flex justify-center mb-4">
+                                    <i class="fas fa-check-circle text-5xl text-green-500"></i>
+                                </div>
+                                <h3 class="text-lg font-medium mb-4">Xác nhận thanh toán</h3>
+                                <p class="mb-2">Bàn: <strong>${table.name}</strong></p>
+                                <p class="mb-2">Tổng tiền: <strong>${formatCurrency(totalWithTax)}</strong></p>
+                                <p class="mb-4">Phương thức: <strong>${paymentMethod === 'cash' ? 'Tiền mặt' :
+                            paymentMethod === 'momo' ? 'Ví MoMo' :
+                                paymentMethod === 'zalopay' ? 'ZaloPay' : 'Chuyển khoản'
+                        }</strong></p>
+                                <div class="flex justify-center space-x-3">
+                                    <button id="cancel-payment-confirm" class="px-4 py-2 border rounded">Hủy</button>
+                                    <button id="confirm-payment" class="px-4 py-2 bg-green-600 text-white rounded">Xác nhận</button>
+                                </div>
+                            </div>
+                        `;
+
+                    openModal('Xác nhận thanh toán', modalContent);
+
+                    document.getElementById('cancel-payment-confirm').addEventListener('click', closeModal);
+                    document.getElementById('confirm-payment').addEventListener('click', function () {
+                        // Update order status to completed
+                        const orderIndex = appState.orders.findIndex(o => o.id === order.id);
+                        if (orderIndex !== -1) {
+                            appState.orders[orderIndex].status = 'completed';
+                            appState.orders[orderIndex].paymentMethod = paymentMethod;
+                            appState.orders[orderIndex].paymentTime = new Date();
+                            appState.orders[orderIndex].discount = discount;
+                            appState.orders[orderIndex].tax = tax;
+                            appState.orders[orderIndex].finalTotal = totalWithTax;
+                        }
+
+                        // Update table status to available
+                        const tableIndex = appState.tables.findIndex(t => t.id === tableId);
+                        if (tableIndex !== -1) {
+                            appState.tables[tableIndex].status = 'available';
+                            appState.tables[tableIndex].startTime = null;
+                        }
+
+                        closeModal();
+                        renderPaymentTables();
+
+                        // Hide payment details, show the "no selection" message
+                        document.getElementById('payment-details').classList.add('hidden');
+                        document.getElementById('no-payment-selected').classList.remove('hidden');
+
+                        showToast('Thanh toán thành công', 'success');
+
+                        // Print receipt
+                        printReceipt(order, table.name, subtotal, tax, discount, totalWithTax, paymentMethod);
+                    });
+                });
+            }
+
+            function loadPaymentDetailsByOrderId(orderId) {
+                const paymentDetails = document.getElementById('payment-details');
+                const noPaymentSelected = document.getElementById('no-payment-selected');
+
+                // Find the order
+                const order = appState.orders.find(o => o.id === orderId && o.status !== 'completed');
+
+                if (!order) {
+                    return;
+                }
+
+                // Show payment details, hide the "no selection" message
+                paymentDetails.classList.remove('hidden');
+                noPaymentSelected.classList.add('hidden');
+
+                // Set order name and time
+                document.getElementById('payment-table-name').textContent = order.tableName;
+                document.getElementById('payment-time').textContent = new Date(order.created).toLocaleString();
+
+                // Populate order items
+                const paymentItems = document.getElementById('payment-items');
+                paymentItems.innerHTML = '';
+
+                order.items.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b';
+
+                    const itemTotal = item.price * item.quantity;
+
+                    row.innerHTML = `
+                            <td class="py-2">${item.name}</td>
+                            <td class="py-2 text-right">${item.quantity}</td>
+                            <td class="py-2 text-right">${formatCurrency(item.price)}</td>
+                            <td class="py-2 text-right">${formatCurrency(itemTotal)}</td>
+                        `;
+
+                    paymentItems.appendChild(row);
+                });
+
+                // Set subtotal and total
+                const subtotal = order.total;
+                const tax = subtotal * 0.08; // 8% tax
+                document.getElementById('payment-subtotal').textContent = formatCurrency(subtotal);
+                document.getElementById('payment-tax').textContent = formatCurrency(tax);
+
+                // Reset discount
+                document.getElementById('discount-type').value = 'percent';
+                document.getElementById('discount-value').value = '0';
+
+                updatePaymentTotal(subtotal, tax, 0);
+
+                // Payment method selection
+                document.querySelectorAll('.payment-method').forEach(method => {
+                    method.classList.remove('bg-primary', 'text-white');
+
+                    method.addEventListener('click', function () {
+                        document.querySelectorAll('.payment-method').forEach(m => {
+                            m.classList.remove('bg-primary', 'text-white');
+                        });
+                        this.classList.add('bg-primary', 'text-white');
+
+                        // Enable the payment button once a method is selected
+                        document.getElementById('complete-payment-btn').removeAttribute('disabled');
+                    });
+                });
+
+                // Discount change handlers
+                document.getElementById('discount-type').addEventListener('change', updatePaymentTotalFromInputs);
+                document.getElementById('discount-value').addEventListener('input', updatePaymentTotalFromInputs);
+
+                function updatePaymentTotalFromInputs() {
+                    const discountType = document.getElementById('discount-type').value;
+                    const discountValue = parseFloat(document.getElementById('discount-value').value) || 0;
+
+                    let discount = 0;
+                    if (discountType === 'percent') {
+                        discount = (subtotal * discountValue) / 100;
+                    } else {
+                        discount = discountValue;
+                    }
+
+                    updatePaymentTotal(subtotal, tax, discount);
+                }
+
+                // Complete payment button handler
+                document.getElementById('complete-payment-btn').addEventListener('click', function () {
+                    if (this.hasAttribute('disabled')) {
+                        return;
+                    }
+
+                    const selectedMethod = document.querySelector('.payment-method.bg-primary');
+                    if (!selectedMethod) {
+                        showToast('Vui lòng chọn phương thức thanh toán', 'warning');
+                        return;
+                    }
+
+                    const paymentMethod = selectedMethod.dataset.method;
+                    const discountType = document.getElementById('discount-type').value;
+                    const discountValue = parseFloat(document.getElementById('discount-value').value) || 0;
+
+                    let discount = 0;
+                    if (discountType === 'percent') {
+                        discount = (subtotal * discountValue) / 100;
+                    } else {
+                        discount = discountValue;
+                    }
+
+                    const totalWithTax = subtotal + tax - discount;
+
+                    // Confirm payment
+                    const modalContent = `
+                            <div class="text-center">
+                                <div class="flex justify-center mb-4">
+                                    <i class="fas fa-check-circle text-5xl text-green-500"></i>
+                                </div>
+                                <h3 class="text-lg font-medium mb-4">Xác nhận thanh toán</h3>
+                                <p class="mb-2">Đơn hàng: <strong>${order.tableName}</strong></p>
+                                <p class="mb-2">Tổng tiền: <strong>${formatCurrency(totalWithTax)}</strong></p>
+                                <p class="mb-4">Phương thức: <strong>${paymentMethod === 'cash' ? 'Tiền mặt' :
+                            paymentMethod === 'momo' ? 'Ví MoMo' :
+                                paymentMethod === 'zalopay' ? 'ZaloPay' : 'Chuyển khoản'
+                        }</strong></p>
+                                <div class="flex justify-center space-x-3">
+                                    <button id="cancel-payment-confirm" class="px-4 py-2 border rounded">Hủy</button>
+                                    <button id="confirm-payment" class="px-4 py-2 bg-green-600 text-white rounded">Xác nhận</button>
+                                </div>
+                            </div>
+                        `;
+
+                    openModal('Xác nhận thanh toán', modalContent);
+
+                    document.getElementById('cancel-payment-confirm').addEventListener('click', closeModal);
+                    document.getElementById('confirm-payment').addEventListener('click', function () {
+                        // Update order status to completed
+                        const orderIndex = appState.orders.findIndex(o => o.id === order.id);
+                        if (orderIndex !== -1) {
+                            appState.orders[orderIndex].status = 'completed';
+                            appState.orders[orderIndex].paymentMethod = paymentMethod;
+                            appState.orders[orderIndex].paymentTime = new Date();
+                            appState.orders[orderIndex].discount = discount;
+                            appState.orders[orderIndex].tax = tax;
+                            appState.orders[orderIndex].finalTotal = totalWithTax;
+                        }
+
+                        closeModal();
+                        renderPaymentTables();
+
+                        // Hide payment details, show the "no selection" message
+                        document.getElementById('payment-details').classList.add('hidden');
+                        document.getElementById('no-payment-selected').classList.remove('hidden');
+
+                        showToast('Thanh toán thành công', 'success');
+
+                        // Print receipt
+                        printReceipt(order, order.tableName, subtotal, tax, discount, totalWithTax, paymentMethod);
+                    });
+                });
+            }
+
+            function updatePaymentTotal(subtotal, tax, discount) {
+                const total = subtotal + tax - discount;
+                document.getElementById('payment-total').textContent = formatCurrency(total);
+            }
+
+            function printReceipt(order, tableName, subtotal, tax, discount, totalWithTax, paymentMethod) {
+                const modalContent = `
+                        <div class="p-4 max-w-md mx-auto bg-white dark:bg-gray-800">
+                            <div class="text-center mb-4">
+                                <h3 class="text-xl font-bold">Restaurant Manager</h3>
+                                <p class="text-sm">123 Nguyễn Huệ, Q.1, TP.HCM</p>
+                                <p class="text-sm">Tel: (028) 1234 5678</p>
+                                <div class="border-t border-b border-gray-300 dark:border-gray-600 my-3 py-2">
+                                    <h4 class="font-bold">HÓA ĐƠN THANH TOÁN</h4>
+                                    <p>Số: #${order.id.toString().slice(-6)}</p>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="flex justify-between text-sm">
+                                    <span>Ngày:</span>
+                                    <span>${new Date().toLocaleDateString()}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span>Giờ:</span>
+                                    <span>${new Date().toLocaleTimeString()}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span>Bàn:</span>
+                                    <span>${tableName}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span>Thu ngân:</span>
+                                    <span>${appState.currentUser?.name || 'Admin'}</span>
+                                </div>
+                            </div>
+
+                            <table class="w-full mb-4 text-sm">
+                                <thead class="border-t border-b border-gray-300 dark:border-gray-600">
+                                    <tr>
+                                        <th class="py-1 text-left">Món</th>
+                                        <th class="py-1 text-right">SL</th>
+                                        <th class="py-1 text-right">Đơn giá</th>
+                                        <th class="py-1 text-right">T.Tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${order.items.map(item => `
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-1">${item.name}</td>
+                                            <td class="py-1 text-right">${item.quantity}</td>
+                                            <td class="py-1 text-right">${formatCurrency(item.price)}</td>
+                                            <td class="py-1 text-right">${formatCurrency(item.price * item.quantity)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+
+                            <div class="space-y-1 text-sm mb-4">
+                                <div class="flex justify-between">
+                                    <span>Tổng tiền hàng:</span>
+                                    <span>${formatCurrency(subtotal)}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Thuế VAT (8%):</span>
+                                    <span>${formatCurrency(tax)}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Giảm giá:</span>
+                                    <span>${formatCurrency(discount)}</span>
+                                </div>
+                                <div class="flex justify-between font-bold border-t border-gray-300 dark:border-gray-600 pt-1">
+                                    <span>Tổng thanh toán:</span>
+                                    <span>${formatCurrency(totalWithTax)}</span>
+                                </div>
+                            </div>
+
+                            <div class="text-sm mb-4">
+                                <div class="flex justify-between">
+                                    <span>Phương thức thanh toán:</span>
+                                    <span>${paymentMethod === 'cash' ? 'Tiền mặt' :
+                        paymentMethod === 'momo' ? 'Ví MoMo' :
+                            paymentMethod === 'zalopay' ? 'ZaloPay' : 'Chuyển khoản'
+                    }</span>
+                                </div>
+                            </div>
+
+                            <div class="text-center text-sm mt-6">
+                                <p>Cảm ơn quý khách đã sử dụng dịch vụ!</p>
+                                <p>Hẹn gặp lại quý khách!</p>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-center mt-4">
+                            <button id="close-receipt" class="px-4 py-2 bg-primary text-white rounded">Đóng</button>
+                        </div>
+                    `;
+
+                openModal('Hóa đơn thanh toán', modalContent);
+
+                document.getElementById('close-receipt').addEventListener('click', closeModal);
+            }
+
+            function renderKitchen() {
+                const pendingContainer = document.getElementById('pending-kitchen-orders');
+                const inProgressContainer = document.getElementById('in-progress-kitchen-orders');
+
+                pendingContainer.innerHTML = '';
+                inProgressContainer.innerHTML = '';
+
+                // Filter orders by status
+                const pendingOrders = appState.kitchenOrders.filter(order => order.status === 'pending');
+                const inProgressOrders = appState.kitchenOrders.filter(order => order.status === 'in-progress');
+
+                // Render pending orders
+                if (pendingOrders.length === 0) {
+                    pendingContainer.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Không có đơn hàng chờ chế biến</div>';
+                } else {
+                    pendingOrders.forEach(order => {
+                        const orderCard = document.createElement('div');
+                        orderCard.className = 'bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-light-border dark:border-dark-border kitchen-order-card';
+                        orderCard.dataset.id = order.id;
+
+                        orderCard.innerHTML = `
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 class="font-medium">${order.tableName || 'Mang về'}</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            ${new Date(order.created).toLocaleTimeString()}
+                                        </p>
+                                    </div>
+                                    <button class="start-cooking-btn bg-primary hover:bg-secondary text-white px-3 py-1 rounded text-sm">
+                                        Bắt đầu chế biến
+                                    </button>
+                                </div>
+                                <div class="space-y-2 mt-3">
+                                    ${order.items.map(item => `
+                                        <div class="flex justify-between items-center kitchen-item p-2 rounded border">
+                                            <div>
+                                                <div class="font-medium">${item.name} x${item.quantity}</div>
+                                                ${item.notes ? `<div class="text-xs italic text-red-600 dark:text-red-400">Ghi chú: ${item.notes}</div>` : ''}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+
+                        pendingContainer.appendChild(orderCard);
+
+                        // Start cooking button handler
+                        orderCard.querySelector('.start-cooking-btn').addEventListener('click', function () {
+                            const orderId = parseInt(orderCard.dataset.id);
+                            const orderIndex = appState.kitchenOrders.findIndex(o => o.id === orderId);
+
+                            if (orderIndex !== -1) {
+                                appState.kitchenOrders[orderIndex].status = 'in-progress';
+                                appState.kitchenOrders[orderIndex].startedCooking = new Date();
+                                renderKitchen();
+                                showToast('Đã bắt đầu chế biến đơn hàng', 'success');
+                            }
+                        });
+                    });
+                }
+
+                // Render in-progress orders
+                if (inProgressOrders.length === 0) {
+                    inProgressContainer.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Không có đơn hàng đang chế biến</div>';
+                } else {
+                    inProgressOrders.forEach(order => {
+                        const orderCard = document.createElement('div');
+                        orderCard.className = 'bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-light-border dark:border-dark-border kitchen-order-card';
+                        orderCard.dataset.id = order.id;
+
+                        // Calculate time elapsed since cooking started
+                        const startedTime = order.startedCooking ? new Date(order.startedCooking) : new Date(order.created);
+                        const elapsedMinutes = Math.floor((new Date() - startedTime) / 60000);
+
+                        orderCard.innerHTML = `
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 class="font-medium">${order.tableName || 'Mang về'}</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            Bắt đầu: ${startedTime.toLocaleTimeString()} (${elapsedMinutes} phút)
+                                        </p>
+                                    </div>
+                                    <button class="complete-order-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                                        Hoàn thành
+                                    </button>
+                                </div>
+                                <div class="space-y-2 mt-3">
+                                    ${order.items.map((item, index) => `
+                                        <div class="flex justify-between items-center kitchen-item p-2 rounded border ${item.completed ? 'completed' : ''}">
+                                            <div>
+                                                <div class="font-medium">${item.name} x${item.quantity}</div>
+                                                ${item.notes ? `<div class="text-xs italic text-red-600 dark:text-red-400">Ghi chú: ${item.notes}</div>` : ''}
+                                            </div>
+                                            <div class="flex items-center">
+                                                <button class="item-complete-btn text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 px-2" data-index="${index}" ${item.completed ? 'disabled' : ''}>
+                                                    <i class="fas ${item.completed ? 'fa-check-circle' : 'fa-circle'}"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+
+                        inProgressContainer.appendChild(orderCard);
+
+                        // Item complete button handlers
+                        orderCard.querySelectorAll('.item-complete-btn').forEach(btn => {
+                            btn.addEventListener('click', function () {
+                                const orderId = parseInt(orderCard.dataset.id);
+                                const itemIndex = parseInt(this.dataset.index);
+                                const orderIndex = appState.kitchenOrders.findIndex(o => o.id === orderId);
+
+                                if (orderIndex !== -1 && itemIndex !== -1) {
+                                    // Mark item as completed
+                                    appState.kitchenOrders[orderIndex].items[itemIndex].completed = true;
+
+                                    // Update UI
+                                    this.innerHTML = '<i class="fas fa-check-circle"></i>';
+                                    this.disabled = true;
+                                    this.closest('.kitchen-item').classList.add('completed');
+
+                                    // Check if all items in the order are completed
+                                    const allCompleted = appState.kitchenOrders[orderIndex].items.every(item => item.completed);
+
+                                    if (allCompleted) {
+                                        // Auto-complete the order if all items are done
+                                        completeKitchenOrder(orderId);
+                                    }
+                                }
+                            });
+                        });
+
+                        // Complete order button handler
+                        orderCard.querySelector('.complete-order-btn').addEventListener('click', function () {
+                            const orderId = parseInt(orderCard.dataset.id);
+                            completeKitchenOrder(orderId);
+                        });
+                    });
+                }
+            }
+
+            function completeKitchenOrder(orderId) {
+                // Update kitchen order status
+                const kitchenOrderIndex = appState.kitchenOrders.findIndex(o => o.id === orderId);
+
+                if (kitchenOrderIndex !== -1) {
+                    // Remove the kitchen order
+                    appState.kitchenOrders.splice(kitchenOrderIndex, 1);
+
+                    // Update the main order status
+                    const orderIndex = appState.orders.findIndex(o => o.id === orderId);
+                    if (orderIndex !== -1) {
+                        appState.orders[orderIndex].status = 'ready';
+                    }
+
+                    renderKitchen();
+                    showToast('Đơn hàng đã hoàn thành', 'success');
+                }
+            }
+
+            function renderOverall() {
+                // Render recent orders
+                const recentOrdersContainer = document.getElementById('recent-orders');
+                recentOrdersContainer.innerHTML = '';
+
+                // Sort all orders by creation time (most recent first)
+                const allOrders = [...appState.orders].sort((a, b) => new Date(b.created) - new Date(a.created));
+
+                // Take the 5 most recent orders
+                const recentOrders = allOrders.slice(0, 5);
+
+                if (recentOrders.length === 0) {
+                    recentOrdersContainer.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Không có đơn hàng gần đây</div>';
+                } else {
+                    recentOrders.forEach(order => {
+                        const orderCard = document.createElement('div');
+                        orderCard.className = 'bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-light-border dark:border-dark-border';
+
+                        let statusText = 'Đơn mới';
+                        let statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+
+                        if (order.status === 'kitchen') {
+                            statusText = 'Đang chế biến';
+                            statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                        } else if (order.status === 'ready') {
+                            statusText = 'Sẵn sàng phục vụ';
+                            statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                        } else if (order.status === 'serving') {
+                            statusText = 'Đang phục vụ';
+                            statusClass = 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+                        } else if (order.status === 'completed') {
+                            statusText = 'Hoàn thành';
+                            statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+                        }
+
+                        // Get table time info if available
+                        let timeInfo = '';
+                        if (order.tableId) {
+                            const table = appState.tables.find(t => t.id === order.tableId);
+                            if (table && table.startTime) {
+                                const minutesElapsed = getMinutesElapsed(table.startTime);
+                                if (minutesElapsed > 0 && order.status !== 'completed') {
+                                    timeInfo = `<p class="text-xs text-gray-500 dark:text-gray-400">Thời gian phục vụ: ${minutesElapsed}:00 (phút)</p>`;
+                                }
+                            }
+                        }
+
+                        orderCard.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-medium">${order.tableName || 'Mang về'}</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            ${new Date(order.created).toLocaleTimeString()}, ${order.items.length} món
+                                        </p>
+                                        ${timeInfo}
+                                    </div>
+                                    <span class="px-2 py-1 text-xs rounded-full ${statusClass}">
+                                        ${statusText}
+                                    </span>
+                                </div>
+                                <div class="mt-2">
+                                    <div class="text-sm">
+                                        ${order.items.slice(0, 3).map(item => `${item.name} x${item.quantity}`).join(', ')}
+                                        ${order.items.length > 3 ? '...' : ''}
+                                    </div>
+                                    <div class="mt-1 font-medium">${formatCurrency(order.total)}</div>
+                                </div>
+                            `;
+
+                        recentOrdersContainer.appendChild(orderCard);
+                    });
+                }
+
+                // Render top selling items
+                const topSellingContainer = document.getElementById('top-selling-items');
+                topSellingContainer.innerHTML = '';
+
+                // Get all items from all orders
+                const allItems = [];
+                appState.orders.forEach(order => {
+                    order.items.forEach(item => {
+                        const existingItemIndex = allItems.findIndex(i => i.itemId === item.itemId);
+                        if (existingItemIndex !== -1) {
+                            allItems[existingItemIndex].quantity += item.quantity;
+                            allItems[existingItemIndex].revenue += item.quantity * item.price;
+                        } else {
+                            allItems.push({
+                                itemId: item.itemId,
+                                name: item.name,
+                                quantity: item.quantity,
+                                price: item.price,
+                                revenue: item.quantity * item.price
+                            });
+                        }
+                    });
+                });
+
+                // Sort items by quantity (highest first) and take the top 5
+                const topItems = allItems.sort((a, b) => b.quantity - a.quantity).slice(0, 5);
+
+                if (topItems.length === 0) {
+                    topSellingContainer.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Không có dữ liệu</div>';
+                } else {
+                    // Calculate total quantity for percentage
+                    const totalQuantity = topItems.reduce((sum, i) => sum + i.quantity, 0);
+
+                    topItems.forEach((item, index) => {
+                        const percentage = Math.round((item.quantity / totalQuantity) * 100);
+
+                        const itemCard = document.createElement('div');
+                        itemCard.className = 'flex items-center mb-4';
+
+                        itemCard.innerHTML = `
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-3">
+                                    ${index + 1}
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="font-medium">${item.name}</span>
+                                        <div class="text-right">
+                                            <span>${item.quantity} món (${percentage}%)</span>
+                                            <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">${formatCurrency(item.revenue)}</span>
+                                        </div>
+                                    </div>
+                                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div class="bg-primary h-2 rounded-full" style="width: ${percentage}%"></div>
+                                    </div>
+                                </div>
+                            `;
+
+                        topSellingContainer.appendChild(itemCard);
+                    });
+                }
+
+                // Render low stock items
+                const lowStockTable = document.getElementById('low-stock-table');
+                lowStockTable.innerHTML = '';
+
+                // Filter low and out of stock items
+                const lowStockItems = appState.inventory.filter(item => item.quantity <= item.minQuantity);
+
+                if (lowStockItems.length === 0) {
+                    lowStockTable.innerHTML = '<tr><td colspan="4" class="px-4 py-2 text-center text-gray-500 dark:text-gray-400">Không có nguyên liệu sắp hết</td></tr>';
+                } else {
+                    lowStockItems.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b';
+
+                        // Determine status class
+                        let statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                        let statusText = 'Đủ hàng';
+
+                        if (item.quantity === 0) {
+                            statusClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                            statusText = 'Hết hàng';
+                        } else if (item.quantity <= item.minQuantity) {
+                            statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                            statusText = 'Sắp hết';
+                        }
+
+                        row.innerHTML = `
+                                <td class="px-4 py-2">${item.name}</td>
+                                <td class="px-4 py-2">${item.quantity} ${item.unit}</td>
+                                <td class="px-4 py-2">${item.minQuantity} ${item.unit}</td>
+                                <td class="px-4 py-2">
+                                    <span class="px-2 py-1 rounded-full text-xs ${statusClass}">
+                                        ${statusText}
+                                    </span>
+                                </td>
+                            `;
+
+                        lowStockTable.appendChild(row);
+                    });
+                }
+            }
+
+            // Event Listeners
+            // Login events
+            elements.roleOptions.forEach(option => {
+                option.addEventListener('click', function () {
+                    elements.roleOptions.forEach(opt => {
+                        opt.classList.remove('bg-primary', 'text-white');
+                    });
+                    this.classList.add('bg-primary', 'text-white');
+                });
+            });
+
+            elements.loginBtn.addEventListener('click', function () {
+                const username = elements.usernameInput.value.trim();
+                const selectedRole = document.querySelector('.role-option.bg-primary');
+
+                if (!username) {
+                    showToast('Vui lòng nhập tên đăng nhập', 'error');
+                    return;
+                }
+
+                if (!selectedRole) {
+                    showToast('Vui lòng chọn vai trò', 'error');
+                    return;
+                }
+
+                login(username, selectedRole.dataset.role);
+            });
+
+            // Logout event
+            elements.logoutBtn.addEventListener('click', logout);
+
+            // Sidebar toggle for mobile
+            elements.sidebarToggle.addEventListener('click', function () {
+                const sidebarEl = elements.sidebar;
+                if (sidebarEl.classList.contains('-translate-x-full')) {
+                    sidebarEl.classList.remove('-translate-x-full');
+                } else {
+                    sidebarEl.classList.add('-translate-x-full');
+                }
+            });
+
+            // Outside sidebar click to close on mobile
+            document.addEventListener('click', function (e) {
+                if (window.innerWidth < 768) {
+                    if (!elements.sidebar.contains(e.target) && !elements.sidebarToggle.contains(e.target)) {
+                        elements.sidebar.classList.add('-translate-x-full');
+                    }
+                }
+            });
+
+            // Navigation links
+            elements.navLinks.forEach(link => {
+                link.addEventListener('click', function () {
+                    const viewId = this.dataset.view;
+                    showView(viewId);
+                });
+            });
+
+            // Sample data initialization
+            // Add sample tables data
+
+            // Add sample orders
+            const sampleOrder1 = {
+                id: Date.now() - 3600000, // 1 hour ago
+                tableId: 1,
+                tableName: 'Bàn 1',
+                items: [
+                    { itemId: 1, name: 'Bò bít tết', price: 150000, quantity: 2, notes: '' },
+                    { itemId: 3, name: 'Salad trộn dầu giấm', price: 50000, quantity: 1, notes: 'Không hành' },
+                    { itemId: 4, name: 'Coca Cola', price: 20000, quantity: 2, notes: '' }
+                ],
+                status: 'kitchen',
+                created: new Date(Date.now() - 3600000),
+                total: 390000
+            };
+
+            appState.orders.push(sampleOrder1);
+
+            // Update table status
+            const tableIndex = appState.tables.findIndex(t => t.id === 1);
+            if (tableIndex !== -1) {
+                appState.tables[tableIndex].status = 'occupied';
+                appState.tables[tableIndex].startTime = new Date(Date.now() - 3600000); // 1 hour ago
+            }
+
+            // Add sample kitchen order
+            const sampleKitchenOrder = {
+                id: sampleOrder1.id,
+                tableId: 1,
+                tableName: 'Bàn 1',
+                items: [
+                    { itemId: 1, name: 'Bò bít tết', price: 150000, quantity: 2, notes: '', completed: false },
+                    { itemId: 3, name: 'Salad trộn dầu giấm', price: 50000, quantity: 1, notes: 'Không hành', completed: false },
+                    { itemId: 4, name: 'Coca Cola', price: 20000, quantity: 2, notes: '', completed: true }
+                ],
+                status: 'in-progress',
+                created: new Date(Date.now() - 3600000),
+                startedCooking: new Date(Date.now() - 3000000) // 50 minutes ago
+            };
+
+            appState.kitchenOrders.push(sampleKitchenOrder);
+
+            // Update occupied tables every minute
+            setInterval(() => {
+                if (document.getElementById('tables-layout') &&
+                    document.getElementById('tables-layout').querySelector('.table-occupied')) {
+                    // Refresh the tables view to update time display
+                    if (appState.activeView === 'tables') {
+                        renderTables();
+                    }
+                }
+            }, 60000);
+        });
