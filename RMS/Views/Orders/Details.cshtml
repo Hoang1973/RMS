@@ -1,4 +1,4 @@
-﻿@model RMS.Models.OrderViewModel
+@model RMS.Models.OrderViewModel
 
 @{
     ViewData["Title"] = "Details";
@@ -57,4 +57,5 @@
 <div>
     <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
     <a asp-action="Index">Back to List</a>
+    <button class="btn btn-success ml-2" onclick="window.location.href='/Payment/Index?selectedOrder=@Model.Id'">Thanh toán</button>
 </div>

@@ -54,7 +54,8 @@ namespace RMS
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IDiscountService, DiscountService>();
-
+            builder.Services.AddScoped<IBillService, BillService>();
+            
             // Add these services in Program.cs
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
