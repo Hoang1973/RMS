@@ -54,22 +54,25 @@
     <div id="order-bill-@Model.Id" class="hidden">
         <div class="max-w-md mx-auto bg-white p-6 rounded shadow text-black text-base font-sans" style="font-family: Arial, sans-serif;">
             <div class="text-center mb-4">
-                <div class="text-2xl font-bold text-primary">HÓA ĐƠN THANH TOÁN</div>
-                <div class="text-sm text-gray-700">Nhà hàng RMS</div>
+                <div class="text-2xl font-bold text-primary">Nhà hàng RMS</div>
+                <div class="text-sm text-gray-700">123 Nguyễn Huệ, Q.1, TP.HCM</div>
+                <div class="text-sm text-gray-700">Tel: (028) 1234 5678</div>
             </div>
-            <div class="mb-2 flex justify-between">
-                <span class="font-semibold">Bàn:</span> <span>@Model.TableNumber</span>
+            <div class="border-t border-b border-gray-300 my-3 py-2">
+                <div class="flex justify-between">
+                    <span class="font-semibold">Bàn:</span> <span>@Model.TableNumber</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-semibold">Mã hóa đơn:</span> <span>#@Model.Id</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-semibold">Thời gian:</span> <span>@Model.CreatedAt.Value.ToString("HH:mm dd/MM/yyyy")</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-semibold">Trạng thái:</span> <span>@(isCurrent ? "Đang phục vụ" : "Đã thanh toán")</span>
+                </div>
             </div>
-            <div class="mb-2 flex justify-between">
-                <span class="font-semibold">Mã hóa đơn:</span> <span>#@Model.Id</span>
-            </div>
-            <div class="mb-2 flex justify-between">
-                <span class="font-semibold">Thời gian:</span> <span>@Model.CreatedAt.Value.ToString("HH:mm dd/MM/yyyy")</span>
-            </div>
-            <div class="mb-2 flex justify-between">
-                <span class="font-semibold">Trạng thái:</span> <span>@(isCurrent ? "Đang phục vụ" : "Đã thanh toán")</span>
-            </div>
-            <div class="my-4">
+            <div class="mb-3">
                 <table class="w-full border border-gray-300">
                     <thead>
                         <tr class="bg-gray-100">
@@ -92,11 +95,39 @@
                     </tbody>
                 </table>
             </div>
-            <div class="flex justify-between mt-4 text-lg font-bold">
-                <span>Tổng cộng:</span>
-                <span class="text-green-600">@Model.TotalAmount.Value.ToString("N0") ₫</span>
+            <div class="space-y-1 border-t pt-3">
+                <div class="flex justify-between">
+                    <span>Tổng tiền hàng:</span>
+                    <span>@Model.TotalAmount?.ToString("N0") ₫</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Thuế VAT (8%):</span>
+                    <span>@((Model.TotalAmount ?? 0 * 0.08m).ToString("N0")) ₫</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Giảm giá:</span>
+                    <span>@(Model.Discount != null ? Model.Discount.Value.ToString("N0") + " ₫" : "0 ₫")</span>
+                </div>
             </div>
-            <div class="text-center mt-6 text-xs text-gray-500">Cảm ơn quý khách và hẹn gặp lại!</div>
+            <div class="flex justify-between font-bold text-lg pt-2 border-t mt-2">
+                <span>Tổng thanh toán:</span>
+                <span class="text-green-600">
+                    @{
+                        var vat = (Model.TotalAmount ?? 0) * 0.08m;
+                        var discount = Model.Discount ?? 0;
+                        var totalWithTax = (Model.TotalAmount ?? 0) + vat - discount;
+                    }
+                    @totalWithTax.ToString("N0") ₫
+                </span>
+            </div>
+            <div class="flex justify-between mt-2">
+                <span>Phương thức:</span>
+                <span>@(Model.PaymentMethod ?? "---")</span>
+            </div>
+            <div class="text-center text-xs mt-6 text-gray-500">
+                <p>Cảm ơn quý khách đã sử dụng dịch vụ!</p>
+                <p>Hẹn gặp lại quý khách!</p>
+            </div>
         </div>
     </div>
 </div>
