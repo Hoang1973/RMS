@@ -32,6 +32,13 @@ namespace RMS.Services
             CreateMap<Discount, DiscountViewModel>()
                 .ReverseMap()
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+            CreateMap<Bill, BillViewModel>()
+                .ReverseMap()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+            CreateMap<Payment, PaymentViewModel>()
+                .ReverseMap()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+                
         }
     }
 }

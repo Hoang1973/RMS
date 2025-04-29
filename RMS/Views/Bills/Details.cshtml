@@ -1,0 +1,11 @@
+@model RMS.Models.BillViewModel
+@{
+    ViewData["Title"] = $"Chi tiết hóa đơn #{Model.Id}";
+}
+<h2 class="text-xl font-bold mb-4">Chi tiết hóa đơn #@Model.Id</h2>
+<div class="mb-2"><b>Bàn:</b> @Model.TableNumber</div>
+<div class="mb-2"><b>Tổng tiền hàng:</b> @Model.Subtotal.ToString("N0") ₫</div>
+<div class="mb-2"><b>Giảm giá:</b> @(Model.Discounts != null && Model.Discounts.Any() ? string.Join(", ", Model.Discounts.Select(d => d.DiscountValue.ToString("N0") + "₫")) : "0₫")</div>
+<div class="mb-2"><b>Tổng thanh toán:</b> @Model.TotalDue.ToString("N0") ₫</div>
+<div class="mb-2"><b>Ngày tạo:</b> @Model.CreatedAt?.ToString("HH:mm dd/MM/yyyy")</div>
+<a class="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" href="@Url.Action("Index")">Quay lại danh sách</a>

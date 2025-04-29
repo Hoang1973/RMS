@@ -16,6 +16,8 @@ namespace RMS.Controllers
         private readonly IOrderService _orderService;
         private readonly IDishService _dishService;
         private readonly ITableService _tableService;
+        private readonly IBillService _billService;
+        private readonly IPaymentService _paymentService;
         private readonly RMSDbContext _context;
         private readonly IMapper _mapper;
 
@@ -55,6 +57,8 @@ namespace RMS.Controllers
 
             return View(model);
         }
+
+
 
         // GET: Orders/DetailsJson/5
         [HttpGet]

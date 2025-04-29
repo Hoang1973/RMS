@@ -1,0 +1,28 @@
+@model IEnumerable<RMS.Models.BillViewModel>
+@{
+    ViewData["Title"] = "Lịch sử hóa đơn";
+}
+<h2 class="text-2xl font-bold mb-4">Lịch sử hóa đơn</h2>
+<table class="table-auto w-full border">
+    <thead class="bg-gray-100">
+        <tr>
+            <th class="border px-2 py-1">Mã HĐ</th>
+            <th class="border px-2 py-1">Bàn</th>
+            <th class="border px-2 py-1">Tổng tiền</th>
+            <th class="border px-2 py-1">Ngày tạo</th>
+            <th class="border px-2 py-1"></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var bill in Model)
+    {
+        <tr>
+            <td class="border px-2 py-1">@bill.Id</td>
+            <td class="border px-2 py-1">@bill.TableNumber</td>
+            <td class="border px-2 py-1">@bill.TotalDue.ToString("N0") ₫</td>
+            <td class="border px-2 py-1">@bill.CreatedAt?.ToString("HH:mm dd/MM/yyyy")</td>
+            <td class="border px-2 py-1"><a class="text-blue-600 hover:underline" href="@Url.Action("Details", new { id = bill.Id })">Chi tiết</a></td>
+        </tr>
+    }
+    </tbody>
+</table>

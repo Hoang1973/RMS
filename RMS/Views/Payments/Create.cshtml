@@ -1,0 +1,21 @@
+@model RMS.Models.PaymentViewModel
+@{
+    ViewData["Title"] = "Tạo thanh toán mới";
+}
+<h2 class="text-xl font-bold mb-4">Tạo thanh toán mới</h2>
+<form asp-action="Create" method="post">
+    <div class="mb-2">
+        <label for="OrderId" class="block">Mã đơn hàng</label>
+        <input asp-for="OrderId" class="border px-2 py-1 w-full" />
+    </div>
+    <div class="mb-2">
+        <label for="AmountPaid" class="block">Số tiền thanh toán</label>
+        <input asp-for="AmountPaid" class="border px-2 py-1 w-full" />
+    </div>
+    <div class="mb-2">
+        <label for="PaymentMethod" class="block">Phương thức thanh toán</label>
+        <input asp-for="PaymentMethod" class="border px-2 py-1 w-full" />
+    </div>
+    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Lưu thanh toán</button>
+    <a class="ml-4 text-blue-600 hover:underline" href="@Url.Action("Index")">Hủy</a>
+</form>

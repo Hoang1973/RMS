@@ -5,6 +5,95 @@ function formatVND(amount) {
     return parseInt(amount).toLocaleString('vi-VN') + ' ₫';
 }
 
+function showOrderDetail(orderId) {
+    // Xóa modal cũ nếu có
+    let oldModal = document.getElementById('order-detail-modal');
+    if (oldModal) oldModal.remove();
+    // Tạo modal mới
+    const modal = document.createElement('div');
+    modal.id = 'order-detail-modal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-xl min-w-[350px] p-6 sm:p-8 relative animate-fadein flex flex-col">
+            <button onclick="document.getElementById('order-detail-modal').remove()" class="absolute top-3 right-4 text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+            <div id="order-detail-content" class="flex flex-col w-full min-h-[160px] justify-center">
+                <span class="text-gray-400 self-center">Đang tải chi tiết đơn hàng...</span>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    // Fetch chi tiết đơn hàng
+    fetch(`/Orders/DetailsJson/${orderId}`)
+        .then(res => {
+            if (!res.ok) throw new Error('Not found');
+            return res.json();
+        })
+        .then(order => {
+            renderOrderDetailContent(order);
+            window._lastOrderDetail = order;
+        })
+        .catch(() => {
+            document.getElementById('order-detail-content').innerHTML = `<span class='text-red-500'>Không tìm thấy đơn hàng hoặc lỗi server.</span>`;
+        });
+}
+
+// Hàm render chi tiết đơn hàng (panel đầu tiên trong modal)
+function renderOrderDetailContent(order) {
+    const statusColor = order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : (order.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600');
+    const statusText = order.status === 'Pending' ? 'Đang phục vụ' : (order.status === 'Completed' ? 'Đã thanh toán' : 'Đã hủy');
+    const content = document.getElementById('order-detail-content');
+    content.innerHTML = `
+        <div class="flex flex-col space-y-6">
+            <div>
+                <div class="font-bold text-2xl text-gray-900 mb-1">Đơn hàng - <span class="text-primary">${order.tableNumber ?? '-'}</span></div>
+                <div class="flex flex-col space-y-1 text-sm text-gray-600">
+                    <div><span class="font-semibold">Bàn:</span> <span class="text-blue-600 font-bold">${order.tableNumber ?? '-'}</span></div>
+                    <div><span class="font-semibold">Thời gian tạo:</span> <span>${order.createdAt ?? '-'}</span></div>
+                    <div><span class="font-semibold">Thời gian phục vụ:</span> <span>${order.serveTime ?? '-'}</span></div>
+                    <div><span class="font-semibold">Trạng thái:</span> <span class="inline-block px-2 py-1 rounded ${statusColor}">${statusText}</span></div>
+                </div>
+            </div>
+            <div>
+                <div class="font-semibold mb-2 text-base">Danh sách món</div>
+                <div class="divide-y divide-gray-100">${typeof renderDishes === 'function' ? renderDishes(order.dishes) : ''}</div>
+            </div>
+            <div class="flex justify-end">
+                <span class="font-bold text-xl text-green-700">Tổng tiền: ${formatVND(order.totalAmount)}</span>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="document.getElementById('order-detail-modal').remove()" class="px-5 py-2 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 font-semibold">Đóng</button>
+                ${order.status === 'Pending' ? `<button id=\"start-payment-btn\" class=\"ml-3 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold\">Thanh toán</button>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+// Hàm render panel thanh toán
+function renderPaymentPanel(order) {
+    const modal = document.getElementById('order-detail-modal');
+    if (!modal) return;
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-xl min-w-[350px] p-6 sm:p-8 relative animate-fadein flex flex-col">
+            <button onclick="document.getElementById('order-detail-modal').remove()" class="absolute top-3 right-4 text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+            <div id="payment-detail-panel"></div>
+        </div>
+    `;
+    renderPaymentDetailPanel(order);
+}
+
+// Lắng nghe click nút "Thanh toán" để chuyển sang panel thanh toán
+if (!window._orderDetailPaymentListener) {
+    document.addEventListener('click', function (e) {
+        if (e.target && e.target.id === 'start-payment-btn') {
+            const order = window._lastOrderDetail;
+            if (!order) return;
+            renderPaymentPanel(order);
+        }
+    });
+    window._orderDetailPaymentListener = true;
+}
+
+
 // Render nội dung chi tiết thanh toán
 function renderPaymentDetailPanel(order) {
     const content = document.getElementById('payment-detail-panel');
@@ -144,24 +233,18 @@ function renderPaymentDetailPanel(order) {
                 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
             },
             body: JSON.stringify({
-                OrderId: order.id || order.OrderId,
-                TableNumber: order.tableNumber || order.TableNumber,
-                CreatedAt: order.createdAt || order.CreatedAt,
-                Dishes: order.dishes || order.Dishes,
+                OrderId: order.id,
                 Subtotal: subtotal,
-                Vat: vat,
                 Discount: discountAmount,
-                Total: total,
+                TotalAmount: total,
+                TotalDue: total,
                 AmountPaid: total,
                 PaymentMethod: paymentMethod
             })
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Lỗi server');
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            if (data.success && data.bill) {
                 // Hiển thị hóa đơn ở modal
                 const bill = data.bill;
                 const billId = data.billId;
@@ -188,6 +271,7 @@ function renderPaymentDetailPanel(order) {
                 html += `<div class='mt-4 flex flex-col gap-2'>
                     <button onclick="window.print()" class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2">In hóa đơn</button>
                     <a href="/Bill/Print/${billId}" target="_blank" class="w-full bg-green-600 hover:bg-green-700 text-white rounded px-4 py-2 text-center">Xem/In lại hóa đơn</a>
+                    <button onclick="closeInvoiceModalAndReload()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 rounded px-4 py-2 mt-2">Đóng</button>
                 </div>`;
                 // Tạo modal nếu chưa có
                 let modal = document.getElementById('invoiceModal');
@@ -196,29 +280,40 @@ function renderPaymentDetailPanel(order) {
                     modal.id = 'invoiceModal';
                     modal.className = 'fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50';
                     modal.innerHTML = `<div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative print:w-full print:max-w-full">
-                        <button type="button" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700" onclick="document.getElementById('invoiceModal').classList.add('hidden')">&times;</button>
+                        <button type="button" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700" onclick="closeInvoiceModalAndReload()">&times;</button>
                         <div id="invoiceContent"></div>
-                        <button onclick="window.print()" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 print:hidden">In hóa đơn</button>
                     </div>`;
                     document.body.appendChild(modal);
                 }
                 document.getElementById('invoiceContent').innerHTML = html;
                 modal.classList.remove('hidden');
+                // Đóng modal chi tiết order gốc
+                document.getElementById('order-detail-modal')?.remove();
                 // Reset nút thanh toán
                 btn.disabled = false;
                 btn.textContent = 'Hoàn tất thanh toán';
+            } else if(data.success) {
+                alert(data.message || "Thanh toán thành công!");
+                document.getElementById('order-detail-modal')?.remove();
+                location.reload();
             } else {
-                alert('Lỗi khi thanh toán, vui lòng thử lại.');
+                alert(data.message || "Thanh toán thất bại!");
                 btn.disabled = false;
                 btn.textContent = 'Hoàn tất thanh toán';
             }
         })
         .catch(() => {
-            alert('Có lỗi xảy ra, vui lòng thử lại.');
+            alert("Có lỗi xảy ra khi thanh toán!");
             btn.disabled = false;
             btn.textContent = 'Hoàn tất thanh toán';
         });
     });
+        
+        // Hàm đóng modal hóa đơn và reload trang
+        function closeInvoiceModalAndReload() {
+            document.getElementById('invoiceModal')?.remove();
+            location.reload();
+        }
 
     // Initial summary
     updatePaymentSummary();

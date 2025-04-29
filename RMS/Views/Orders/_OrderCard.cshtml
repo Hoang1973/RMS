@@ -1,4 +1,4 @@
-@model RMS.Models.OrderViewModel
+  @model RMS.Models.OrderViewModel
 @{
     var isCurrent = Model.Status == RMS.Data.Entities.Order.OrderStatus.Pending;
 }
@@ -43,6 +43,13 @@
         <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold flex items-center" onclick="showOrderDetail(@Model.Id)">
             <i class="fas fa-info-circle mr-1"></i> Xem chi tiết
         </button>
+        @if (isCurrent)
+        {
+            <a href="@Url.Action("Payment", "Orders", new { id = Model.Id })"
+               class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold flex items-center ml-2">
+                <i class="fas fa-cash-register mr-1"></i> Thanh toán
+            </a>
+        }
         @if (!isCurrent)
         {
             <button type="button" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-semibold flex items-center" onclick="printOrderBill(@Model.Id)">
@@ -115,14 +122,14 @@
                     @{
                         var vat = (Model.TotalAmount ?? 0) * 0.08m;
                         var discount = Model.Discount ?? 0;
-                        var totalWithTax = (Model.TotalAmount ?? 0) + vat - discount;
+                        // var totalWithTax = (Model.TotalAmount ?? 0) + vat - discount;
                     }
-                    @totalWithTax.ToString("N0") ₫
+                    @* @totalWithTax.ToString("N0") ₫ *@
                 </span>
             </div>
             <div class="flex justify-between mt-2">
                 <span>Phương thức:</span>
-                <span>@(Model.PaymentMethod ?? "---")</span>
+                @* <span>@(Model.PaymentMethod ?? "---")</span> *@
             </div>
             <div class="text-center text-xs mt-6 text-gray-500">
                 <p>Cảm ơn quý khách đã sử dụng dịch vụ!</p>
