@@ -24,5 +24,6 @@ namespace RMS.Models
             public decimal Price { get; set; }
         }
         public Order.OrderStatus Status { get; set; } = Order.OrderStatus.Pending;
+        public double? Discount { get; set; }
     }
 }

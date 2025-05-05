@@ -16,14 +16,24 @@ namespace RMS.Controllers
         private readonly IOrderService _orderService;
         private readonly IDishService _dishService;
         private readonly ITableService _tableService;
+        private readonly IBillService _billService;
+        private readonly IPaymentService _paymentService;
         private readonly RMSDbContext _context;
         private readonly IMapper _mapper;
 
-        public OrdersController(IOrderService orderService, IDishService dishService, ITableService tableService, RMSDbContext context, IMapper mapper)
+        public OrdersController
+        (IOrderService orderService, 
+        IDishService dishService, 
+        ITableService tableService, 
+        IBillService billService, 
+        IPaymentService paymentService, 
+        RMSDbContext context, IMapper mapper)
         {
             _orderService = orderService;
             _dishService = dishService;
             _tableService = tableService;
+            _billService = billService;
+            _paymentService = paymentService;
             _context = context;
             _mapper = mapper;
         }
@@ -55,6 +65,8 @@ namespace RMS.Controllers
 
             return View(model);
         }
+
+
 
         // GET: Orders/DetailsJson/5
         [HttpGet]
@@ -194,7 +206,7 @@ namespace RMS.Controllers
         [HttpPost]
         public async Task<IActionResult> CompletePayment(int orderId, int tableId)
         {
-            bool success = await _orderService.CompletePaymentAsync(orderId, tableId);
+            bool success = await _billService.CompletePaymentAndCreateBillAsync(orderId, tableId);
             if (!success) return NotFound();
 
             return RedirectToAction(nameof(Index));

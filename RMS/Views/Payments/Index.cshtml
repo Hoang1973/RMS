@@ -1,0 +1,30 @@
+@model IEnumerable<RMS.Models.PaymentViewModel>
+@{
+    ViewData["Title"] = "Lịch sử thanh toán";
+}
+<h2 class="text-2xl font-bold mb-4">Lịch sử thanh toán</h2>
+<table class="table-auto w-full border">
+    <thead class="bg-gray-100">
+        <tr>
+            <th class="border px-2 py-1">Mã TT</th>
+            <th class="border px-2 py-1">Bàn</th>
+            <th class="border px-2 py-1">Số tiền</th>
+            <th class="border px-2 py-1">Phương thức</th>
+            <th class="border px-2 py-1">Ngày tạo</th>
+            <th class="border px-2 py-1"></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var payment in Model)
+    {
+        <tr>
+            <td class="border px-2 py-1">@payment.Id</td>
+            <td class="border px-2 py-1">@payment.TableNumber</td>
+            <td class="border px-2 py-1">@payment.AmountPaid.ToString("N0") ₫</td>
+            <td class="border px-2 py-1">@payment.PaymentMethod</td>
+            <td class="border px-2 py-1">@payment.CreatedAt?.ToString("HH:mm dd/MM/yyyy")</td>
+            <td class="border px-2 py-1"><a class="text-blue-600 hover:underline" href="@Url.Action("Details", new { id = payment.Id })">Chi tiết</a></td>
+        </tr>
+    }
+    </tbody>
+</table>
