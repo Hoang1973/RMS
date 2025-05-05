@@ -5,6 +5,7 @@ namespace RMS.Models
     public class OrderPaymentViewModel
     {
         public int OrderId { get; set; }
+        public int TableId { get; set; }
         public decimal Subtotal { get; set; } // = Order.TotalAmount (chưa VAT, giảm giá)
         public decimal VatPercent { get; set; } = 8; // mặc định 8%
         public decimal Discount { get; set; }

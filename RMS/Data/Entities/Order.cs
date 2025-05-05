@@ -5,7 +5,7 @@ namespace RMS.Data.Entities
 {
     public class Order : BaseEntity
     {
-        public int CustomerId { get; set; }
+        public string CustomerPhoneNumber { get; set; }
         public int TableId { get; set; }
         public decimal TotalAmount { get; set; }
         public OrderStatus Status { get; set; }
@@ -16,6 +16,7 @@ namespace RMS.Data.Entities
         public ICollection<OrderItem> OrderItems { get; set; }
         public Payment Payment { get; set; }
         public Bill Bill { get; set; }
+        public string Note { get; set; }
         public enum OrderStatus
         {
             Pending,

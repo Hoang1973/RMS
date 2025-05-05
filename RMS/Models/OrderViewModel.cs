@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using RMS.Data.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -10,7 +10,8 @@ namespace RMS.Models
         public int Id { get; set; }
         public string? TableNumber { get; set; }
         public int? CustomerId { get; set; }
-
+        public string? Note { get; set; }
+        public string? CustomerPhoneNumber { get; set; }
         [Required(ErrorMessage = "Please select a table")]
         public int TableId { get; set; }
         public IEnumerable<SelectListItem>? AvailableTables { get; set; }

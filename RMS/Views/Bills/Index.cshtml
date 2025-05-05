@@ -20,7 +20,7 @@
             <tr class="hover:bg-gray-100 transition">
                 <td class="px-4 py-2 font-mono">@bill.Id</td>
                 <td class="px-4 py-2">@bill.TableNumber</td>
-                <td class="px-4 py-2 text-green-600 font-bold">@bill.TotalDue.ToString("N0") ₫</td>
+                <td class="px-4 py-2 text-green-600 font-bold">@((bill.TotalDue ?? 0).ToString("N0")) ₫</td>
                 <td class="px-4 py-2">
                     <a class="text-blue-600 hover:underline font-semibold" href="@Url.Action("Details", new { id = bill.Id })">
                         <i class="fas fa-eye"></i> Chi tiết

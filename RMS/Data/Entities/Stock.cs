@@ -9,6 +9,6 @@ namespace RMS.Data.Entities
         public int StockChange { get; set; }
         public DateTime StockDate { get; set; }
         [ForeignKey("IngredientId")]
-        public Ingredient Ingredient { get; set; }
+        public Ingredient? Ingredient { get; set; }
     }
 }
