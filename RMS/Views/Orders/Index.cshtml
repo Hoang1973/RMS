@@ -6,10 +6,18 @@
 
 <h1 class="text-2xl font-bold text-primary mb-6">Quản lý đơn hàng</h1>
 <div class="mb-4 flex justify-end">
-    <a asp-action="Create" class="inline-block bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
+    <button id="btnShowOrderModal" type="button" class="inline-block bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
         <i class="fas fa-plus mr-2"></i> Tạo đơn mới
-    </a>
+    </button>
 </div>
+@Html.Partial("_OrderForm", new RMS.Models.OrderViewModel(), new ViewDataDictionary(ViewData))
+<script>
+$(document).ready(function(){
+    $('#btnShowOrderModal').on('click', function(){
+        $('#orderModal').show();
+    });
+});
+</script>
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
         <h3 class="font-bold text-lg mb-4">Đơn hàng hiện tại</h3>

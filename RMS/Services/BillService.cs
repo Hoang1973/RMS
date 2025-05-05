@@ -7,14 +7,14 @@ namespace RMS.Services
 {
     public interface IBillService : IBaseService<BillViewModel, Bill> 
     { 
-        Task<bool> CompletePaymentAndCreateBillAsync(int orderId, int tableId);
+        Task<bool> CompletePaymentAndCreateBillAsync(int orderId, int tableId, decimal subtotal, decimal discount, decimal total, string paymentMethod);
     }
 
     public class BillService : BaseService<BillViewModel, Bill>, IBillService
     {
         public BillService(RMSDbContext context, IMapper mapper) : base(context, mapper) { }
         // Custom logic nếu cần
-        public async Task<bool> CompletePaymentAndCreateBillAsync(int orderId, int tableId)
+        public async Task<bool> CompletePaymentAndCreateBillAsync(int orderId, int tableId, decimal subtotal, decimal discount, decimal total, string paymentMethod)
         {
             var order = await _context.Orders.FindAsync(orderId);
             if (order == null) return false;
@@ -28,15 +28,16 @@ namespace RMS.Services
             // 2. Cập nhật trạng thái bàn
             table.Status = Table.TableStatus.Available;
 
-            // 3. Tạo Bill
-            var bill = new Bill
+            // 3. Tạo Bill sử dụng ViewModel và logic generic
+            var billVM = new BillViewModel
             {
                 OrderId = orderId,
-                Subtotal = order.TotalAmount, // hoặc tính lại nếu cần
-                TotalAmount = order.TotalAmount,
-                // Thêm các trường cần thiết khác
+                Subtotal = subtotal,
+                TotalAmount = total,
+                TableNumber = table.TableNumber,
+                // Nếu muốn lưu discount/payment method thì cần mở rộng BillViewModel và entity Bill
             };
-            _context.Bills.Add(bill);
+            await this.CreateAsync(billVM);
 
             await _context.SaveChangesAsync();
             return true;

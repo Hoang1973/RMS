@@ -1,11 +1,6 @@
 // order.js - Quản lý modal thanh toán, tối giản, không logic thừa
 
-// Discount logic
-const discountTypeEl = document.getElementById('discount-type');
-const discountValueEl = document.getElementById('discount-value');
-const subtotalEl = document.getElementById('payment-subtotal');
-const vatEl = document.getElementById('payment-tax');
-const totalEl = document.getElementById('payment-total');
+
 
 // Định dạng tiền VND
 function formatVND(amount) {
@@ -100,12 +95,13 @@ function renderPaymentPanel(order) {
     renderPaymentDetailPanel(order);
 }
 
-// Lắng nghe click nút "Thanh toán" để chuyển sang panel thanh toán
+// Lắng nghe click nút "Thanh toán" để chuyển sang panel form chi tiết thanh toán duy nhất
 if (!window._orderDetailPaymentListener) {
     document.addEventListener('click', function (e) {
         if (e.target && e.target.id === 'start-payment-btn') {
             const order = window._lastOrderDetail;
             if (!order) return;
+            // Khi nhấn Thanh toán, chuyển luôn sang panel form thanh toán chi tiết
             renderPaymentPanel(order);
         }
     });
@@ -184,18 +180,14 @@ function renderPaymentDetailPanel(order) {
                             <i class="fas fa-money-bill-wave mr-2"></i>
                             <span>Tiền mặt</span>
                         </button>
-                        <button type="button" class="payment-method border p-2 rounded flex items-center justify-center" data-method="momo">
-                            <i class="fas fa-mobile-alt mr-2"></i>
-                            <span>Ví MoMo</span>
-                        </button>
-                        <button type="button" class="payment-method border p-2 rounded flex items-center justify-center" data-method="zalopay">
-                            <i class="fas fa-qrcode mr-2"></i>
-                            <span>ZaloPay</span>
-                        </button>
                         <button type="button" class="payment-method border p-2 rounded flex items-center justify-center" data-method="bank">
                             <i class="fas fa-university mr-2"></i>
                             <span>Chuyển khoản</span>
                         </button>
+                        <div id="bank-transfer-qr" class="w-full flex flex-col items-center mt-4 hidden">
+                            <img src="/images/qr-bank.png" alt="QR chuyển khoản" class="w-48 h-48 object-contain border rounded mb-2" />
+                            <div class="text-sm text-gray-700">Quét mã QR để chuyển khoản</div>
+                        </div>
                     </div>
                     <button id="complete-payment-btn" class="w-full py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded disabled:opacity-60" disabled>Hoàn tất thanh toán</button>
                     <button onclick="document.getElementById('order-detail-modal').remove()" class="w-full mt-2 py-2 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 font-semibold">Đóng</button>
@@ -203,6 +195,13 @@ function renderPaymentDetailPanel(order) {
             </div>
         </div>
     `;
+
+    // Discount logic
+    const discountTypeEl = document.getElementById('discount-type');
+    const discountValueEl = document.getElementById('discount-value');
+    const subtotalEl = document.getElementById('payment-subtotal');
+    const vatEl = document.getElementById('payment-tax');
+    const totalEl = document.getElementById('payment-total');
 
     function updatePaymentSummary() {
         let discountType = discountTypeEl.value;
@@ -229,6 +228,21 @@ function renderPaymentDetailPanel(order) {
             this.classList.add('bg-blue-100', 'border-blue-500');
             paymentMethod = this.dataset.method;
             document.getElementById('complete-payment-btn').disabled = false;
+            // Hiện/ẩn QR khi chọn chuyển khoản
+            const qrDiv = document.getElementById('bank-transfer-qr');
+            const qrImg = qrDiv.querySelector('img');
+            if (paymentMethod === 'bank') {
+                // Tạo QR động
+                const bankCode = 'BID'; // mã ngân hàng
+                const accountNo = '8834512153'; // số tài khoản
+                const addInfo = encodeURIComponent(`Thanh toan don #${order.id}`);
+                const qrUrl = `https://img.vietqr.io/image/${bankCode}-${accountNo}-compact2.png?amount=${total}&addInfo=${addInfo}`;
+                qrImg.src = qrUrl;
+                qrDiv.classList.remove('hidden');
+            } else {
+                qrDiv.classList.add('hidden');
+            }
+
             selectedMethodBtn = this;
         });
     });
@@ -238,7 +252,7 @@ function renderPaymentDetailPanel(order) {
         const btn = this;
         btn.disabled = true;
         btn.textContent = 'Đang xử lý...';
-        fetch('/Payment/Order', {
+        fetch('/Payments/Order', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -246,12 +260,14 @@ function renderPaymentDetailPanel(order) {
             },
             body: JSON.stringify({
                 OrderId: order.id,
+                TableId: order.tableId,
                 Subtotal: subtotal,
                 Discount: discountAmount,
                 TotalAmount: total,
                 TotalDue: total,
                 AmountPaid: total,
-                PaymentMethod: paymentMethod
+                PaymentMethod: paymentMethod,
+                TableNumber: order.tableNumber
             })
         })
         .then(response => response.json())
