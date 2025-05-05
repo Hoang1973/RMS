@@ -18,5 +18,12 @@ namespace RMS.Controllers
             var bills = await _billService.GetAllAsync();
             return View(bills);
         }
+
+        public async Task<IActionResult> Details(int id)
+        {
+            var bill = await _billService.GetByIdAsync(id);
+            if (bill == null) return NotFound();
+            return View(bill);
+        }
     }
 }

@@ -1,7 +1,8 @@
-  @model RMS.Models.OrderViewModel
+@model RMS.Models.OrderViewModel
 @{
     var isCurrent = Model.Status == RMS.Data.Entities.Order.OrderStatus.Pending;
 }
+<script src="~/js/order.js" defer></script>
 <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border flex flex-col gap-2">
     <div class="flex justify-between items-center mb-2">
         <div>
@@ -45,10 +46,13 @@
         </button>
         @if (isCurrent)
         {
-            <a href="@Url.Action("Payment", "Orders", new { id = Model.Id })"
-               class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold flex items-center ml-2">
-                <i class="fas fa-cash-register mr-1"></i> Thanh toán
-            </a>
+            <form asp-action="CompletePayment" asp-controller="Orders" method="post" style="display:inline;">
+                <input type="hidden" name="orderId" value="@Model.Id" />
+                <input type="hidden" name="tableId" value="@Model.TableId" />
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold flex items-center ml-2">
+                    <i class="fas fa-cash-register mr-1"></i> Thanh toán
+                </button>
+            </form>
         }
         @if (!isCurrent)
         {
@@ -138,19 +142,5 @@
         </div>
     </div>
 </div>
-<script src="~/js/order.js" defer></script>
-<script>
-function printOrderBill(orderId) {
-    var billContent = document.getElementById('order-bill-' + orderId).innerHTML;
-    var printWindow = window.open('', '', 'width=800,height=600');
-    printWindow.document.write('<html><head><title>In hóa đơn</title>');
-    printWindow.document.write('<link href="https://cdn.tailwindcss.com" rel="stylesheet" />');
-    printWindow.document.write('<style>body{background:white;}</style>');
-    printWindow.document.write('</head><body >');
-    printWindow.document.write(billContent);
-    printWindow.document.write('</body></html>');
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(function(){ printWindow.print(); printWindow.close(); }, 500);
-}
-</script>
+
+

@@ -2,27 +2,32 @@
 @{
     ViewData["Title"] = "Lịch sử hóa đơn";
 }
-<h2 class="text-2xl font-bold mb-4">Lịch sử hóa đơn</h2>
-<table class="table-auto w-full border">
-    <thead class="bg-gray-100">
-        <tr>
-            <th class="border px-2 py-1">Mã HĐ</th>
-            <th class="border px-2 py-1">Bàn</th>
-            <th class="border px-2 py-1">Tổng tiền</th>
-            <th class="border px-2 py-1">Ngày tạo</th>
-            <th class="border px-2 py-1"></th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var bill in Model)
-    {
-        <tr>
-            <td class="border px-2 py-1">@bill.Id</td>
-            <td class="border px-2 py-1">@bill.TableNumber</td>
-            <td class="border px-2 py-1">@bill.TotalDue.ToString("N0") ₫</td>
-            <td class="border px-2 py-1">@bill.CreatedAt?.ToString("HH:mm dd/MM/yyyy")</td>
-            <td class="border px-2 py-1"><a class="text-blue-600 hover:underline" href="@Url.Action("Details", new { id = bill.Id })">Chi tiết</a></td>
-        </tr>
-    }
-    </tbody>
-</table>
+<h2 class="text-2xl font-bold mb-6 text-primary">Lịch sử hóa đơn</h2>
+<div class="overflow-x-auto rounded shadow">
+    <table class="min-w-full divide-y divide-gray-200 bg-white">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã HĐ</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bàn</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
+                <th class="px-4 py-2"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+        @foreach (var bill in Model)
+        {
+            <tr class="hover:bg-gray-100 transition">
+                <td class="px-4 py-2 font-mono">@bill.Id</td>
+                <td class="px-4 py-2">@bill.TableNumber</td>
+                <td class="px-4 py-2 text-green-600 font-bold">@bill.TotalDue.ToString("N0") ₫</td>
+                <td class="px-4 py-2">
+                    <a class="text-blue-600 hover:underline font-semibold" href="@Url.Action("Details", new { id = bill.Id })">
+                        <i class="fas fa-eye"></i> Chi tiết
+                    </a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

@@ -1,10 +1,29 @@
 // order.js - Quản lý modal thanh toán, tối giản, không logic thừa
 
+// Discount logic
+const discountTypeEl = document.getElementById('discount-type');
+const discountValueEl = document.getElementById('discount-value');
+const subtotalEl = document.getElementById('payment-subtotal');
+const vatEl = document.getElementById('payment-tax');
+const totalEl = document.getElementById('payment-total');
+
 // Định dạng tiền VND
 function formatVND(amount) {
     return parseInt(amount).toLocaleString('vi-VN') + ' ₫';
 }
-
+function printOrderBill(orderId) {
+    var billContent = document.getElementById('order-bill-' + orderId).innerHTML;
+    var printWindow = window.open('', '', 'width=800,height=600');
+    printWindow.document.write('<html><head><title>In hóa đơn</title>');
+    printWindow.document.write('<link href="https://cdn.tailwindcss.com" rel="stylesheet" />');
+    printWindow.document.write('<style>body{background:white;}</style>');
+    printWindow.document.write('</head><body >');
+    printWindow.document.write(billContent);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(function () { printWindow.print(); printWindow.close(); }, 500);
+}
 function showOrderDetail(orderId) {
     // Xóa modal cũ nếu có
     let oldModal = document.getElementById('order-detail-modal');
@@ -185,13 +204,6 @@ function renderPaymentDetailPanel(order) {
         </div>
     `;
 
-    // Discount logic
-    const discountTypeEl = document.getElementById('discount-type');
-    const discountValueEl = document.getElementById('discount-value');
-    const subtotalEl = document.getElementById('payment-subtotal');
-    const vatEl = document.getElementById('payment-tax');
-    const totalEl = document.getElementById('payment-total');
-
     function updatePaymentSummary() {
         let discountType = discountTypeEl.value;
         discountValue = parseInt(discountValueEl.value) || 0;
@@ -308,12 +320,12 @@ function renderPaymentDetailPanel(order) {
             btn.textContent = 'Hoàn tất thanh toán';
         });
     });
-        
-        // Hàm đóng modal hóa đơn và reload trang
-        function closeInvoiceModalAndReload() {
-            document.getElementById('invoiceModal')?.remove();
-            location.reload();
-        }
+
+    // Hàm đóng modal hóa đơn và reload trang
+    function closeInvoiceModalAndReload() {
+        document.getElementById('invoiceModal')?.remove();
+        location.reload();
+    }
 
     // Initial summary
     updatePaymentSummary();
