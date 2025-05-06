@@ -8,10 +8,14 @@
         <thead class="bg-gray-50">
             <tr>
                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã HĐ</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bàn</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
-                <th class="px-4 py-2"></th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã đơn hàng</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền hàng</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VAT (%)</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tiền VAT</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng sau VAT</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giảm giá</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thành tiền phải trả</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -19,8 +23,13 @@
         {
             <tr class="hover:bg-gray-100 transition">
                 <td class="px-4 py-2 font-mono">@bill.Id</td>
-                <td class="px-4 py-2">@bill.TableNumber</td>
-                <td class="px-4 py-2 text-green-600 font-bold">@((bill.TotalDue ?? 0).ToString("N0")) ₫</td>
+                <td class="px-4 py-2">@bill.OrderId</td>
+                <td class="px-4 py-2">@string.Format("{0:N0} ₫", bill.Subtotal)</td>
+                <td class="px-4 py-2">@bill.VatPercent %</td>
+                <td class="px-4 py-2">@string.Format("{0:N0} ₫", bill.VatAmount)</td>
+                <td class="px-4 py-2">@string.Format("{0:N0} ₫", bill.TotalAmount)</td>
+                <td class="px-4 py-2">@string.Format("{0:N0} ₫", bill.DiscountAmount)</td>
+                <td class="px-4 py-2">@string.Format("{0:N0} ₫", bill.TotalDue)</td>
                 <td class="px-4 py-2">
                     <a class="text-blue-600 hover:underline font-semibold" href="@Url.Action("Details", new { id = bill.Id })">
                         <i class="fas fa-eye"></i> Chi tiết
