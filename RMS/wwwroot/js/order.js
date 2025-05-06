@@ -118,7 +118,7 @@ function renderPaymentDetailPanel(order) {
     let paymentMethod = '';
     let discountAmount = 0;
     let total = subtotal + vat;
-
+    
     content.innerHTML = `
         <div class="flex flex-col space-y-6">
             <div>
@@ -262,12 +262,11 @@ function renderPaymentDetailPanel(order) {
                 OrderId: order.id,
                 TableId: order.tableId,
                 Subtotal: subtotal,
-                Discount: discountAmount,
-                TotalAmount: total,
-                TotalDue: total,
-                AmountPaid: total,
+                DiscountValue: parseInt(discountValueEl.value) || 0,
+                DiscountType: discountTypeEl.value,
+                VatPercent: 8, // hoặc cho phép chọn nếu cần
                 PaymentMethod: paymentMethod,
-                TableNumber: order.tableNumber
+                TableNumber: order.tableNumber,
             })
         })
         .then(response => response.json())

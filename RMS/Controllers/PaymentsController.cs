@@ -30,19 +30,13 @@ namespace RMS.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ" });
-
+            
             // Đồng bộ hóa logic: luôn gọi BillService để cập nhật trạng thái, tạo bill và payment
-            bool success = await _billService.CompletePaymentAndCreateBillAsync(
-                model.OrderId,
-                model.TableId,
-                model.Subtotal,
-                model.Discount,
-                model.TotalAmount > 0 ? model.TotalAmount : model.TotalDue > 0 ? model.TotalDue : model.AmountPaid,
-                model.PaymentMethod
-            );
+            bool success = await _billService.CompletePaymentAndCreateBillAsync(model);
             if (!success)
                 return NotFound();
             var table = await _tableService.GetByIdAsync(model.TableId);
+
             // Tạo bản ghi Payment
             var payment = new PaymentViewModel
             {

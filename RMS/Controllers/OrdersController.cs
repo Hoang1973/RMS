@@ -112,59 +112,40 @@ namespace RMS.Controllers
         }
 
         // POST: Orders/Create
+        // [HttpPost]
+        // [ValidateAntiForgeryToken]
+        // public async Task<IActionResult> Create(OrderViewModel model)
+        // {
+        //     if (!ModelState.IsValid)
+        //     {
+        //         ModelState.AddModelError("", "Order could not be added. Please check the details and try again.");
+        //         ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
+        //         ViewData["Tables"] = new SelectList(await _tableService.GetAvailableTablesAsync(), "Id", "TableNumber");
+        //         return View(model);
+        //     }
+        //     await _orderService.CreateAsync(model);
+        //     return RedirectToAction(nameof(Index));
+        // }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(OrderViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                ModelState.AddModelError("", "Order could not be added. Please check the details and try again.");
-                ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
-                ViewData["Tables"] = new SelectList(await _tableService.GetAvailableTablesAsync(), "Id", "TableNumber");
-                return View(model);
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return Json(new { success = false, message = "Dữ liệu không hợp lệ", errors });
             }
-            await _orderService.CreateAsync(model);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _orderService.CreateAsync(model);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.ToString(), inner = ex.InnerException?.ToString() });
+            }
         }
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Create(OrderViewModel model)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-        //        return Json(new { success = false, message = "Dữ liệu không hợp lệ", errors });
-        //    }
-        //    try
-        //    {
-        //        await _orderService.CreateAsync(model);
-        //        return Json(new { success = true });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new { success = false, message = ex.Message }); // hoặc ex.InnerException?.Message
-        //    }
-        //}
-
-        //[HttpPost]
-        //public async Task<IActionResult> Create(OrderViewModel model)
-        //{
-        //    try
-        //    {
-        //        if (!ModelState.IsValid)
-        //            return Json(new { success = false, message = "Model không hợp lệ." });
-
-        //        await _orderService.CreateAsync(model);
-        //        return Json(new { success = true });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Lỗi khi tạo đơn hàng.");
-        //        return Json(new { success = false, message = ex.Message });
-        //    }
-        //}
-
 
         // GET: Orders/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -254,9 +235,17 @@ namespace RMS.Controllers
             var order = await _context.Orders.FindAsync(orderId);
             if (order == null) return NotFound();
             // Thanh toán nhanh mặc định: tiền mặt, không giảm giá
-            bool success = await _billService.CompletePaymentAndCreateBillAsync(
-                orderId, tableId, order.TotalAmount, 0, order.TotalAmount, "cash"
-            );
+            var paymentModel = new RMS.Models.OrderPaymentViewModel {
+                OrderId = orderId,
+                TableId = tableId,
+                Subtotal = order.TotalAmount,
+                DiscountValue = 0,
+                DiscountType = "amount",
+                VatPercent = 8,
+                PaymentMethod = "cash"
+            };
+            bool success = await _billService.CompletePaymentAndCreateBillAsync(paymentModel);
+
             if (!success) return NotFound();
 
             return RedirectToAction(nameof(Index));

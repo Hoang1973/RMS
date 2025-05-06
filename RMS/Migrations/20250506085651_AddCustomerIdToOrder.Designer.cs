@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RMS.Data;
 
@@ -11,9 +12,11 @@ using RMS.Data;
 namespace RMS.Migrations
 {
     [DbContext(typeof(RMSDbContext))]
-    partial class RMSDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250506085651_AddCustomerIdToOrder")]
+    partial class AddCustomerIdToOrder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,9 +42,6 @@ namespace RMS.Migrations
                         .HasColumnType("int")
                         .HasColumnName("created_by");
 
-                    b.Property<decimal>("DiscountAmount")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<int>("OrderId")
                         .HasColumnType("int");
 
@@ -61,12 +61,6 @@ namespace RMS.Migrations
                     b.Property<int?>("UpdatedBy")
                         .HasColumnType("int")
                         .HasColumnName("updated_by");
-
-                    b.Property<decimal>("VatAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("VatPercent")
-                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 

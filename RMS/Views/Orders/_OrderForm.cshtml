@@ -13,9 +13,13 @@
         <form id="orderCreateForm" autocomplete="off">
             @Html.AntiForgeryToken()
             <div class="mb-3">
-                <label class="block font-semibold mb-1">Khách hàng</label>
-                <input asp-for="CustomerId" class="border px-3 py-2 w-full rounded" placeholder="Nhập mã khách hàng hoặc để trống..." />
-            </div>
+    <label class="block font-semibold mb-1">Khách hàng</label>
+    <input asp-for="CustomerId" class="border px-3 py-2 w-full rounded" placeholder="Nhập mã khách hàng hoặc để trống..." />
+</div>
+<div class="mb-3">
+    <label class="block font-semibold mb-1">Số điện thoại khách hàng</label>
+    <input asp-for="CustomerPhoneNumber" class="border px-3 py-2 w-full rounded" placeholder="Nhập số điện thoại khách hàng..." />
+</div>
             <div class="mb-3">
                 <label class="block font-semibold mb-1">Chọn bàn</label>
                 <select asp-for="TableId" class="border px-3 py-2 w-full rounded">
@@ -152,23 +156,29 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById('orderModal').style.display = 'none';
     });
 
-    document.getElementById('orderCreateForm').addEventListener('submit', function (e) {
+    $('#orderCreateForm').on('submit', function (e) {
         e.preventDefault();
-        const formData = $(this).serialize(); // giữ jQuery nếu bạn cần
+        var formData = $(this).serialize();
         $.ajax({
             url: '/Orders/Create',
             type: 'POST',
             data: formData,
-            success: function (resp) {
-                if (resp.success) {
+            success: function (res) {
+                console.log('Server response:', res);
+                if (res.success) {
+                    $('#orderModal').hide();
                     alert('Tạo đơn thành công!');
                     location.reload();
                 } else {
-                    alert(resp.message || 'Có lỗi xảy ra');
+                    let errorMsg = res.message || 'Có lỗi xảy ra!';
+                    if (res.errors) errorMsg += '\n' + res.errors.join('\n');
+                    if (res.inner) errorMsg += '\n' + res.inner;
+                    alert(errorMsg);
                 }
             },
-            error: function () {
-                alert('Có lỗi xảy ra khi gửi dữ liệu!');
+            error: function (xhr) {
+                console.log('AJAX error:', xhr);
+                alert('Lỗi server!\n' + xhr.responseText);
             }
         });
     });
