@@ -2,6 +2,7 @@ using RMS.Data;
 using RMS.Data.Entities;
 using RMS.Models;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 
 namespace RMS.Services
 {
@@ -13,6 +14,31 @@ namespace RMS.Services
     public class BillService : BaseService<BillViewModel, Bill>, IBillService
     {
         public BillService(RMSDbContext context, IMapper mapper) : base(context, mapper) { }
+
+        public override async Task<BillViewModel?> GetByIdAsync(int id)
+        {
+            var bill = await _context.Bills
+                .Include(b => b.Order)
+                    .ThenInclude(o => o.OrderItems)
+                        .ThenInclude(oi => oi.Dish)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (bill == null) return null;
+
+            var viewModel = _mapper.Map<BillViewModel>(bill);
+            viewModel.TableNumber = bill.Order?.Table?.TableNumber;
+            viewModel.Items = bill.Order?.OrderItems.Select(oi => new BillViewModel.OrderItem
+            {
+                DishId = oi.DishId,
+                Name = oi.Dish?.Name ?? string.Empty,
+                Quantity = oi.Quantity,
+                Price = oi.Dish?.Price ?? 0,
+                Total = (oi.Dish?.Price ?? 0) * oi.Quantity
+            }).ToList();
+
+            return viewModel;
+        }
+
         // Custom logic nếu cần
         public async Task<bool> CompletePaymentAndCreateBillAsync(OrderPaymentViewModel model)
         {

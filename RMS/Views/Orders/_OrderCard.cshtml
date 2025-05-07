@@ -3,6 +3,7 @@
     var isCurrent = Model.Status == RMS.Data.Entities.Order.OrderStatus.Pending;
 }
 <script src="~/js/order.js" defer></script>
+<script src="~/js/bills.js" defer></script>
 <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border flex flex-col gap-2">
     <div class="flex justify-between items-center mb-2">
         <div>
@@ -56,90 +57,10 @@
         }
         @if (!isCurrent)
         {
-            <button type="button" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-semibold flex items-center" onclick="printOrderBill(@Model.Id)">
+            <button type="button" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-semibold flex items-center" onclick="printBill(@Model.Id)">
                 <i class="fas fa-print mr-1"></i> In hóa đơn
             </button>
         }
-    </div>
-    <!-- Template hóa đơn ẩn -->
-    <div id="order-bill-@Model.Id" class="hidden">
-        <div class="max-w-md mx-auto bg-white p-6 rounded shadow text-black text-base font-sans" style="font-family: Arial, sans-serif;">
-            <div class="text-center mb-4">
-                <div class="text-2xl font-bold text-primary">Nhà hàng RMS</div>
-                <div class="text-sm text-gray-700">123 Nguyễn Huệ, Q.1, TP.HCM</div>
-                <div class="text-sm text-gray-700">Tel: (028) 1234 5678</div>
-            </div>
-            <div class="border-t border-b border-gray-300 my-3 py-2">
-                <div class="flex justify-between">
-                    <span class="font-semibold">Bàn:</span> <span>@Model.TableNumber</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="font-semibold">Mã hóa đơn:</span> <span>#@Model.Id</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="font-semibold">Thời gian:</span> <span>@Model.CreatedAt.Value.ToString("HH:mm dd/MM/yyyy")</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="font-semibold">Trạng thái:</span> <span>@(isCurrent ? "Đang phục vụ" : "Đã thanh toán")</span>
-                </div>
-            </div>
-            <div class="mb-3">
-                <table class="w-full border border-gray-300">
-                    <thead>
-                        <tr class="bg-gray-100">
-                            <th class="border px-2 py-1 text-left">Món</th>
-                            <th class="border px-2 py-1">SL</th>
-                            <th class="border px-2 py-1">Đơn giá</th>
-                            <th class="border px-2 py-1">Thành tiền</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var dish in Model.Dishes)
-                        {
-                            <tr>
-                                <td class="border px-2 py-1">@dish.Name</td>
-                                <td class="border px-2 py-1 text-center">@dish.Quantity</td>
-                                <td class="border px-2 py-1 text-right">@dish.Price.ToString("N0") ₫</td>
-                                <td class="border px-2 py-1 text-right">@(dish.Quantity * dish.Price).ToString("N0") ₫</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-            <div class="space-y-1 border-t pt-3">
-                <div class="flex justify-between">
-                    <span>Tổng tiền hàng:</span>
-                    <span>@Model.TotalAmount?.ToString("N0") ₫</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>Thuế VAT (8%):</span>
-                    <span>@((Model.TotalAmount ?? 0 * 0.08m).ToString("N0")) ₫</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>Giảm giá:</span>
-                    <span>@(Model.Discount != null ? Model.Discount.Value.ToString("N0") + " ₫" : "0 ₫")</span>
-                </div>
-            </div>
-            <div class="flex justify-between font-bold text-lg pt-2 border-t mt-2">
-                <span>Tổng thanh toán:</span>
-                <span class="text-green-600">
-                    @{
-                        var vat = (Model.TotalAmount ?? 0) * 0.08m;
-                        var discount = Model.Discount ?? 0;
-                        // var totalWithTax = (Model.TotalAmount ?? 0) + vat - discount;
-                    }
-                    @* @totalWithTax.ToString("N0") ₫ *@
-                </span>
-            </div>
-            <div class="flex justify-between mt-2">
-                <span>Phương thức:</span>
-                @* <span>@(Model.PaymentMethod ?? "---")</span> *@
-            </div>
-            <div class="text-center text-xs mt-6 text-gray-500">
-                <p>Cảm ơn quý khách đã sử dụng dịch vụ!</p>
-                <p>Hẹn gặp lại quý khách!</p>
-            </div>
-        </div>
     </div>
 </div>
 
