@@ -31,12 +31,87 @@
                 <td class="px-4 py-2">@string.Format("{0:N0} ₫", bill.DiscountAmount)</td>
                 <td class="px-4 py-2">@string.Format("{0:N0} ₫", bill.TotalDue)</td>
                 <td class="px-4 py-2">
-                    <a class="text-blue-600 hover:underline font-semibold" href="@Url.Action("Details", new { id = bill.Id })">
+                    <button onclick="showBillDetails(@bill.Id)" class="text-blue-600 hover:underline font-semibold">
                         <i class="fas fa-eye"></i> Chi tiết
-                    </a>
+                    </button>
                 </td>
             </tr>
         }
         </tbody>
     </table>
 </div>
+
+<!-- Bill Details Modal -->
+<div id="billDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+        <div class="max-w-md mx-auto bg-white p-6 rounded shadow text-black text-base font-sans" style="font-family: Arial, sans-serif;">
+            <div class="text-center mb-4">
+                <div class="text-2xl font-bold text-primary">Nhà hàng RMS</div>
+                <div class="text-sm text-gray-700">123 Nguyễn Huệ, Q.1, TP.HCM</div>
+                <div class="text-sm text-gray-700">Tel: (028) 1234 5678</div>
+            </div>
+            <div class="border-t border-b border-gray-300 my-3 py-2">
+                <div class="flex justify-between">
+                    <span class="font-semibold">Bàn:</span> <span id="tableNumber"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-semibold">Mã hóa đơn:</span> <span id="billId"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-semibold">Mã đơn hàng:</span> <span id="orderId"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-semibold">Thời gian:</span> <span id="createdAt"></span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <table class="w-full border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border px-2 py-1 text-left">Món</th>
+                            <th class="border px-2 py-1">SL</th>
+                            <th class="border px-2 py-1">Đơn giá</th>
+                            <th class="border px-2 py-1">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody id="billItems" class="divide-y divide-gray-200">
+                    </tbody>
+                </table>
+            </div>
+            <div class="space-y-1 border-t pt-3">
+                <div class="flex justify-between">
+                    <span>Tổng tiền hàng:</span>
+                    <span id="subtotal"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Thuế VAT (<span id="vatPercent"></span>%):</span>
+                    <span id="vatAmount"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Giảm giá:</span>
+                    <span id="discountAmount"></span>
+                </div>
+            </div>
+            <div class="flex justify-between font-bold text-lg pt-2 border-t mt-2">
+                <span>Tổng thanh toán:</span>
+                <span class="text-green-600" id="totalDue"></span>
+            </div>
+            <div class="text-center text-xs mt-6 text-gray-500">
+                <p>Cảm ơn quý khách đã sử dụng dịch vụ!</p>
+                <p>Hẹn gặp lại quý khách!</p>
+            </div>
+            <div class="flex justify-center gap-2 mt-4">
+                <button onclick="printBill()" class="px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    <i class="fas fa-print mr-1"></i> In hóa đơn
+                </button>
+                <button id="closeModal" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/bills.js"></script>
+}

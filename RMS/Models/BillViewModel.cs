@@ -17,5 +17,15 @@ namespace RMS.Models
 
         public List<DiscountViewModel>? Discounts { get; set; } = new();
         public string? TableNumber { get; set; }
+        public List<OrderItem>? Items { get; set; } = new();
+
+        public class OrderItem
+        {
+            public int DishId { get; set; }
+            public string Name { get; set; }
+            public int Quantity { get; set; }
+            public decimal Price { get; set; }
+            public decimal Total { get; set; }
+        }
     }
 }
