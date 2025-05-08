@@ -147,6 +147,5 @@ namespace RMS.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
     }
 }

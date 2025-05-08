@@ -1,125 +1,224 @@
 ﻿@model IEnumerable<RMS.Models.DishViewModel>
+@using System.ComponentModel.DataAnnotations
 
 @{
-    ViewData["Title"] = "Index";
-    // Lấy danh sách các loại món ăn duy nhất
-    var dishTypes = Model.Select(d => d.Type).Distinct().Select(t => t.ToString()).ToList();
-
+    ViewData["Title"] = "Quản lý thực đơn";
+    var dishTypes = Model.Select(d => d.Type.ToString()).Distinct().ToList();
+    var ingredients = ViewBag.Ingredients as List<RMS.Models.IngredientViewModel> ?? new List<RMS.Models.IngredientViewModel>();
 }
 
-<h1>MENU</h1>
-
-<p>
-    <a asp-action="Create" class="btn btn-primary">Create New</a>
-</p>
-
-<!-- Nút phân loại -->
-<div class="mb-3">
-    <button type="button" class="btn btn-outline-secondary dish-filter active" data-type="all">All</button>
-    @foreach (var type in dishTypes)
+@functions{
+    string GetEnumDisplayName(Enum value)
     {
-        <button type="button" class="btn btn-outline-secondary dish-filter" data-type="@type">@type</button>
+        var field = value.GetType().GetField(value.ToString());
+        var attr = (DisplayAttribute)Attribute.GetCustomAttribute(field, typeof(DisplayAttribute));
+        return attr?.Name ?? value.ToString();
     }
-</div>
-
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Price)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Description)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Type)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CreatedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.UpdatedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CreatedBy)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.UpdatedBy)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr class="dish-row" data-type="@item.Type.ToString()">
-            <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Price)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Description)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Type)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedAt)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.UpdatedAt)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedBy)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.UpdatedBy)
-            </td>
-            <td>
-                <div class="d-flex flex-wrap gap-1">
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-info btn-sm rounded-3 px-3">
-                        Edit
-                    </a>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-primary btn-sm rounded-3 px-3">
-                        Details
-                    </a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm rounded-3 px-3">
-                        Delete
-                    </a>
-                </div>
-            </td>
-        </tr>
 }
-    </tbody>
-</table>
 
+<div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h2 class="text-2xl font-bold">Quản lý thực đơn</h2>
+        <div class="flex gap-2 w-full md:w-auto">
+            <div class="relative flex-1">
+                <input type="text" id="menu-search" placeholder="Tìm kiếm món..." class="border border-gray-300 rounded px-3 py-2 pr-10 w-full text-base">
+                <i class="fas fa-search absolute top-3 right-3 text-gray-400"></i>
+            </div>
+            <button id="add-menu-item-btn" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded">
+                <i class="fas fa-plus mr-2"></i>Thêm món mới
+            </button>
+        </div>
+    </div>
+    <div class="mb-4 flex flex-wrap gap-2">
+        <button class="menu-filter px-3 py-1 rounded transition bg-primary text-white" data-category="all">Tất cả</button>
+        @foreach (var type in dishTypes)
+        {
+            <button class="menu-filter px-3 py-1 rounded transition bg-gray-100 text-gray-600" data-category="@type">
+                @GetEnumDisplayName((RMS.Data.Entities.Dish.DishType)Enum.Parse(typeof(RMS.Data.Entities.Dish.DishType), type))
+            </button>
+        }
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="menu-items-container">
+        @foreach (var item in Model)
+        {
+            <div class="card bg-white shadow rounded-lg overflow-hidden border border-light-border flex flex-col menu-item-card" data-category="@item.Type" data-name="@item.Name.ToLower() @item.Description.ToLower()">
+                <div class="h-32 bg-gradient-to-r from-blue-300 to-purple-300 flex items-center justify-center relative">
+                    <span class="text-3xl font-bold text-white">@item.Name.Substring(0,1)</span>
+                    <span class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium">
+                        @GetEnumDisplayName(item.Type)
+                    </span>
+                </div>
+                <div class="p-4 flex-1 flex flex-col">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold">@item.Name</h3>
+                        <span class="text-sm font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">@item.Price.ToString("N0") VNĐ</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">@item.Description</p>
+                    <div class="flex justify-between items-center mt-auto">
+                        <span class="text-xs text-gray-500">@string.Join(", ", item.Ingredients.Select(i => i.IngredientName))</span>
+                        <div>
+                            <button class="edit-menu-item text-blue-600 hover:text-blue-800 mr-2" data-id="@item.Id">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="delete-menu-item text-red-600 hover:text-red-800" data-id="@item.Id">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+<!-- Modal -->
+<div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div id="modal-container" class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"></div>
+</div>
 @section Scripts {
-    <script>
-        $(document).ready(function() {
-            // Xử lý nút lọc
-            $(".dish-filter").click(function() {
-                var selectedType = $(this).data("type");
-
-                // Đánh dấu nút đang chọn
-                $(".dish-filter").removeClass("active btn-secondary").addClass("btn-outline-secondary");
-                $(this).removeClass("btn-outline-secondary").addClass("active btn-secondary");
-
-                // Lọc các hàng trong bảng
-                if (selectedType === "all") {
-                    // Hiển thị tất cả các hàng
-                    $(".dish-row").show();
-                } else {
-                    // Ẩn tất cả các hàng trước
-                    $(".dish-row").hide();
-                    // Hiển thị chỉ những hàng có type phù hợp
-                    $(".dish-row[data-type='" + selectedType + "']").show();
-                }
-            });
+<script>
+    // Filtering and search
+    function filterMenu() {
+        var search = document.getElementById('menu-search').value.toLowerCase();
+        var category = document.querySelector('.menu-filter.bg-primary, .menu-filter.text-white')?.dataset.category || 'all';
+        document.querySelectorAll('.menu-item-card').forEach(function(card) {
+            var name = card.dataset.name;
+            var cat = card.dataset.category;
+            var show = (category === 'all' || cat === category) && (!search || name.includes(search));
+            card.style.display = show ? '' : 'none';
         });
-    </script>
+    }
+    document.getElementById('menu-search').addEventListener('input', filterMenu);
+    document.querySelectorAll('.menu-filter').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.menu-filter').forEach(b => b.classList.remove('bg-primary', 'text-white'));
+            document.querySelectorAll('.menu-filter').forEach(b => b.classList.add('bg-gray-100', 'text-gray-600'));
+            this.classList.remove('bg-gray-100', 'text-gray-600');
+            this.classList.add('bg-primary', 'text-white');
+            filterMenu();
+        });
+    });
+    // Modal logic (same as before)
+    function openModal(title, dish) {
+        var modal = document.getElementById('modal-overlay');
+        var container = document.getElementById('modal-container');
+        var isEdit = !!dish;
+        var ingredients = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ingredients));
+        var dishIngredients = dish ? dish.Ingredients : [];
+        container.innerHTML = `
+            <div class="flex justify-between items-center px-6 py-4 border-b">
+                <h3 class="text-xl font-bold">${isEdit ? 'Sửa món' : 'Thêm món mới'}</h3>
+                <button id="modal-close" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <form id="dish-form" class="p-6 space-y-4">
+                <input type="hidden" name="Id" value="${dish ? dish.Id : ''}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Tên món</label>
+                        <input type="text" name="Name" class="w-full border rounded px-3 py-2 text-base" value="${dish ? dish.Name : ''}" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Giá (VND)</label>
+                        <input type="number" name="Price" class="w-full border rounded px-3 py-2 text-base" min="0" value="${dish ? dish.Price : ''}" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Mô tả</label>
+                    <textarea name="Description" class="w-full border rounded px-3 py-2 text-base" rows="2">${dish ? dish.Description : ''}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Loại</label>
+                    <select name="Type" id="dish-type" class="w-full border rounded px-3 py-2 text-base" required>
+                        <option value="">Chọn loại</option>
+                        @foreach (var type in dishTypes)
+                        {
+                            <option value="@type">
+                                @GetEnumDisplayName((RMS.Data.Entities.Dish.DishType)Enum.Parse(typeof(RMS.Data.Entities.Dish.DishType), type))
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Nguyên liệu</label>
+                    <div id="ingredients-container" class="space-y-2">
+                        ${(dishIngredients && dishIngredients.length > 0 ? dishIngredients : [{}]).map((ing, idx) => `
+                            <div class="ingredient-row flex space-x-2">
+                                <select name="Ingredients[${idx}].IngredientId" class="ingredient-select flex-1 border rounded px-3 py-2 text-base">
+                                    <option value="">Chọn nguyên liệu</option>
+                                    ${ingredients.map(i => `<option value="${i.Id}" ${ing.IngredientId == i.Id ? 'selected' : ''}>${i.Name} (${i.Unit})</option>`).join('')}
+                                </select>
+                                <input type="number" name="Ingredients[${idx}].QuantityNeeded" class="ingredient-quantity w-24 border rounded px-3 py-2 text-base" placeholder="Số lượng" min="0" step="0.1" value="${ing.QuantityNeeded || ''}">
+                                <button type="button" class="remove-ingredient px-2 bg-red-100 text-red-600 rounded"><i class="fas fa-times"></i></button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button type="button" id="add-ingredient" class="mt-2 text-sm text-primary"><i class="fas fa-plus mr-1"></i>Thêm nguyên liệu</button>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" id="cancel-dish" class="px-4 py-2 border rounded">Hủy</button>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded">${isEdit ? 'Cập nhật' : 'Thêm món'}</button>
+                </div>
+            </form>
+        `;
+        modal.classList.remove('hidden');
+        document.getElementById("dish-type").value = dish?.Type || "";
+        document.getElementById('modal-close').onclick = () => modal.classList.add('hidden');
+        document.getElementById('cancel-dish').onclick = () => modal.classList.add('hidden');
+        document.getElementById('add-ingredient').onclick = function() {
+            var container = document.getElementById('ingredients-container');
+            var idx = container.children.length;
+            var row = document.createElement('div');
+            row.className = 'ingredient-row flex space-x-2';
+            row.innerHTML = `
+                <select name="Ingredients[${idx}].IngredientId" class="ingredient-select flex-1 border rounded px-3 py-2 text-base">
+                    <option value="">Chọn nguyên liệu</option>
+                    ${ingredients.map(i => `<option value="${i.Id}">${i.Name} (${i.Unit})</option>`).join('')}
+                </select>
+                <input type="number" name="Ingredients[${idx}].QuantityNeeded" class="ingredient-quantity w-24 border rounded px-3 py-2 text-base" placeholder="Số lượng" min="0" step="0.1">
+                <button type="button" class="remove-ingredient px-2 bg-red-100 text-red-600 rounded"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(row);
+            row.querySelector('.remove-ingredient').onclick = function() { row.remove(); };
+        };
+        document.querySelectorAll('.remove-ingredient').forEach(btn => {
+            btn.onclick = function() { btn.closest('.ingredient-row').remove(); };
+        });
+        document.getElementById('dish-form').onsubmit = function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            var url = isEdit ? '/Dishes/Edit' : '/Dishes/Create';
+            fetch(url, {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+                body: formData
+            }).then(r => {
+                if (r.ok) window.location.reload();
+                else alert('Có lỗi xảy ra khi lưu món ăn');
+            });
+        };
+    }
+    document.getElementById('add-menu-item-btn').onclick = function() { openModal('Thêm món mới'); };
+    document.querySelectorAll('.edit-menu-item').forEach(btn => {
+        btn.onclick = function() {
+            var id = btn.dataset.id;
+            fetch(`/Dishes/Edit/${id}`).then(r => r.json()).then(dish => openModal('Sửa món', dish));
+        };
+    });
+    document.querySelectorAll('.delete-menu-item').forEach(btn => {
+        btn.onclick = function() {
+            if (confirm('Bạn có chắc chắn muốn xóa món này?')) {
+                var id = btn.dataset.id;
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/Dishes/Delete/${id}`;
+                var token = document.createElement('input');
+                token.type = 'hidden';
+                token.name = '__RequestVerificationToken';
+                token.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                form.appendChild(token);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        };
+    });
+</script>
 }

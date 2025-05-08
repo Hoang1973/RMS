@@ -1,77 +1,430 @@
 ﻿@model IEnumerable<RMS.Models.IngredientViewModel>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Quản lý kho nguyên liệu";
 }
 
-<h1>INGREDIENTS</h1>
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Quản lý kho nguyên liệu</h1>
+        <button id="add-inventory-btn" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded">
+            <i class="fas fa-plus mr-2"></i>Thêm nguyên liệu
+        </button>
+    </div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.StockQuantity)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Unit)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Type)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CreatedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.UpdatedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CreatedBy)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.UpdatedBy)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.StockQuantity)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Unit)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Type)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedAt)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.UpdatedAt)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedBy)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.UpdatedBy)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
+            <div class="flex items-center">
+                <div class="rounded-full bg-green-100 dark:bg-green-900 p-3 mr-4">
+                    <i class="fas fa-warehouse text-green-500 dark:text-green-300 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Tổng mặt hàng trong kho</h3>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">@Model.Count()</p>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
+            <div class="flex items-center">
+                <div class="rounded-full bg-yellow-100 dark:bg-yellow-900 p-3 mr-4">
+                    <i class="fas fa-exclamation-triangle text-yellow-500 dark:text-yellow-300 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Nguyên liệu sắp hết</h3>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">@Model.Count(i => i.StockQuantity < 10)</p>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
+            <div class="flex items-center">
+                <div class="rounded-full bg-red-100 dark:bg-red-900 p-3 mr-4">
+                    <i class="fas fa-times-circle text-red-500 dark:text-red-300 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Nguyên liệu đã hết</h3>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">@Model.Count(i => i.StockQuantity == 0)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex justify-between items-center mb-4">
+        <div class="relative">
+            <input type="text" id="search-input" placeholder="Tìm kiếm nguyên liệu..." class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+        </div>
+        <div class="flex gap-2">
+            <button id="import-btn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                <i class="fas fa-file-import mr-2"></i>Nhập kho
+            </button>
+            <button id="export-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                <i class="fas fa-file-export mr-2"></i>Xuất kho
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên nguyên liệu</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn vị</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tồn kho</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngưỡng cảnh báo</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lần cuối nhập</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@item.Id</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.Name</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.Unit</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.StockQuantity</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.UpdatedAt</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @if (item.StockQuantity == 0)
+                            {
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Hết hàng</span>
+                            }
+                            else if (item.StockQuantity < 10)
+                            {
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Sắp hết</span>
+                            }
+                            else
+                            {
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Còn hàng</span>
+                            }
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="text-blue-500 hover:text-blue-700 mr-2 edit-btn" data-id="@item.Id">
+                                <i class="fas fa-edit"></i> Sửa
+                            </button>
+                            <button class="text-red-500 hover:text-red-700 delete-btn" data-id="@item.Id">
+                                <i class="fas fa-trash"></i> Xóa
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- Add/Edit Modal -->
+<div id="ingredient-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4" id="modal-title">Thêm nguyên liệu mới</h2>
+        <form id="ingredient-form">
+            <input type="hidden" id="ingredient-id">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="ingredient-name">Tên nguyên liệu</label>
+                <input type="text" id="ingredient-name" name="Name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="ingredient-unit">Đơn vị</label>
+                <select id="ingredient-unit" name="Unit" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    <option value="">--Chọn đơn vị--</option>
+                    <option value="kg">kg</option>
+                    <option value="liters">liters</option>
+                    <option value="pieces">pieces</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="ingredient-type">Loại</label>
+                <select id="ingredient-type" name="Type" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    <option value="">--Chọn loại--</option>
+                    <option value="Meat">Meat</option>
+                    <option value="Vegetable">Vegetable</option>
+                    <option value="Fruit">Fruit</option>
+                    <option value="Dairy">Dairy</option>
+                    <option value="Grain">Grain</option>
+                    <option value="Spice">Spice</option>
+                    <option value="Sweetener">Sweetener</option>
+                    <option value="Fat">Fat</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="ingredient-quantity">Số lượng</label>
+                <input type="number" id="ingredient-quantity" name="StockQuantity" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="flex justify-end">
+                <button type="button" id="cancel-ingredient" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded mr-2">Hủy</button>
+                <button type="submit" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div id="import-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Nhập kho</h2>
+        <form id="import-form">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="import-ingredient">Chọn nguyên liệu</label>
+                <select id="import-ingredient" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    <option value="">--Chọn nguyên liệu--</option>
+                    @foreach (var item in Model)
+                    {
+                        <option value="@item.Id" data-unit="@item.Unit">@item.Name (@item.Unit)</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="import-quantity">Số lượng</label>
+                <div class="flex items-center">
+                    <input type="number" id="import-quantity" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required min="0" step="0.01">
+                    <span id="import-unit" class="ml-2 text-gray-600"></span>
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button type="button" id="cancel-import" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded mr-2">Hủy</button>
+                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Xác nhận</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div id="export-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Xuất kho</h2>
+        <form id="export-form">
+            <input type="hidden" id="export-ingredient-id">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="export-quantity">Số lượng</label>
+                <input type="number" id="export-quantity" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="flex justify-end">
+                <button type="button" id="cancel-export" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded mr-2">Hủy</button>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Xác nhận</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Add/Edit Ingredient
+        document.getElementById('add-inventory-btn').addEventListener('click', function() {
+            document.getElementById('modal-title').textContent = 'Thêm nguyên liệu mới';
+            document.getElementById('ingredient-form').reset();
+            document.getElementById('ingredient-id').value = '';
+            document.getElementById('ingredient-modal').classList.remove('hidden');
+        });
+
+        document.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.dataset.id;
+                // Fetch ingredient details and populate form
+                fetch(`/Ingredients/Edit/${id}`)
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        
+                        // Get values from the form
+                        const name = doc.querySelector('input[name="Name"]').value;
+                        const unit = doc.querySelector('select[name="Unit"]').value;
+                        const type = doc.querySelector('select[name="Type"]').value;
+                        const stockQuantity = doc.querySelector('input[name="StockQuantity"]').value;
+                        
+                        // Populate the modal form
+                        document.getElementById('modal-title').textContent = 'Sửa nguyên liệu';
+                        document.getElementById('ingredient-id').value = id;
+                        document.getElementById('ingredient-name').value = name;
+                        document.getElementById('ingredient-unit').value = unit;
+                        document.getElementById('ingredient-type').value = type;
+                        document.getElementById('ingredient-quantity').value = stockQuantity;
+                        
+                        document.getElementById('ingredient-modal').classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Error fetching ingredient details:', error);
+                        alert('Có lỗi xảy ra khi tải thông tin nguyên liệu');
+                    });
+            });
+        });
+
+        document.getElementById('cancel-ingredient').addEventListener('click', function() {
+            document.getElementById('ingredient-modal').classList.add('hidden');
+        });
+
+        document.getElementById('ingredient-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('ingredient-id').value;
+            const formData = new FormData();
+            formData.append('Id', id || '0');
+            formData.append('Name', document.getElementById('ingredient-name').value);
+            formData.append('Unit', document.getElementById('ingredient-unit').value);
+            formData.append('StockQuantity', document.getElementById('ingredient-quantity').value);
+            formData.append('Type', document.getElementById('ingredient-type').value);
+
+            const url = id ? '/Ingredients/Edit' : '/Ingredients/Create';
+            const method = 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    throw new Error('Network response was not ok');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi lưu nguyên liệu');
+            });
+        });
+
+        // Import/Export
+        document.getElementById('import-btn').addEventListener('click', function() {
+            document.getElementById('import-form').reset();
+            document.getElementById('import-unit').textContent = '';
+            document.getElementById('import-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('import-ingredient').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const unit = selectedOption.dataset.unit;
+            document.getElementById('import-unit').textContent = unit;
+        });
+
+        document.getElementById('cancel-import').addEventListener('click', function() {
+            document.getElementById('import-modal').classList.add('hidden');
+        });
+
+        document.getElementById('export-btn').addEventListener('click', function() {
+            document.getElementById('export-form').reset();
+            document.getElementById('export-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('cancel-export').addEventListener('click', function() {
+            document.getElementById('export-modal').classList.add('hidden');
+        });
+
+        document.getElementById('import-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const ingredientId = document.getElementById('import-ingredient').value;
+            const quantity = document.getElementById('import-quantity').value;
+
+            if (!ingredientId) {
+                alert('Vui lòng chọn nguyên liệu');
+                return;
+            }
+
+            // First get the current ingredient data
+            fetch(`/Ingredients/Edit/${ingredientId}`)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Get current values
+                    const name = doc.querySelector('input[name="Name"]').value;
+                    const unit = doc.querySelector('select[name="Unit"]').value;
+                    const type = doc.querySelector('select[name="Type"]').value;
+                    const currentQuantity = parseFloat(doc.querySelector('input[name="StockQuantity"]').value);
+                    
+                    // Create form data with updated quantity
+                    const formData = new FormData();
+                    formData.append('Id', ingredientId);
+                    formData.append('Name', name);
+                    formData.append('Unit', unit);
+                    formData.append('Type', type);
+                    formData.append('StockQuantity', currentQuantity + parseFloat(quantity));
+
+                    // Submit the update
+                    return fetch('/Ingredients/Edit', {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: formData
+                    });
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi nhập kho');
+                });
+        });
+
+        document.getElementById('export-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const data = {
+                quantity: document.getElementById('export-quantity').value
+            };
+
+            fetch('/Ingredients/Export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            });
+        });
+
+        // Delete
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                if (confirm('Bạn có chắc chắn muốn xóa nguyên liệu này?')) {
+                    const id = this.dataset.id;
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/Ingredients/Delete/${id}`;
+                    
+                    const token = document.createElement('input');
+                    token.type = 'hidden';
+                    token.name = '__RequestVerificationToken';
+                    token.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    
+                    form.appendChild(token);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        });
+
+        // Search
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const searchText = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const unit = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                if (name.includes(searchText) || unit.includes(searchText)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
 }
-    </tbody>
-</table>
+
