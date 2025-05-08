@@ -29,7 +29,7 @@ namespace RMS.Controllers
         }
 
         // GET: Bills/GetBillDetails/5
-        [HttpGet]
+        [HttpGet("Bills/GetBillDetails/{id}")]
         public async Task<IActionResult> GetBillDetails(int id)
         {
             var bill = await _billService.GetByIdAsync(id);

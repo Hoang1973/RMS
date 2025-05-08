@@ -28,6 +28,7 @@ namespace RMS.Controllers
         public async Task<IActionResult> Index()
         {
             var models = await _dishService.GetAllAsync();
+            ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
             return View(models);
         }
 
