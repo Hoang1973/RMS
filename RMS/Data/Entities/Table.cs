@@ -7,6 +7,8 @@ namespace RMS.Data.Entities
         public string TableNumber { get; set; }
         public int Capacity { get; set; }
         public TableStatus Status { get; set; }
+        public int? PositionX { get; set; }
+        public int? PositionY { get; set; }
 
         public ICollection<Order> Orders { get; set; }
         public enum TableStatus
