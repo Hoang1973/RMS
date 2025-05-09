@@ -1,10 +1,10 @@
 ﻿@model IEnumerable<RMS.Models.DishViewModel>
 @using System.ComponentModel.DataAnnotations
+@using RMS.Data.Entities
 
 @{
     ViewData["Title"] = "Quản lý thực đơn";
-    var dishTypes = Model.Select(d => d.Type.ToString()).Distinct().ToList();
-    var ingredients = ViewBag.Ingredients as List<RMS.Models.IngredientViewModel> ?? new List<RMS.Models.IngredientViewModel>();
+    var dishTypes = Enum.GetValues(typeof(Dish.DishType));
 }
 
 @functions{
@@ -25,18 +25,18 @@
                 <i class="fas fa-search absolute top-3 right-3 text-gray-400"></i>
             </div>
             <button id="add-menu-item-btn" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded">
-                <i class="fas fa-plus mr-2"></i>Thêm món mới
-            </button>
-        </div>
+            <i class="fas fa-plus mr-2"></i>Thêm món mới
+        </button>
     </div>
+            </div>
     <div class="mb-4 flex flex-wrap gap-2">
         <button class="menu-filter px-3 py-1 rounded transition bg-primary text-white" data-category="all">Tất cả</button>
-        @foreach (var type in dishTypes)
-        {
+                @foreach (var type in dishTypes)
+                {
             <button class="menu-filter px-3 py-1 rounded transition bg-gray-100 text-gray-600" data-category="@type">
-                @GetEnumDisplayName((RMS.Data.Entities.Dish.DishType)Enum.Parse(typeof(RMS.Data.Entities.Dish.DishType), type))
+                @GetEnumDisplayName((RMS.Data.Entities.Dish.DishType)type)
             </button>
-        }
+                }
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="menu-items-container">
         @foreach (var item in Model)
@@ -57,12 +57,12 @@
                     <div class="flex justify-between items-center mt-auto">
                         <span class="text-xs text-gray-500">@string.Join(", ", item.Ingredients.Select(i => i.IngredientName))</span>
                         <div>
-                            <button class="edit-menu-item text-blue-600 hover:text-blue-800 mr-2" data-id="@item.Id">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="delete-menu-item text-red-600 hover:text-red-800" data-id="@item.Id">
+                            <button type="button" class="edit-menu-item text-blue-600 hover:text-blue-800 mr-2" data-id="@item.Id">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                            <button type="button" class="delete-menu-item text-red-600 hover:text-red-800" data-id="@item.Id">
                                 <i class="fas fa-trash-alt"></i>
-                            </button>
+                        </button>
                         </div>
                     </div>
                 </div>
@@ -97,60 +97,73 @@
             filterMenu();
         });
     });
-    // Modal logic (same as before)
+    // Modal logic
     function openModal(title, dish) {
         var modal = document.getElementById('modal-overlay');
         var container = document.getElementById('modal-container');
         var isEdit = !!dish;
-        var ingredients = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ingredients));
+        var ingredients = @Html.Raw(Json.Serialize((ViewData["Ingredients"] as IEnumerable<SelectListItem>)?.Select(i => new { value = i.Value, text = i.Text })));
         var dishIngredients = dish ? dish.Ingredients : [];
+        
+        // Store the dish type for later use and ensure it's a number
+        var dishType = dish ? parseInt(dish.type) : null;
+        
         container.innerHTML = `
             <div class="flex justify-between items-center px-6 py-4 border-b">
                 <h3 class="text-xl font-bold">${isEdit ? 'Sửa món' : 'Thêm món mới'}</h3>
                 <button id="modal-close" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
-            <form id="dish-form" class="p-6 space-y-4">
-                <input type="hidden" name="Id" value="${dish ? dish.Id : ''}">
+            <form id="dish-form" class="p-6 space-y-4" action="${isEdit ? '/Dishes/EditJson/' + (dish ? dish.id : '') : '/Dishes/CreateJson'}" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="${dish ? dish.id : ''}">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1">Tên món</label>
-                        <input type="text" name="Name" class="w-full border rounded px-3 py-2 text-base" value="${dish ? dish.Name : ''}" required>
+                        <input type="text" name="Name" class="w-full border rounded px-3 py-2 text-base" value="${dish ? dish.name : ''}" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Giá (VND)</label>
-                        <input type="number" name="Price" class="w-full border rounded px-3 py-2 text-base" min="0" value="${dish ? dish.Price : ''}" required>
+                        <input type="number" name="Price" class="w-full border rounded px-3 py-2 text-base" min="0" value="${dish ? dish.price : ''}" required>
                     </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Mô tả</label>
-                    <textarea name="Description" class="w-full border rounded px-3 py-2 text-base" rows="2">${dish ? dish.Description : ''}</textarea>
+                    <textarea name="Description" class="w-full border rounded px-3 py-2 text-base" rows="2">${dish ? dish.description : ''}</textarea>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Loại</label>
                     <select name="Type" id="dish-type" class="w-full border rounded px-3 py-2 text-base" required>
                         <option value="">Chọn loại</option>
-                        @foreach (var type in dishTypes)
+                        @foreach (Dish.DishType type in dishTypes)
                         {
-                            <option value="@type">
-                                @GetEnumDisplayName((RMS.Data.Entities.Dish.DishType)Enum.Parse(typeof(RMS.Data.Entities.Dish.DishType), type))
-                            </option>
+                            <option value="@((int)type)">@GetEnumDisplayName(type)</option>
                         }
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Nguyên liệu</label>
                     <div id="ingredients-container" class="space-y-2">
-                        ${(dishIngredients && dishIngredients.length > 0 ? dishIngredients : [{}]).map((ing, idx) => `
-                            <div class="ingredient-row flex space-x-2">
-                                <select name="Ingredients[${idx}].IngredientId" class="ingredient-select flex-1 border rounded px-3 py-2 text-base">
+                        ${isEdit && dish.ingredients && dish.ingredients.length > 0 ? 
+                            dish.ingredients.map((ingredient, idx) => `
+                                <div class="ingredient-row flex space-x-2">
+                                    <select name="Ingredients[${idx}].IngredientId" class="ingredient-select flex-1 border rounded px-3 py-2 text-base">
+                                        <option value="">Chọn nguyên liệu</option>
+                                        ${ingredients.map(i => `<option value="${i.value}" ${i.value == ingredient.ingredientId ? 'selected' : ''}>${i.text}</option>`).join('')}
+                                    </select>
+                                    <input type="number" name="Ingredients[${idx}].QuantityNeeded" class="ingredient-quantity w-24 border rounded px-3 py-2 text-base" placeholder="Số lượng" min="0" step="0.1" value="${ingredient.quantityNeeded}">
+                                    <button type="button" class="remove-ingredient px-2 bg-red-100 text-red-600 rounded"><i class="fas fa-times"></i></button>
+                                </div>
+                            `).join('') :
+                            `<div class="ingredient-row flex space-x-2">
+                                <select name="Ingredients[0].IngredientId" class="ingredient-select flex-1 border rounded px-3 py-2 text-base">
                                     <option value="">Chọn nguyên liệu</option>
-                                    ${ingredients.map(i => `<option value="${i.Id}" ${ing.IngredientId == i.Id ? 'selected' : ''}>${i.Name} (${i.Unit})</option>`).join('')}
+                                    ${ingredients.map(i => `<option value="${i.value}">${i.text}</option>`).join('')}
                                 </select>
-                                <input type="number" name="Ingredients[${idx}].QuantityNeeded" class="ingredient-quantity w-24 border rounded px-3 py-2 text-base" placeholder="Số lượng" min="0" step="0.1" value="${ing.QuantityNeeded || ''}">
+                                <input type="number" name="Ingredients[0].QuantityNeeded" class="ingredient-quantity w-24 border rounded px-3 py-2 text-base" placeholder="Số lượng" min="0" step="0.1">
                                 <button type="button" class="remove-ingredient px-2 bg-red-100 text-red-600 rounded"><i class="fas fa-times"></i></button>
-                            </div>
-                        `).join('')}
-                    </div>
+                            </div>`
+                        }
+                </div>
                     <button type="button" id="add-ingredient" class="mt-2 text-sm text-primary"><i class="fas fa-plus mr-1"></i>Thêm nguyên liệu</button>
                 </div>
                 <div class="flex justify-end space-x-2">
@@ -159,10 +172,18 @@
                 </div>
             </form>
         `;
+
         modal.classList.remove('hidden');
-        document.getElementById("dish-type").value = dish?.Type || "";
+        
+        // Set up event handlers
         document.getElementById('modal-close').onclick = () => modal.classList.add('hidden');
         document.getElementById('cancel-dish').onclick = () => modal.classList.add('hidden');
+        
+        // Set up ingredient row handlers
+        document.querySelectorAll('.remove-ingredient').forEach(btn => {
+            btn.onclick = function() { btn.closest('.ingredient-row').remove(); };
+        });
+
         document.getElementById('add-ingredient').onclick = function() {
             var container = document.getElementById('ingredients-container');
             var idx = container.children.length;
@@ -171,7 +192,7 @@
             row.innerHTML = `
                 <select name="Ingredients[${idx}].IngredientId" class="ingredient-select flex-1 border rounded px-3 py-2 text-base">
                     <option value="">Chọn nguyên liệu</option>
-                    ${ingredients.map(i => `<option value="${i.Id}">${i.Name} (${i.Unit})</option>`).join('')}
+                    ${ingredients.map(i => `<option value="${i.value}">${i.text}</option>`).join('')}
                 </select>
                 <input type="number" name="Ingredients[${idx}].QuantityNeeded" class="ingredient-quantity w-24 border rounded px-3 py-2 text-base" placeholder="Số lượng" min="0" step="0.1">
                 <button type="button" class="remove-ingredient px-2 bg-red-100 text-red-600 rounded"><i class="fas fa-times"></i></button>
@@ -179,46 +200,153 @@
             container.appendChild(row);
             row.querySelector('.remove-ingredient').onclick = function() { row.remove(); };
         };
-        document.querySelectorAll('.remove-ingredient').forEach(btn => {
-            btn.onclick = function() { btn.closest('.ingredient-row').remove(); };
-        });
+
+        // Set the Type value after a short delay to ensure the select is rendered
+        if (dishType !== null) {
+            setTimeout(() => {
+                var typeSelect = document.getElementById("dish-type");
+                if (typeSelect) {
+                    typeSelect.value = dishType.toString();
+                }
+            }, 0);
+        }
+
+        // Add form submit handler
         document.getElementById('dish-form').onsubmit = function(e) {
             e.preventDefault();
             var formData = new FormData(this);
-            var url = isEdit ? '/Dishes/Edit' : '/Dishes/Create';
+            
+            // Create the model structure
+            var model = {
+                Id: 0,
+                Name: '',
+                Price: 0,
+                Description: '',
+                Type: 0,
+                Ingredients: []
+            };
+
+            // Fill the model with form data
+            formData.forEach((value, key) => {
+                if (value === '') return;
+                
+                if (key.includes('[')) {
+                    // Handle ingredients array
+                    var parts = key.split(/[\[\].]+/);
+                    var index = parseInt(parts[1]);
+                    var field = parts[2];
+                    
+                    if (!model.Ingredients[index]) {
+                        model.Ingredients[index] = {
+                            IngredientId: 0,
+                            QuantityNeeded: 0
+                        };
+                    }
+                    
+                    if (field === 'IngredientId' || field === 'QuantityNeeded') {
+                        model.Ingredients[index][field] = Number(value);
+                    } else {
+                        model.Ingredients[index][field] = value;
+                    }
+                } else {
+                    // Handle regular fields
+                    if (key === 'Id' || key === 'Price' || key === 'Type') {
+                        model[key] = Number(value);
+                    } else {
+                        model[key] = value;
+                    }
+                }
+            });
+
+            // Clean up ingredients array
+            model.Ingredients = model.Ingredients.filter(ing => 
+                ing && ing.IngredientId && !isNaN(ing.IngredientId) && 
+                ing.QuantityNeeded && !isNaN(ing.QuantityNeeded)
+            );
+
+            var url = model.Id ? `/Dishes/EditJson/${model.Id}` : '/Dishes/CreateJson';
+            
             fetch(url, {
                 method: 'POST',
-                headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
-                body: formData
-            }).then(r => {
-                if (r.ok) window.location.reload();
-                else alert('Có lỗi xảy ra khi lưu món ăn');
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify(model)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errors => {
+                        const errorMessages = [];
+                        for (const key in errors) {
+                            if (Array.isArray(errors[key])) {
+                                errorMessages.push(...errors[key]);
+                            } else {
+                                errorMessages.push(errors[key]);
+                            }
+                        }
+                        throw new Error(errorMessages.join('\n'));
+                    });
+                }
+                return response.json();
+            })
+            .then(() => {
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'Có lỗi xảy ra khi lưu món ăn');
             });
         };
     }
-    document.getElementById('add-menu-item-btn').onclick = function() { openModal('Thêm món mới'); };
+
+    // Update the edit button click handler
     document.querySelectorAll('.edit-menu-item').forEach(btn => {
         btn.onclick = function() {
             var id = btn.dataset.id;
-            fetch(`/Dishes/Edit/${id}`).then(r => r.json()).then(dish => openModal('Sửa món', dish));
+            fetch(`/Dishes/GetDish/${id}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Không thể tải thông tin món ăn');
+                    }
+                    return response.json();
+                })
+                .then(dish => {
+                    console.log('Dish data:', dish); // Debug log
+                    openModal('Sửa món', dish);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(error.message);
+                });
         };
     });
+    document.getElementById('add-menu-item-btn').onclick = function() { openModal('Thêm món mới'); };
     document.querySelectorAll('.delete-menu-item').forEach(btn => {
         btn.onclick = function() {
             if (confirm('Bạn có chắc chắn muốn xóa món này?')) {
                 var id = btn.dataset.id;
-                var form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/Dishes/Delete/${id}`;
-                var token = document.createElement('input');
-                token.type = 'hidden';
-                token.name = '__RequestVerificationToken';
-                token.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
-                form.appendChild(token);
-                document.body.appendChild(form);
-                form.submit();
+                fetch(`/Dishes/DeleteJson/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Không thể xóa món ăn');
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(error.message);
+                });
             }
         };
     });
-</script>
+    </script>
 }

@@ -16,11 +16,13 @@ namespace RMS.Controllers
     {
         private readonly ITableService _tableService;
         private readonly IIngredientService _ingredientService;
+        private readonly RMSDbContext _context;
 
-        public TablesController(ITableService tableService, IIngredientService ingredientService)
+        public TablesController(ITableService tableService, IIngredientService ingredientService, RMSDbContext context)
         {
             _tableService = tableService;
             _ingredientService = ingredientService;
+            _context = context;
         }
 
         // GET: Tables
@@ -42,6 +44,20 @@ namespace RMS.Controllers
             if (model == null)
             {
                 return NotFound();
+            }
+
+            // Check if the request is AJAX
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new
+                {
+                    id = model.Id,
+                    tableNumber = model.TableNumber,
+                    capacity = model.Capacity,
+                    status = (int)model.Status,
+                    createdAt = model.CreatedAt,
+                    updatedAt = model.UpdatedAt
+                });
             }
 
             return View(model);
@@ -150,5 +166,57 @@ namespace RMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        public async Task<IActionResult> SaveLayout([FromBody] List<TableLayoutModel> layout)
+        {
+            try
+            {
+                foreach (var item in layout)
+                {
+                    var table = await _context.Tables.FindAsync(item.TableId);
+                    if (table != null)
+                    {
+                        table.PositionX = item.X;
+                        table.PositionY = item.Y;
+                    }
+                }
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLayout()
+        {
+            try
+            {
+                var layout = await _context.Tables
+                    .Where(t => t.PositionX.HasValue && t.PositionY.HasValue)
+                    .Select(t => new TableLayoutModel
+                    {
+                        TableId = t.Id,
+                        X = t.PositionX.Value,
+                        Y = t.PositionY.Value
+                    })
+                    .ToListAsync();
+
+                return Json(layout);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+    }
+
+    public class TableLayoutModel
+    {
+        public int TableId { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
     }
 }

@@ -32,6 +32,92 @@ namespace RMS.Controllers
             return View(models);
         }
 
+        // GET: Dishes/GetDish/5 (JSON)
+        [HttpGet]
+        public async Task<IActionResult> GetDish(int id)
+        {
+            var model = await _dishService.GetByIdAsync(id);
+            if (model == null)
+            {
+                return NotFound();
+            }
+            return Json(model);
+        }
+
+        // POST: Dishes/Create (JSON)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateJson([FromBody] DishViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try 
+            {
+                await _dishService.CreateAsync(model);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Could not create dish. " + ex.Message });
+            }
+        }
+
+        // POST: Dishes/Edit/5 (JSON)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditJson(int id, [FromBody] DishViewModel model)
+        {
+            if (id != model.Id)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                await _dishService.UpdateAsync(model);
+                return Json(new { success = true });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _dishService.ExistsAsync(model.Id))
+                {
+                    return NotFound();
+                }
+                throw;
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Could not update dish. " + ex.Message });
+            }
+        }
+
+        // POST: Dishes/Delete/5 (JSON)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteJson(int id)
+        {
+            try
+            {
+                bool deleted = await _dishService.DeleteByIdAsync(id);
+                if (!deleted)
+                {
+                    return NotFound();
+                }
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Could not delete dish. " + ex.Message });
+            }
+        }
+
         // GET: Dishes/Details/5
         public async Task<IActionResult> Details(int? id)
         {
@@ -85,7 +171,6 @@ namespace RMS.Controllers
                 return NotFound();
             }
             ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
-
             return View(model);
         }
 
@@ -104,6 +189,7 @@ namespace RMS.Controllers
                 try
                 {
                     await _dishService.UpdateAsync(model);
+                    return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -116,8 +202,8 @@ namespace RMS.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
             }
+            ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
             return View(model);
         }
 
@@ -148,9 +234,7 @@ namespace RMS.Controllers
             {
                 return NotFound();
             }
-
             return RedirectToAction(nameof(Index));
         }
-
     }
 }
