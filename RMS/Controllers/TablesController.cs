@@ -171,15 +171,29 @@ namespace RMS.Controllers
         {
             try
             {
+                // First, clear all positions
+                var allTables = await _context.Tables.ToListAsync();
+                foreach (var table in allTables)
+                {
+                    table.PositionX = null;
+                    table.PositionY = null;
+                }
+
+                // Then update positions for tables in grid
                 foreach (var item in layout)
                 {
                     var table = await _context.Tables.FindAsync(item.TableId);
                     if (table != null)
                     {
-                        table.PositionX = item.X;
-                        table.PositionY = item.Y;
+                        if (item.IsInGrid)
+                        {
+                            table.PositionX = item.X;
+                            table.PositionY = item.Y;
+                        }
+                        // Tables not in grid will have null positions (already set in the first step)
                     }
                 }
+
                 await _context.SaveChangesAsync();
                 return Json(new { success = true });
             }
@@ -194,15 +208,20 @@ namespace RMS.Controllers
         {
             try
             {
-                var layout = await _context.Tables
-                    .Where(t => t.PositionX.HasValue && t.PositionY.HasValue)
-                    .Select(t => new TableLayoutModel
-                    {
-                        TableId = t.Id,
-                        X = t.PositionX.Value,
-                        Y = t.PositionY.Value
-                    })
-                    .ToListAsync();
+                // Get all tables with their data
+                var tables = await _context.Tables.ToListAsync();
+                
+                // Create layout data for all tables
+                var layout = tables.Select(t => new TableLayoutModel
+                {
+                    TableId = t.Id,
+                    X = t.PositionX,
+                    Y = t.PositionY,
+                    IsInGrid = t.PositionX.HasValue && t.PositionY.HasValue,
+                    TableNumber = t.TableNumber,
+                    Capacity = t.Capacity,
+                    Status = (int)t.Status
+                }).ToList();
 
                 return Json(layout);
             }
@@ -216,7 +235,11 @@ namespace RMS.Controllers
     public class TableLayoutModel
     {
         public int TableId { get; set; }
-        public int X { get; set; }
-        public int Y { get; set; }
+        public int? X { get; set; }
+        public int? Y { get; set; }
+        public bool IsInGrid { get; set; }
+        public string TableNumber { get; set; }
+        public int Capacity { get; set; }
+        public int Status { get; set; }
     }
 }
