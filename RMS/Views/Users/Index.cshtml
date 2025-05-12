@@ -1,95 +1,69 @@
 ﻿@model IEnumerable<UserViewModel>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Users";
 }
 
-<h1>Index</h1>
-
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Id)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Email)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Password)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Phone)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Address)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.UserRole)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CreatedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.UpdatedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CreatedBy)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.UpdatedBy)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Id)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Email)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Password)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Phone)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Address)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.UserRole)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedAt)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.UpdatedAt)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedBy)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.UpdatedBy)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+<div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <h1 class="text-2xl font-bold text-gray-800">Users</h1>
+        <a asp-action="Create" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow">
+            <i class="fas fa-plus mr-2"></i> Create New
+        </a>
+    </div>
+    <div class="bg-white rounded-xl shadow-lg overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+                <tr class="bg-gradient-to-r from-blue-50 to-blue-100">
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">ID</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Email</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Password</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Phone</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Address</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Role</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Created At</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Updated At</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Created By</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Updated By</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @foreach (var item in Model)
+                {
+                    <tr class="hover:bg-blue-50 transition-colors duration-200">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Id</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Name</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Email</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-400 italic">••••••••</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Phone</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Address</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm">
+                            <span class="inline-block px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium">
+                                @item.UserRole
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">@item.CreatedAt?.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">@item.UpdatedAt?.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">@item.CreatedBy</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">@item.UpdatedBy</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm">
+                            <div class="flex gap-2">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors duration-200">
+                                    <i class="fas fa-edit mr-1.5"></i>Edit
+                                </a>
+                                <a asp-action="Details" asp-route-id="@item.Id" class="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200">
+                                    <i class="fas fa-info-circle mr-1.5"></i>Details
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200">
+                                    <i class="fas fa-trash mr-1.5"></i>Delete
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
