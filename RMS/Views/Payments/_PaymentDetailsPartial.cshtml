@@ -1,0 +1,10 @@
+﻿@model RMS.Models.PaymentViewModel
+
+<div>
+    <h2 class="text-xl font-bold mb-4">Chi tiết thanh toán</h2>
+    <div class="mb-2"><strong>Mã thanh toán:</strong> @Model.Id</div>
+    <div class="mb-2"><strong>Bàn:</strong> @Model.TableNumber</div>
+    <div class="mb-2"><strong>Số tiền đã thanh toán:</strong> @Model.AmountPaid.ToString("N0") VNĐ</div>
+    <div class="mb-2"><strong>Phương thức:</strong> @Model.PaymentMethod</div>
+    <div class="mb-2"><strong>Ngày tạo:</strong> @Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</div>
+</div>
