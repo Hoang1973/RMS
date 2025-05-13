@@ -9,7 +9,10 @@ namespace RMS.Services
 
     public class PaymentService : BaseService<PaymentViewModel, Payment>, IPaymentService
     {
-        public PaymentService(RMSDbContext context, IMapper mapper) : base(context, mapper) { }
+        public PaymentService(RMSDbContext context, IMapper mapper, INotificationService notificationService)
+            : base(context, mapper, notificationService)
+        {
+        }
         // Custom logic nếu cần
     }
 }

@@ -15,8 +15,8 @@ namespace RMS.Services
 
     public class OrderService : BaseService<OrderViewModel, Order>, IOrderService
     {
-        public OrderService(RMSDbContext context, IMapper mapper)
-            : base(context, mapper)
+        public OrderService(RMSDbContext context, IMapper mapper, INotificationService notificationService)
+            : base(context, mapper, notificationService)
         {
         }
 

@@ -426,5 +426,33 @@
             });
         });
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+        // Connect to the SignalR hub
+        const ingredientConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .build();
+
+        // Listen for the IngredientChanged event
+        ingredientConnection.on("IngredientChanged", function (data) {
+            // Option 1: Reload the page (simple, but not SPA-like)
+            //window.location.reload();
+
+            // Option 2: (Advanced) Use AJAX to fetch and update the table only
+            fetch('/Ingredients/Index')
+                .then(response => response.text())
+                .then(html => {
+                    // Parse and update only the table body
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTbody = doc.querySelector('tbody');
+                    document.querySelector('tbody').innerHTML = newTbody.innerHTML;
+                });
+        });
+
+        ingredientConnection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
+    </script>
 }
 
