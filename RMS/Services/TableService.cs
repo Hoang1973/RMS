@@ -13,8 +13,8 @@ namespace RMS.Services
 
     public class TableService : BaseService<TableViewModel, Table>, ITableService
     {
-        public TableService(RMSDbContext context, IMapper mapper)
-            : base(context, mapper)
+        public TableService(RMSDbContext context, IMapper mapper, INotificationService notificationService)
+            : base(context, mapper, notificationService)
         {
         }
         public async Task<List<Table>> GetAvailableTablesAsync()

@@ -11,12 +11,14 @@ namespace RMS.Services
         protected readonly RMSDbContext _context;
         protected readonly IMapper _mapper;
         protected readonly DbSet<TEntity> _dbSet;
+        protected readonly INotificationService _notificationService;
 
-        public BaseService(RMSDbContext context, IMapper mapper)
+        public BaseService(RMSDbContext context, IMapper mapper, INotificationService notificationService)
         {
             _context = context;
             _mapper = mapper;
             _dbSet = _context.Set<TEntity>();
+            _notificationService = notificationService;
         }
 
         public async Task<List<TViewModel>> GetAllAsync()
@@ -37,6 +39,7 @@ namespace RMS.Services
             await _dbSet.AddAsync(entity);
             await CreateRelationshipsAsync(entity, model);
             await _context.SaveChangesAsync();
+            await _notificationService.NotifyAllAsync($"{typeof(TEntity).Name}Changed", model);
         }
 
         public virtual async Task UpdateAsync(TViewModel model)
@@ -47,14 +50,16 @@ namespace RMS.Services
             _mapper.Map(model, entity);
             await UpdateRelationshipsAsync(entity, model);
             await _context.SaveChangesAsync();
+            await _notificationService.NotifyAllAsync($"{typeof(TEntity).Name}Changed", model);
         }
 
-        public async Task<bool> DeleteByIdAsync(int id)
+        public virtual async Task<bool> DeleteByIdAsync(int id)
         {
             var entity = await _dbSet.FindAsync(id);
             if (entity == null) return false;
             _dbSet.Remove(entity);
             await _context.SaveChangesAsync();
+            await _notificationService.NotifyAllAsync($"{typeof(TEntity).Name}Changed", new { DeletedId = id });
             return true;
         }
 

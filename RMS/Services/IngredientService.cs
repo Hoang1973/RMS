@@ -16,8 +16,8 @@ namespace RMS.Services
 
     public class IngredientService : BaseService<IngredientViewModel, Ingredient>, IIngredientService
     {
-        public IngredientService(RMSDbContext context, IMapper mapper)
-            : base(context, mapper)
+        public IngredientService(RMSDbContext context, IMapper mapper, INotificationService notificationService)
+            : base(context, mapper, notificationService)
         {
         }
 

@@ -56,7 +56,11 @@ namespace RMS
             builder.Services.AddScoped<IDiscountService, DiscountService>();
             builder.Services.AddScoped<IBillService, BillService>();
             builder.Services.AddScoped<IPaymentService, PaymentService>();
-            
+            builder.Services.AddScoped<INotificationService, NotificationService>();
+
+            builder.Services.AddRazorPages();
+            builder.Services.AddSignalR(); // Add this line
+
             // Add these services in Program.cs
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
@@ -89,6 +93,10 @@ namespace RMS
             app.UseAuthentication();
 
             app.UseAuthorization();
+
+            app.MapRazorPages();
+
+            app.MapHub<NotificationHub>("/notificationHub");
 
             app.MapControllerRoute(
                 name: "default",

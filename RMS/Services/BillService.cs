@@ -13,7 +13,10 @@ namespace RMS.Services
 
     public class BillService : BaseService<BillViewModel, Bill>, IBillService
     {
-        public BillService(RMSDbContext context, IMapper mapper) : base(context, mapper) { }
+        public BillService(RMSDbContext context, IMapper mapper, INotificationService notificationService)
+            : base(context, mapper, notificationService)
+        {
+        }
 
         public override async Task<BillViewModel?> GetByIdAsync(int id)
         {

@@ -10,8 +10,8 @@ namespace RMS.Services
 
     public class UserService : BaseService<UserViewModel, User>, IUserService
     {
-        public UserService(RMSDbContext context, IMapper mapper)
-            : base(context, mapper)
+        public UserService(RMSDbContext context, IMapper mapper, INotificationService notificationService)
+            : base(context, mapper, notificationService)
         {
         }
 

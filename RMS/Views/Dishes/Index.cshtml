@@ -349,4 +349,24 @@
         };
     });
     </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+        // Connect to the SignalR hub
+        const ingredientConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .build();
+
+        // Listen for the IngredientChanged event
+        ingredientConnection.on("IngredientChanged", function (data) {
+            // Show a notification or reload the page, as you prefer
+            alert("Có nguyên liệu mới hoặc thay đổi nguyên liệu! Vui lòng tải lại trang để cập nhật danh sách nguyên liệu.");
+            // Optionally, you can reload automatically:
+            //window.location.reload();
+        });
+
+        ingredientConnection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
+    </script>
 }

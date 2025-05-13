@@ -13,8 +13,8 @@ namespace RMS.Services
 
     public class DishService : BaseService<DishViewModel, Dish>, IDishService
     {
-        public DishService(RMSDbContext context, IMapper mapper)
-            : base(context, mapper)
+        public DishService(RMSDbContext context, IMapper mapper, INotificationService notificationService)
+            : base(context, mapper, notificationService)
         {
         }
 

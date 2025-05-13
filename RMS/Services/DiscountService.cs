@@ -15,8 +15,8 @@ namespace RMS.Services
 
     public class DiscountService : BaseService<DiscountViewModel, Discount>, IDiscountService
     {
-        public DiscountService(RMSDbContext context, IMapper mapper)
-            : base(context, mapper)
+        public DiscountService(RMSDbContext context, IMapper mapper, INotificationService notificationService)
+            : base(context, mapper, notificationService)
         {
         }
 
