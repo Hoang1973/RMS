@@ -167,6 +167,36 @@ namespace RMS.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> CreateAjax([FromBody] TableViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    // Return validation errors as JSON
+                    return BadRequest(new
+                    {
+                        errors = ModelState.ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                        )
+                    });
+                }
+                return View(model);
+            }
+
+            await _tableService.CreateAsync(model);
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Ok(new { success = true });
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+
+        [HttpPost]
         public async Task<IActionResult> SaveLayout([FromBody] List<TableLayoutModel> layout)
         {
             try
