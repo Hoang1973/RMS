@@ -13,11 +13,6 @@
         <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
-                <label asp-for="CustomerId" class="control-label"></label>
-                <input asp-for="CustomerId" class="form-control" />
-                <span asp-validation-for="CustomerId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
                 <label asp-for="TableId" class="control-label">Select Table</label>
                 <select asp-for="TableId" class="form-control" asp-items="@ViewData["Tables"] as IEnumerable<SelectListItem>">
                     <option value="">-- Choose a table --</option>

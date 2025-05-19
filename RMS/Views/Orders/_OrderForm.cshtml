@@ -13,13 +13,9 @@
         <form id="orderCreateForm" autocomplete="off">
             @Html.AntiForgeryToken()
             <div class="mb-3">
-    <label class="block font-semibold mb-1">Khách hàng</label>
-    <input asp-for="CustomerId" class="border px-3 py-2 w-full rounded" placeholder="Nhập mã khách hàng hoặc để trống..." />
-</div>
-<div class="mb-3">
-    <label class="block font-semibold mb-1">Số điện thoại khách hàng</label>
-    <input asp-for="CustomerPhoneNumber" class="border px-3 py-2 w-full rounded" placeholder="Nhập số điện thoại khách hàng..." />
-</div>
+                <label class="block font-semibold mb-1">Số điện thoại khách hàng</label>
+                <input asp-for="CustomerPhoneNumber" class="border px-3 py-2 w-full rounded" placeholder="Nhập số điện thoại khách hàng..." />
+            </div>
             <div class="mb-3">
                 <label class="block font-semibold mb-1">Chọn bàn</label>
                 <select asp-for="TableId" class="border px-3 py-2 w-full rounded">

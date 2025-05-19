@@ -87,7 +87,6 @@ namespace RMS.Controllers
                 id = model.Id,
                 tableId = model.TableId,
                 tableNumber = model.TableNumber,
-                customerId = model.CustomerId,
                 status = model.Status.ToString(),
                 createdAt = model.CreatedAt?.ToString("HH:mm dd/MM/yyyy"),
                 totalAmount = model.TotalAmount,
