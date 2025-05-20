@@ -10,7 +10,6 @@ namespace RMS.Data.Entities
         public string Phone { get; set; }
         public string? Address { get; set; }
         public Role UserRole { get; set; }
-        public ICollection<Order> Orders { get; set; }
         public ICollection<Shift> Shifts { get; set; }
         public enum Role
         {
