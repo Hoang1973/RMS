@@ -57,6 +57,7 @@ namespace RMS
             builder.Services.AddScoped<IBillService, BillService>();
             builder.Services.AddScoped<IPaymentService, PaymentService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<IKitchenDisplayService, KitchenDisplayService>();
 
             builder.Services.AddRazorPages();
             builder.Services.AddSignalR(); // Add this line

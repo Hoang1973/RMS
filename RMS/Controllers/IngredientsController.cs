@@ -147,5 +147,64 @@ namespace RMS.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        // GET: Ingredients/GetIngredient/5 (JSON)
+        [HttpGet]
+        public async Task<IActionResult> GetIngredient(int id)
+        {
+            var model = await _ingredientService.GetByIdAsync(id);
+            if (model == null)
+            {
+                return NotFound();
+            }
+            return Json(model);
+        }
+
+        // POST: Ingredients/CreateJson (JSON)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateJson([FromBody] IngredientViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            
+            try 
+            {
+                await _ingredientService.CreateAsync(model);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Could not create ingredient. " + ex.Message });
+            }
+        }
+
+        // POST: Ingredients/EditJson/5 (JSON)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditJson(int id, [FromBody] IngredientViewModel model)
+        {
+            if (id != model.Id)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                await _ingredientService.UpdateAsync(model);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Could not update ingredient. " + ex.Message });
+            }
+        }
     }
 }
