@@ -1,0 +1,220 @@
+﻿@model KitchenDisplayViewModel
+@{
+    ViewData["Title"] = "Màn hình bếp (KDS)";
+}
+
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-2xl font-bold mb-6">Màn hình bếp (KDS)</h2>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Pending Orders -->
+        <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
+            <h3 class="font-bold text-lg mb-4">Đơn hàng chờ chế biến</h3>
+            <div id="pending-kitchen-orders" class="space-y-4">
+                @if (Model.PendingOrders.Count == 0)
+                {
+                    <div class="text-center text-gray-500 dark:text-gray-400 py-4">
+                        Không có đơn hàng chờ chế biến
+                    </div>
+                }
+                else
+                {
+                    foreach (var order in Model.PendingOrders)
+                    {
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-light-border dark:border-dark-border kitchen-order-card" data-id="@order.Id">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-medium">@order.TableName</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                                        @order.Created?.ToString("HH:mm:ss")
+                                    </p>
+                                    @if (!string.IsNullOrWhiteSpace(order.Note))
+                                    {
+                                        <div class="text-xs italic text-red-600 dark:text-red-400">Ghi chú: @order.Note</div>
+                                    }
+                                </div>
+                                <button class="start-cooking-btn bg-primary hover:bg-secondary text-white px-3 py-1 rounded text-sm"
+                                        data-order-id="@order.Id">
+                                    Bắt đầu chế biến
+                                </button>
+                            </div>
+                            <div class="space-y-2 mt-3">
+                                @foreach (var item in order.Items)
+                                {
+                                    <div class="flex justify-between items-center kitchen-item p-2 rounded border">
+                                        <div>
+                                            <div class="font-medium">@item.Name x@(item?.Quantity ?? 0)</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+        <!-- In-Progress Orders -->
+        <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
+            <h3 class="font-bold text-lg mb-4">Đang chế biến</h3>
+            <div id="in-progress-kitchen-orders" class="space-y-4">
+                @if (Model.InProgressOrders.Count == 0)
+                {
+                    <div class="text-center text-gray-500 dark:text-gray-400 py-4">
+                        Không có đơn hàng đang chế biến
+                    </div>
+                }
+                else
+                {
+                    foreach (var order in Model.InProgressOrders)
+                    {
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-light-border dark:border-dark-border kitchen-order-card" data-id="@order.Id">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-medium">@order.TableName</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                                        Bắt đầu: @(order.StartedCooking?.ToString("HH:mm:ss") ?? order.Created?.ToString("HH:mm:ss")) (@order.ElapsedMinutes phút)
+                                    </p>
+                                    @if (!string.IsNullOrWhiteSpace(order.Note))
+                                    {
+                                        <div class="text-xs italic text-red-600 dark:text-red-400">Ghi chú: @order.Note</div>
+                                    }
+                                </div>
+                                <button class="complete-order-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                                        data-order-id="@order.Id">
+                                    Hoàn thành
+                                </button>
+                            </div>
+                            <div class="space-y-2 mt-3">
+                                @foreach (var item in order.Items)
+                                {
+                                    <div class="flex justify-between items-center kitchen-item p-2 rounded border">
+                                        <div>
+                                            <div class="font-medium">@item.Name x@(item?.Quantity ?? 0)</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+    <!-- Ready Orders -->
+    <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border mt-6">
+        <h3 class="font-bold text-lg mb-4">Đơn hàng đã hoàn thành (sẵn sàng phục vụ)</h3>
+        <div id="ready-kitchen-orders" class="space-y-4">
+            @if (Model.ReadyOrders.Count == 0)
+            {
+                <div class="text-center text-gray-500 dark:text-gray-400 py-4">
+                    Không có đơn hàng đã hoàn thành
+                </div>
+            }
+            else
+            {
+                foreach (var order in Model.ReadyOrders)
+                {
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-light-border dark:border-dark-border kitchen-order-card" data-id="@order.Id">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-medium">@order.TableName</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    Hoàn thành: @(order.Created?.ToString("HH:mm:ss"))
+                                </p>
+                                @if (!string.IsNullOrWhiteSpace(order.Note))
+                                {
+                                    <div class="text-xs italic text-red-600 dark:text-red-400">Ghi chú: @order.Note</div>
+                                }
+                            </div>
+                        </div>
+                        <div class="space-y-2 mt-3">
+                            @foreach (var item in order.Items)
+                            {
+                                <div class="flex justify-between items-center kitchen-item p-2 rounded border">
+                                    <div>
+                                        <div class="font-medium">@item.Name x@(item?.Quantity ?? 0)</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Start cooking button
+            $(".start-cooking-btn").click(function () {
+                const orderId = $(this).data("order-id");
+                $.ajax({
+                    url: "/KitchenDisplay/StartCooking",
+                    type: "POST",
+                    data: { orderId: orderId },
+                    success: function (response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert("Không thể bắt đầu chế biến. Vui lòng thử lại.");
+                        }
+                    },
+                    error: function () {
+                        alert("Đã xảy ra lỗi. Vui lòng thử lại.");
+                    }
+                });
+            });
+
+            // Complete order button
+            $(".complete-order-btn").click(function () {
+                const orderId = $(this).data("order-id");
+                $.ajax({
+                    url: "/KitchenDisplay/CompleteOrder",
+                    type: "POST",
+                    data: { orderId: orderId },
+                    success: function (response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert("Không thể hoàn thành đơn hàng. Vui lòng thử lại.");
+                        }
+                    },
+                    error: function () {
+                        alert("Đã xảy ra lỗi. Vui lòng thử lại.");
+                    }
+                });
+            });
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+        // Connect to the SignalR hub
+        const kdsConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .build();
+        // Listen for the IngredientChanged event
+        kdsConnection.on("OrderChanged", function (data) {
+            window.location.reload();
+        });
+        kdsConnection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
+    </script>
+    <style>
+        .kitchen-item {
+            transition: all 0.3s ease;
+        }
+        .kitchen-item.completed {
+            background-color: rgba(74, 222, 128, 0.1);
+        }
+        @@keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+        }
+        .kitchen-order-card:first-child {
+            animation: pulse 2s infinite;
+        }
+    </style>
+}

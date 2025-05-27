@@ -104,6 +104,7 @@ namespace RMS.Services
 
             await CreateRelationshipsAsync(entity, model);
             await _context.SaveChangesAsync();
+            await _notificationService.NotifyAllAsync("OrderChanged", model);
         }
 
         public async Task<bool> CompletePaymentAsync(int orderId, int tableId)
