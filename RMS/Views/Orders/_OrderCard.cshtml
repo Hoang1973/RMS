@@ -1,6 +1,6 @@
 @model RMS.Models.OrderViewModel
 @{
-    var isCurrent = Model.Status == RMS.Data.Entities.Order.OrderStatus.Pending;
+    var isCurrent = Model.Status != RMS.Data.Entities.Order.OrderStatus.Completed;
 }
 <script src="~/js/order.js" defer></script>
 <script src="~/js/bills.js" defer></script>

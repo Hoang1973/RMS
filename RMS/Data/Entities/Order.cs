@@ -19,6 +19,7 @@ namespace RMS.Data.Entities
         {
             Pending,
             Processing,
+            Ready,
             Completed,
             Cancelled
         }

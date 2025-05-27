@@ -22,11 +22,15 @@ $(document).ready(function(){
     <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
         <h3 class="font-bold text-lg mb-4">Đơn hàng hiện tại</h3>
         <div id="current-orders" class="space-y-3">
-            @foreach (var order in Model.Where(o => o.Status == RMS.Data.Entities.Order.OrderStatus.Pending))
+            @foreach (var order in Model
+            .Where(o => o.Status != RMS.Data.Entities.Order.OrderStatus.Completed))
             {
                 @Html.Partial("_OrderCard", order)
             }
-            @if (!Model.Any(o => o.Status == RMS.Data.Entities.Order.OrderStatus.Pending))
+            @if (!Model.Any(o => 
+                        o.Status == RMS.Data.Entities.Order.OrderStatus.Pending ||
+                        o.Status == RMS.Data.Entities.Order.OrderStatus.Processing ||
+                        o.Status == RMS.Data.Entities.Order.OrderStatus.Ready))
             {
                 <div class="text-gray-400 italic">Không có đơn hàng nào đang phục vụ.</div>
             }
@@ -35,11 +39,11 @@ $(document).ready(function(){
     <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
         <h3 class="font-bold text-lg mb-4">Lịch sử đơn hàng</h3>
         <div id="order-history" class="space-y-3">
-            @foreach (var order in Model.Where(o => o.Status != RMS.Data.Entities.Order.OrderStatus.Pending))
+            @foreach (var order in Model.Where(o => o.Status == RMS.Data.Entities.Order.OrderStatus.Completed))
             {
                 @Html.Partial("_OrderCard", order)
             }
-            @if (!Model.Any(o => o.Status != RMS.Data.Entities.Order.OrderStatus.Pending))
+            @if (!Model.Any(o => o.Status == RMS.Data.Entities.Order.OrderStatus.Completed))
             {
                 <div class="text-gray-400 italic">Chưa có đơn hàng nào đã thanh toán.</div>
             }
@@ -49,4 +53,23 @@ $(document).ready(function(){
 
 @section Scripts {
     <script src="~/js/order.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        // Connect to the SignalR hub
+        const orderConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .build();
+        // Listen for the OrderStatusChanged event
+        orderConnection.on("OrderStatusChanged", function (data) {
+            if (data.status == "Ready") {
+                alert("Đơn hàng #" + data.OrderId + " đã nấu xong, sẵn sàng phục vụ!");
+            } else {
+                alert("Đơn hàng #" + data.OrderId + " đang được chế biến.");
+            }            
+        });
+        orderConnection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
+    </script>
 }

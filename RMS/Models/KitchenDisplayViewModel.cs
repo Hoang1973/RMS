@@ -7,6 +7,7 @@ namespace RMS.Models
     {
         public List<KitchenOrderViewModel> PendingOrders { get; set; } = new List<KitchenOrderViewModel>();
         public List<KitchenOrderViewModel> InProgressOrders { get; set; } = new List<KitchenOrderViewModel>();
+        public List<KitchenOrderViewModel> ReadyOrders { get; set; } = new List<KitchenOrderViewModel>();
     }
 
     public class KitchenOrderViewModel

@@ -23,13 +23,12 @@ namespace RMS.Services
         {
             var viewModel = new KitchenDisplayViewModel();
 
-            // Get orders that need to be displayed in the kitchen
             var kitchenOrders = await _context.Orders
                 .Include(o => o.Table)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Dish)
+                .Include(o => o.OrderItems).ThenInclude(oi => oi.Dish)
                 .Where(o => o.Status == Order.OrderStatus.Pending ||
-                       o.Status == Order.OrderStatus.Processing)
+                            o.Status == Order.OrderStatus.Processing ||
+                            o.Status == Order.OrderStatus.Ready) // Thêm Ready
                 .OrderBy(o => o.CreatedAt)
                 .ToListAsync();
 
@@ -48,18 +47,16 @@ namespace RMS.Services
                         Id = oi.Id,
                         DishId = oi.DishId,
                         Name = oi.Dish?.Name ?? "Unknown Dish",
-                        Quantity = oi.Quantity,
+                        Quantity = oi.Quantity
                     }).ToList()
                 };
 
                 if (order.Status == Order.OrderStatus.Pending)
-                {
                     viewModel.PendingOrders.Add(kitchenOrderViewModel);
-                }
                 else if (order.Status == Order.OrderStatus.Processing)
-                {
                     viewModel.InProgressOrders.Add(kitchenOrderViewModel);
-                }
+                else if (order.Status == Order.OrderStatus.Ready)
+                    viewModel.ReadyOrders.Add(kitchenOrderViewModel);
             }
 
             return viewModel;
@@ -73,9 +70,9 @@ namespace RMS.Services
             order.Status = Order.OrderStatus.Processing;
 
             await _context.SaveChangesAsync();
-            
-            // Notify all clients that an order status has changed
-            await _notificationService.NotifyAllAsync("OrderStatusChanged", 
+
+            // Notify all clients that an order is now being processed
+            await _notificationService.NotifyAllAsync("OrderStatusChanged",
                 new { OrderId = orderId, Status = "Processing", Message = $"Order #{orderId} is now being processed" });
 
             return true;
@@ -86,12 +83,8 @@ namespace RMS.Services
             var order = await _context.Orders.FindAsync(orderId);
             if (order == null) return false;
 
-            order.Status = Order.OrderStatus.Completed;
+            order.Status = Order.OrderStatus.Ready;
 
-            // Mark all items as ready
-            var orderItems = await _context.OrderItems
-                .Where(oi => oi.OrderId == orderId)
-                .ToListAsync();
             await _context.SaveChangesAsync();
 
             // Notify all clients that an order is ready

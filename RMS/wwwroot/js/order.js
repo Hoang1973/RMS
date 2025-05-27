@@ -6,6 +6,23 @@
 function formatVND(amount) {
     return parseInt(amount).toLocaleString('vi-VN') + ' ₫';
 }
+function isUnpaidStatus(status) {
+    return ['Pending', 'Processing', 'Ready'].includes(status);
+}
+function getStatusDisplay(status) {
+    switch (status) {
+        case 'Pending':
+            return { text: 'Chờ xử lý', color: 'bg-yellow-100 text-yellow-800' };
+        case 'Processing':
+            return { text: 'Đang chuẩn bị', color: 'bg-orange-100 text-orange-800' };
+        case 'Ready':
+            return { text: 'Sẵn sàng phục vụ', color: 'bg-blue-100 text-blue-800' };
+        case 'Completed':
+            return { text: 'Đã thanh toán', color: 'bg-green-100 text-green-800' };
+        default:
+            return { text: 'Không rõ', color: 'bg-gray-100 text-gray-600' };
+    }
+}
 function printOrderBill(orderId) {
     var billContent = document.getElementById('order-bill-' + orderId).innerHTML;
     var printWindow = window.open('', '', 'width=800,height=600');
@@ -53,13 +70,15 @@ function showOrderDetail(orderId) {
 
 // Hàm render chi tiết đơn hàng (panel đầu tiên trong modal)
 function renderOrderDetailContent(order) {
-    const statusColor = order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : (order.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600');
-    const statusText = order.status === 'Pending' ? 'Đang phục vụ' : (order.status === 'Completed' ? 'Đã thanh toán' : 'Đã hủy');
+    const { text: statusText, color: statusColor } = getStatusDisplay(order.status);
     const content = document.getElementById('order-detail-content');
+
     content.innerHTML = `
         <div class="flex flex-col space-y-6">
             <div>
-                <div class="font-bold text-2xl text-gray-900 mb-1">Đơn hàng - <span class="text-primary">${order.tableNumber ?? '-'}</span></div>
+                <div class="font-bold text-2xl text-gray-900 mb-1">
+                    Đơn hàng - <span class="text-primary">${order.tableNumber ?? '-'}</span>
+                </div>
                 <div class="flex flex-col space-y-1 text-sm text-gray-600">
                     <div><span class="font-semibold">Bàn:</span> <span class="text-blue-600 font-bold">${order.tableNumber ?? '-'}</span></div>
                     <div><span class="font-semibold">Thời gian tạo:</span> <span>${order.createdAt ?? '-'}</span></div>
@@ -69,14 +88,20 @@ function renderOrderDetailContent(order) {
             </div>
             <div>
                 <div class="font-semibold mb-2 text-base">Danh sách món</div>
-                <div class="divide-y divide-gray-100">${typeof renderDishes === 'function' ? renderDishes(order.dishes) : ''}</div>
+                <div class="divide-y divide-gray-100">
+                    ${typeof renderDishes === 'function' ? renderDishes(order.dishes) : ''}
+                </div>
             </div>
             <div class="flex justify-end">
                 <span class="font-bold text-xl text-green-700">Tổng tiền: ${formatVND(order.totalAmount)}</span>
             </div>
             <div class="flex justify-end">
                 <button onclick="document.getElementById('order-detail-modal').remove()" class="px-5 py-2 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 font-semibold">Đóng</button>
-                ${order.status === 'Pending' ? `<button id=\"start-payment-btn\" class=\"ml-3 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold\">Thanh toán</button>` : ''}
+                ${
+                    isUnpaidStatus(order.status)
+                        ? `<button id="start-payment-btn" class="ml-3 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold">Thanh toán</button>`
+                        : ''
+                }
             </div>
         </div>
     `;
