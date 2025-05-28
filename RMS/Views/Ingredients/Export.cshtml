@@ -1,0 +1,35 @@
+@model RMS.Models.IngredientViewModel
+@{
+    ViewData["Title"] = "Xuất kho nguyên liệu";
+}
+<div class="container mx-auto max-w-lg px-4 py-8">
+    <div class="bg-white rounded shadow-md p-6">
+        <h2 class="text-xl font-bold mb-4 text-primary">Xuất kho: @ViewData["IngredientName"]</h2>
+        <form asp-action="Export" asp-route-id="@Model.Id" method="post" class="space-y-4">
+            <div>
+                <label class="block font-semibold mb-1">Tên nguyên liệu</label>
+                <input type="text" class="input input-bordered w-full bg-gray-100" value="@Model.Name" readonly />
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Tồn kho hiện tại</label>
+                <input type="text" class="input input-bordered w-full bg-gray-100" value="@Model.StockQuantity @Model.Unit" readonly />
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Số lượng xuất</label>
+                <input type="number" name="quantity" min="1" max="@Model.StockQuantity" class="input input-bordered w-full" required />
+                @if (ViewData.ModelState["quantity"]?.Errors.Count > 0)
+                {
+                    <span class="text-red-600 text-xs">@ViewData.ModelState["quantity"].Errors[0].ErrorMessage</span>
+                }
+                @if (ViewData.ModelState[string.Empty]?.Errors.Count > 0)
+                {
+                    <span class="text-red-600 text-xs">@ViewData.ModelState[string.Empty].Errors[0].ErrorMessage</span>
+                }
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button type="submit" class="btn btn-primary">Xuất kho</button>
+                <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+            </div>
+        </form>
+    </div>
+</div>

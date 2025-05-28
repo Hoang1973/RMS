@@ -15,6 +15,7 @@ namespace RMS.Data.Entities
         public Payment Payment { get; set; }
         public Bill Bill { get; set; }
         public string Note { get; set; }
+        public bool isPaid { get; set; } = false;
         public enum OrderStatus
         {
             Pending,

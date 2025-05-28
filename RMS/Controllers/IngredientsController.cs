@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -205,6 +205,80 @@ namespace RMS.Controllers
             {
                 return BadRequest(new { message = "Could not update ingredient. " + ex.Message });
             }
+        }
+        // GET: Ingredients/Import/{id}
+        public async Task<IActionResult> Import(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+            var model = await _ingredientService.GetByIdAsync(id.Value);
+            if (model == null)
+            {
+                return NotFound();
+            }
+            ViewData["IngredientName"] = model.Name;
+            return View(model);
+        }
+
+        // POST: Ingredients/Import/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Import(int id, int quantity)
+        {
+            if (quantity <= 0)
+            {
+                ModelState.AddModelError("", "Số lượng nhập phải lớn hơn 0.");
+                var model = await _ingredientService.GetByIdAsync(id);
+                ViewData["IngredientName"] = model?.Name;
+                return View(model);
+            }
+            await _ingredientService.ImportAsync(id, quantity);
+            return RedirectToAction("Index");
+        }
+
+        // GET: Ingredients/Export/{id}
+        public async Task<IActionResult> Export(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+            var model = await _ingredientService.GetByIdAsync(id.Value);
+            if (model == null)
+            {
+                return NotFound();
+            }
+            ViewData["IngredientName"] = model.Name;
+            return View(model);
+        }
+
+        // POST: Ingredients/Export/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Export(int id, int quantity)
+        {
+            if (quantity <= 0)
+            {
+                ModelState.AddModelError("", "Số lượng xuất phải lớn hơn 0.");
+                var model = await _ingredientService.GetByIdAsync(id);
+                ViewData["IngredientName"] = model?.Name;
+                return View(model);
+            }
+            var ingredient = await _ingredientService.GetByIdAsync(id);
+            if (ingredient == null)
+            {
+                return NotFound();
+            }
+            if (ingredient.StockQuantity < quantity)
+            {
+                ModelState.AddModelError("", $"Không đủ tồn kho. Hiện còn: {ingredient.StockQuantity}");
+                ViewData["IngredientName"] = ingredient.Name;
+                return View(ingredient);
+            }
+            await _ingredientService.ExportAsync(id, quantity);
+            return RedirectToAction("Index");
         }
     }
 }

@@ -205,13 +205,13 @@ function renderPaymentDetailPanel(order) {
                             <i class="fas fa-money-bill-wave mr-2"></i>
                             <span>Tiền mặt</span>
                         </button>
-                        <button type="button" class="payment-method border p-2 rounded flex items-center justify-center" data-method="bank">
+                        <button type="button" class="payment-method border p-2 rounded flex items-center justify-center" data-method="card">
                             <i class="fas fa-university mr-2"></i>
-                            <span>Chuyển khoản</span>
+                            <span>Quét QR (Card)</span>
                         </button>
-                        <div id="bank-transfer-qr" class="w-full flex flex-col items-center mt-4 hidden">
-                            <img src="/images/qr-bank.png" alt="QR chuyển khoản" class="w-48 h-48 object-contain border rounded mb-2" />
-                            <div class="text-sm text-gray-700">Quét mã QR để chuyển khoản</div>
+                        <div id="card-qr" class="w-full flex flex-col items-center mt-4 hidden">
+                            <img src="/images/myqr.png" alt="QR chuyển khoản" class="w-48 h-48 object-contain border rounded mb-2" />
+                            <div class="text-sm text-gray-700">Quét mã QR để thanh toán</div>
                         </div>
                     </div>
                     <button id="complete-payment-btn" class="w-full py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded disabled:opacity-60" disabled>Hoàn tất thanh toán</button>
@@ -253,16 +253,11 @@ function renderPaymentDetailPanel(order) {
             this.classList.add('bg-blue-100', 'border-blue-500');
             paymentMethod = this.dataset.method;
             document.getElementById('complete-payment-btn').disabled = false;
-            // Hiện/ẩn QR khi chọn chuyển khoản
-            const qrDiv = document.getElementById('bank-transfer-qr');
+            // Hiển thị QR cố định khi chọn Card
+            const qrDiv = document.getElementById('card-qr');
             const qrImg = qrDiv.querySelector('img');
-            if (paymentMethod === 'bank') {
-                // Tạo QR động
-                const bankCode = 'BID'; // mã ngân hàng
-                const accountNo = '8834512153'; // số tài khoản
-                const addInfo = encodeURIComponent(`Thanh toan don #${order.id}`);
-                const qrUrl = `https://img.vietqr.io/image/${bankCode}-${accountNo}-compact2.png?amount=${total}&addInfo=${addInfo}`;
-                qrImg.src = qrUrl;
+            if (paymentMethod === 'card') {
+                qrImg.src = '/images/myqr.png'; // Đường dẫn QR cố định
                 qrDiv.classList.remove('hidden');
             } else {
                 qrDiv.classList.add('hidden');

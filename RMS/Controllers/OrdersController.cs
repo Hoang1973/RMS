@@ -22,6 +22,47 @@ namespace RMS.Controllers
         private readonly IMapper _mapper;
         private readonly ILogger<OrdersController> _logger;
 
+        // AJAX: Kiểm tra tồn kho nguyên liệu cho danh sách món
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckStock([FromBody] List<DishDto> dishes)
+        {
+            if (dishes == null || !dishes.Any())
+                return Json(new { success = true });
+            var requiredIngredients = new Dictionary<int, double>();
+            foreach (var dishItem in dishes)
+            {
+                var dishIngredients = await _context.DishIngredients
+                    .Where(di => di.DishId == dishItem.DishId)
+                    .ToListAsync();
+                foreach (var di in dishIngredients)
+                {
+                    var totalNeeded = Convert.ToDouble(di.QuantityNeeded) * dishItem.Quantity;
+                    if (!requiredIngredients.ContainsKey(di.IngredientId))
+                        requiredIngredients[di.IngredientId] = 0;
+                    requiredIngredients[di.IngredientId] += totalNeeded;
+                }
+            }
+            var ingredientIds = requiredIngredients.Keys.ToList();
+            var stocks = await _context.Ingredients
+                .Where(i => ingredientIds.Contains(i.Id))
+                .ToDictionaryAsync(i => i.Id, i => new { i.StockQuantity, i.Name });
+            foreach (var kvp in requiredIngredients)
+            {
+                if (!stocks.ContainsKey(kvp.Key) || stocks[kvp.Key].StockQuantity < kvp.Value)
+                {
+                    var ingName = stocks.ContainsKey(kvp.Key) ? stocks[kvp.Key].Name : $"ID={kvp.Key}";
+                    return Json(new { success = false, message = $"Không đủ nguyên liệu: {ingName}. Cần {kvp.Value}, còn {stocks.GetValueOrDefault(kvp.Key)?.StockQuantity ?? 0}" });
+                }
+            }
+            return Json(new { success = true });
+        }
+        public class DishDto
+        {
+            public int DishId { get; set; }
+            public int Quantity { get; set; }
+        }
+
         public OrdersController
         (IOrderService orderService, 
         IDishService dishService, 

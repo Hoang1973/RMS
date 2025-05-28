@@ -1,4 +1,4 @@
-﻿@model RMS.Models.OrderViewModel
+@model RMS.Models.OrderViewModel
 @using RMS.Data.Entities
 
 @{
@@ -52,9 +52,12 @@
     <a asp-action="Index">Back to List</a>
 </div>
 
+<!-- Vùng hiển thị lỗi tồn kho -->
+<div id="stock-error-message" class="alert alert-danger mt-2" style="display:none;"></div>
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-
+    <script src="~/js/ingredient_stock_check.js"></script>
     <script>
         let dishIndex = 1; // Start từ 1 vì 0 đã có sẵn
 

@@ -51,6 +51,7 @@
                 <label class="block font-semibold mb-1">Tổng tiền</label>
                 <input asp-for="TotalAmount" class="border px-3 py-2 w-full rounded bg-gray-100" id="total-amount" readonly />
             </div>
+            <div id="stock-error-message" class="text-red-600 font-semibold mb-2" style="display:none;"></div>
             <div class="flex justify-end gap-2 mt-4">
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Lưu đơn</button>
                 <button type="button" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400" id="cancelOrderModal">Hủy</button>
