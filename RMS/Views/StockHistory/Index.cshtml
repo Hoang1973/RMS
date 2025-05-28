@@ -1,0 +1,38 @@
+@model IEnumerable<RMS.Models.StockHistoryViewModel>
+@{
+    ViewData["Title"] = "Lịch sử kho";
+}
+<div class="container mx-auto px-2 py-6">
+    <h2 class="text-2xl font-bold mb-6 text-primary">Lịch sử nhập/xuất kho</h2>
+    <div class="overflow-x-auto rounded shadow">
+        <table class="min-w-full divide-y divide-gray-200 bg-white">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Thời gian</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nguyên liệu</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Thay đổi</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Loại</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach (var item in Model)
+                {
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-4 py-2 whitespace-nowrap">@item.StockDate.ToString("HH:mm dd/MM/yyyy")</td>
+                        <td class="px-4 py-2 whitespace-nowrap">@item.IngredientName</td>
+                        <td class="px-4 py-2 font-bold whitespace-nowrap">
+                            <span class="@(item.StockChange > 0 ? "text-green-600" : "text-red-600")">
+                                @(item.StockChange > 0 ? "+" : "-")@Math.Abs(item.StockChange)
+                            </span>
+                        </td>
+                        <td class="px-4 py-2 whitespace-nowrap">
+                            <span class="inline-block px-2 py-1 rounded text-xs font-semibold @(item.StockChange > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700")">
+                                @item.OperationType
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

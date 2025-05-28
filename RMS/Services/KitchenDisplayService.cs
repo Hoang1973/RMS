@@ -5,6 +5,7 @@ using RMS.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using static RMS.Data.Entities.Order;
 
 namespace RMS.Services
 {
@@ -67,6 +68,11 @@ namespace RMS.Services
             var order = await _context.Orders.FindAsync(orderId);
             if (order == null) return false;
 
+            if (order.Status == OrderStatus.Completed || order.Status == OrderStatus.Cancelled)
+            {
+                // Không cho cập nhật nữa
+                return false;
+            }
             order.Status = Order.OrderStatus.Processing;
 
             await _context.SaveChangesAsync();
@@ -82,6 +88,12 @@ namespace RMS.Services
         {
             var order = await _context.Orders.FindAsync(orderId);
             if (order == null) return false;
+
+            if (order.Status == OrderStatus.Completed || order.Status == OrderStatus.Cancelled)
+            {
+                // Không cho cập nhật nữa
+                return false;
+            }
 
             order.Status = Order.OrderStatus.Ready;
 

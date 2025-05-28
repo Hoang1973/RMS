@@ -1,4 +1,4 @@
-﻿@model IEnumerable<RMS.Models.IngredientViewModel>
+@model IEnumerable<RMS.Models.IngredientViewModel>
 
 @{
     ViewData["Title"] = "Quản lý kho nguyên liệu";
@@ -90,22 +90,28 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             @if (item.StockQuantity == 0)
                             {
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Hết hàng</span>
+                                <span class="text-red-500">Hết hàng</span>
                             }
                             else if (item.StockQuantity < 10)
                             {
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Sắp hết</span>
+                                <span class="text-yellow-500">Sắp hết</span>
                             }
                             else
                             {
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Còn hàng</span>
+                                <span class="text-green-500">Còn hàng</span>
                             }
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button class="text-blue-500 hover:text-blue-700 mr-2 edit-btn" data-id="@item.Id">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex gap-2">
+                            <a asp-action="Import" asp-route-id="@item.Id" class="inline-flex items-center px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded">
+                                <i class="fas fa-file-import mr-1"></i> Nhập kho
+                            </a>
+                            <a asp-action="Export" asp-route-id="@item.Id" class="inline-flex items-center px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded">
+                                <i class="fas fa-file-export mr-1"></i> Xuất kho
+                            </a>
+                            <button class="text-blue-500 hover:text-blue-700 edit-btn ml-2" data-id="@item.Id">
                                 <i class="fas fa-edit"></i> Sửa
                             </button>
-                            <button class="text-red-500 hover:text-red-700 delete-btn" data-id="@item.Id">
+                            <button class="text-red-500 hover:text-red-700 delete-btn ml-2" data-id="@item.Id">
                                 <i class="fas fa-trash"></i> Xóa
                             </button>
                         </td>

@@ -15,9 +15,11 @@ namespace RMS.Services
 
     public class OrderService : BaseService<OrderViewModel, Order>, IOrderService
     {
-        public OrderService(RMSDbContext context, IMapper mapper, INotificationService notificationService)
+        private readonly IIngredientService _ingredientService;
+        public OrderService(RMSDbContext context, IMapper mapper, INotificationService notificationService, IIngredientService ingredientService)
             : base(context, mapper, notificationService)
         {
+            _ingredientService = ingredientService;
         }
 
         public override async Task<OrderViewModel?> GetByIdAsync(int id)
@@ -93,6 +95,49 @@ namespace RMS.Services
 
         public override async Task CreateAsync(OrderViewModel model)
         {
+            // 1. Kiểm tra tồn kho nguyên liệu
+            var requiredIngredients = new Dictionary<int, double>(); // IngredientId -> total needed
+            var dishNames = new Dictionary<int, string>();
+            if (model.Dishes != null)
+            {
+                foreach (var dishItem in model.Dishes)
+                {
+                    // Lấy nguyên liệu và số lượng cần cho món này
+                    var dishIngredients = await _context.DishIngredients
+                        .Where(di => di.DishId == dishItem.DishId)
+                        .ToListAsync();
+                    foreach (var di in dishIngredients)
+                    {
+                        var totalNeeded = Convert.ToDouble(di.QuantityNeeded) * dishItem.Quantity;
+                        if (!requiredIngredients.ContainsKey(di.IngredientId))
+                            requiredIngredients[di.IngredientId] = 0;
+                        requiredIngredients[di.IngredientId] += totalNeeded;
+                    }
+                    // Lưu tên món để báo lỗi dễ hiểu
+                    if (!dishNames.ContainsKey(dishItem.DishId))
+                        dishNames[dishItem.DishId] = dishItem.Name;
+                }
+            }
+            var ingredientIds = requiredIngredients.Keys.ToList();
+            var stocks = await _context.Ingredients
+                .Where(i => ingredientIds.Contains(i.Id))
+                .ToDictionaryAsync(i => i.Id, i => new { i.StockQuantity, i.Name });
+            foreach (var kvp in requiredIngredients)
+            {
+                if (!stocks.ContainsKey(kvp.Key) || stocks[kvp.Key].StockQuantity < kvp.Value)
+                {
+                    var ingName = stocks.ContainsKey(kvp.Key) ? stocks[kvp.Key].Name : $"ID={kvp.Key}";
+                    throw new InvalidOperationException($"Không đủ nguyên liệu: {ingName}. Cần {kvp.Value}, còn {stocks.GetValueOrDefault(kvp.Key)?.StockQuantity ?? 0}");
+                }
+            }
+            // 2. Xuất kho nguyên liệu cho từng nguyên liệu sử dụng
+            foreach (var kvp in requiredIngredients)
+            {
+                // Chuyển đổi double về int cho ExportAsync (nếu cần làm tròn)
+                int exportQty = (int)Math.Ceiling(kvp.Value);
+                await _ingredientService.ExportAsync(kvp.Key, exportQty);
+            }
+            // Tiếp tục tạo đơn hàng như cũ
             var entity = _mapper.Map<Order>(model);
             await _dbSet.AddAsync(entity);
 

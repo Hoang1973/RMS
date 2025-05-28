@@ -13,8 +13,7 @@ namespace RMS.Data.Entities
         public enum PaymentMethodEnum
         {
             Cash,
-            Card,
-            Cheque
+            Card
         }
     }
 }
