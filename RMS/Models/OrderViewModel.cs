@@ -25,5 +25,6 @@ namespace RMS.Models
         }
         public Order.OrderStatus Status { get; set; } = Order.OrderStatus.Pending;
         public double? Discount { get; set; }
+        public bool isPaid { get; set; }
     }
 }

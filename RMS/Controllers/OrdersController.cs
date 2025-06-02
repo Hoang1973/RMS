@@ -84,16 +84,58 @@ namespace RMS.Controllers
         public async Task<IActionResult> Index()
         {
             var orders = await _context.Orders
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Dish)
                 .Include(o => o.Table)
-                .ProjectTo<OrderViewModel>(_mapper.ConfigurationProvider) // Tự động map theo cấu hình
                 .ToListAsync();
+
+            var vms = orders.Select(order => new OrderViewModel
+            {
+                Id = order.Id,
+                TableId = order.TableId,
+                TableNumber = order.Table?.TableNumber,
+                TotalAmount = order.TotalAmount,
+                CreatedAt = order.CreatedAt,
+                isPaid = order.isPaid,
+                Dishes = order.OrderItems != null
+                    ? order.OrderItems.Select(x => new OrderViewModel.DishItem
+                        {
+                            DishId = x.DishId,
+                            Name = x.Dish?.Name,
+                            Quantity = x.Quantity,
+                            Price = x.Price
+                        }).ToList()
+                    : new List<OrderViewModel.DishItem>(),
+            }).ToList();
+            // Lấy danh sách món ăn đầy đủ thông tin cho JS
+            var dishEntities = await _dishService.GetAllAsync();
+            ViewData["DishList"] = dishEntities.Select(d => new {
+                Id = d.Id,
+                Name = d.Name,
+                Type = d.Type.ToString(),
+                Price = d.Price
+            }).ToList();
+
+            // Lấy danh sách loại món ăn từ enum
+            ViewData["DishTypes"] = Enum.GetValues(typeof(RMS.Data.Entities.Dish.DishType))
+                .Cast<RMS.Data.Entities.Dish.DishType>()
+                .Select(dt => new {
+                    Value = dt.ToString(),
+                    Text = dt switch
+                    {
+                        RMS.Data.Entities.Dish.DishType.MainCourse => "Món chính",
+                        RMS.Data.Entities.Dish.DishType.Appetizer => "Khai vị",
+                        RMS.Data.Entities.Dish.DishType.Dessert => "Tráng miệng",
+                        _ => dt.ToString()
+                    }
+                }).ToList();
 
             // Bổ sung các ViewData cần thiết cho form popup
             ViewData["Dishes"] = new SelectList(await _dishService.GetAllAsync(), "Id", "Name");
             ViewData["Tables"] = new SelectList(await _tableService.GetAvailableTablesAsync(), "Id", "TableNumber");
             ViewData["DishPrices"] = _context.Dishes.ToDictionary(d => d.Id.ToString(), d => d.Price);
 
-            return View(orders);
+            return View(vms);
         }
 
         // GET: Orders/Details/5
@@ -104,16 +146,38 @@ namespace RMS.Controllers
                 return NotFound();
             }
 
-            var model = await _orderService.GetByIdAsync(id.Value);
-            if (model == null)
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Dish)
+                .Include(o => o.Table)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null)
             {
                 return NotFound();
             }
 
-            return View(model);
+            var vm = new OrderViewModel
+            {
+                Id = order.Id,
+                TableId = order.TableId,
+                TableNumber = order.Table?.TableNumber,
+                TotalAmount = order.TotalAmount,
+                CreatedAt = order.CreatedAt,
+                isPaid = order.isPaid,
+                Dishes = order.OrderItems != null
+                    ? order.OrderItems.Select(x => new OrderViewModel.DishItem
+                        {
+                            DishId = x.DishId,
+                            Name = x.Dish?.Name,
+                            Quantity = x.Quantity,
+                            Price = x.Price
+                        }).ToList()
+                    : new List<OrderViewModel.DishItem>(),
+            };
+
+            return View(vm);
         }
-
-
 
         // GET: Orders/DetailsJson/5
         [HttpGet]
@@ -131,6 +195,7 @@ namespace RMS.Controllers
                 status = model.Status.ToString(),
                 createdAt = model.CreatedAt?.ToString("HH:mm dd/MM/yyyy"),
                 totalAmount = model.TotalAmount,
+                isPaid = model.isPaid,
                 dishes = model.Dishes?.Select(d => new {
                     name = d.Name,
                     quantity = d.Quantity,
@@ -270,6 +335,7 @@ namespace RMS.Controllers
         }
 
         [HttpPost]
+        //First option: cash payment with no discount
         public async Task<IActionResult> CompletePayment(int orderId, int tableId)
         {
             var order = await _context.Orders.FindAsync(orderId);

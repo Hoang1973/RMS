@@ -23,14 +23,11 @@ $(document).ready(function(){
         <h3 class="font-bold text-lg mb-4">Đơn hàng hiện tại</h3>
         <div id="current-orders" class="space-y-3">
             @foreach (var order in Model
-            .Where(o => o.Status != RMS.Data.Entities.Order.OrderStatus.Completed))
+            .Where(o => o.isPaid == false))
             {
                 @Html.Partial("_OrderCard", order)
             }
-            @if (!Model.Any(o => 
-                        o.Status == RMS.Data.Entities.Order.OrderStatus.Pending ||
-                        o.Status == RMS.Data.Entities.Order.OrderStatus.Processing ||
-                        o.Status == RMS.Data.Entities.Order.OrderStatus.Ready))
+            @if (!Model.Any(o => o.isPaid == false))
             {
                 <div class="text-gray-400 italic">Không có đơn hàng nào đang phục vụ.</div>
             }
@@ -39,11 +36,11 @@ $(document).ready(function(){
     <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
         <h3 class="font-bold text-lg mb-4">Lịch sử đơn hàng</h3>
         <div id="order-history" class="space-y-3">
-            @foreach (var order in Model.Where(o => o.Status == RMS.Data.Entities.Order.OrderStatus.Completed))
+            @foreach (var order in Model.Where(o => o.isPaid == true))
             {
                 @Html.Partial("_OrderCard", order)
             }
-            @if (!Model.Any(o => o.Status == RMS.Data.Entities.Order.OrderStatus.Completed))
+            @if (!Model.Any(o => o.isPaid == true))
             {
                 <div class="text-gray-400 italic">Chưa có đơn hàng nào đã thanh toán.</div>
             }

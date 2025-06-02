@@ -13,5 +13,6 @@ namespace RMS.Data.Entities
         public Order Order { get; set; }
         [ForeignKey("DishId")]
         public Dish Dish { get; set; }
+        public bool IsCompleted { get; set; }
     }
 }

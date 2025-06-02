@@ -36,5 +36,12 @@ namespace RMS.Controllers
             var result = await _kitchenDisplayService.CompleteOrderAsync(orderId);
             return Json(new { success = result });
         }
+
+        [HttpPost]
+        public IActionResult CompleteOrderItem(int orderItemId)
+        {
+            var result = _kitchenDisplayService.CompleteOrderItem(orderItemId);
+            return Json(new { success = result });
+        }
     }
 }
