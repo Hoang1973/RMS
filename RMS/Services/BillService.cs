@@ -42,7 +42,7 @@ namespace RMS.Services
             return viewModel;
         }
 
-        // Custom logic nếu cần
+        // summary: This method completes the payment for an order and creates a bill based on the provided model.
         public async Task<bool> CompletePaymentAndCreateBillAsync(OrderPaymentViewModel model)
         {
             var order = await _context.Orders.FindAsync(model.OrderId);
@@ -54,7 +54,7 @@ namespace RMS.Services
             // 1. Cập nhật trạng thái order & bàn
             order.Status = Order.OrderStatus.Completed;
             table.Status = Table.TableStatus.Available;
-
+            order.isPaid = true;
             // 2. Tính toán các giá trị hóa đơn
             decimal vatAmount = Math.Round(model.Subtotal * model.VatPercent / 100, 0);
             decimal totalAmount = model.Subtotal + vatAmount;

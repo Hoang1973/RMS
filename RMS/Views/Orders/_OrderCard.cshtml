@@ -1,6 +1,6 @@
 @model RMS.Models.OrderViewModel
 @{
-    var isCurrent = Model.Status != RMS.Data.Entities.Order.OrderStatus.Completed;
+    var isCurrent = Model.isPaid == false;
 }
 <script src="~/js/order.js" defer></script>
 <script src="~/js/bills.js" defer></script>
@@ -17,19 +17,8 @@
     <div class="mb-2">
         <div class="flex justify-between">
             <span class="text-gray-500 dark:text-gray-400">Món:</span>
-            <span class="truncate font-semibold" title="@string.Join(", ", Model.Dishes.Select(d => d.Name + " x" + d.Quantity))">
-                @{
-                    var dishString = string.Join(", ", Model.Dishes.Select(d => d.Name + " x" + d.Quantity));
-                    var maxLen = 40;
-                    @if (dishString.Length > maxLen)
-                    {
-                        @(dishString.Substring(0, maxLen) + "...")
-                    }
-                    else
-                    {
-                        @dishString
-                    }
-                }
+            <span class="truncate font-semibold" title="@(Model.Dishes != null && Model.Dishes.Any() ? string.Join(", ", Model.Dishes.Select(d => d.Name)) : "Không có món")">
+                @(Model.Dishes != null && Model.Dishes.Any() ? string.Join(", ", Model.Dishes.Select(d => d.Name)) : "Không có món")
             </span>
         </div>
         <div class="flex justify-between">
@@ -57,5 +46,3 @@
         }
     </div>
 </div>
-
-

@@ -1,14 +1,15 @@
 // order.js - Quản lý modal thanh toán, tối giản, không logic thừa
 
-
-
 // Định dạng tiền VND
 function formatVND(amount) {
     return parseInt(amount).toLocaleString('vi-VN') + ' ₫';
 }
-function isUnpaidStatus(status) {
-    return ['Pending', 'Processing', 'Ready'].includes(status);
+
+// Sử dụng biến bool isPaid thay cho kiểm tra status
+function isUnpaidStatus(isPaid) {
+    return !isPaid;
 }
+
 function getStatusDisplay(status) {
     switch (status) {
         case 'Pending':
@@ -86,10 +87,32 @@ function renderOrderDetailContent(order) {
                     <div><span class="font-semibold">Trạng thái:</span> <span class="inline-block px-2 py-1 rounded ${statusColor}">${statusText}</span></div>
                 </div>
             </div>
-            <div>
+            <div>           
                 <div class="font-semibold mb-2 text-base">Danh sách món</div>
-                <div class="divide-y divide-gray-100">
-                    ${typeof renderDishes === 'function' ? renderDishes(order.dishes) : ''}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="py-2 text-left">Món</th>
+                                <th class="py-2 text-right">SL</th>
+                                <th class="py-2 text-right">Đơn giá</th>
+                                <th class="py-2 text-right">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${order.dishes && order.dishes.length > 0
+                                ? order.dishes.map(d => `
+                                    <tr>
+                                        <td class="py-1">${d.name}</td>
+                                        <td class="py-1 text-right">${d.quantity}</td>
+                                        <td class="py-1 text-right">${formatVND(d.price)}</td>
+                                        <td class="py-1 text-right">${formatVND(d.subtotal)}</td>
+                                    </tr>
+                                `).join('')
+                                : `<tr><td colspan="4" class="py-2 text-center text-gray-400">Không có món nào</td></tr>`
+                            }
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="flex justify-end">
@@ -98,7 +121,7 @@ function renderOrderDetailContent(order) {
             <div class="flex justify-end">
                 <button onclick="document.getElementById('order-detail-modal').remove()" class="px-5 py-2 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 font-semibold">Đóng</button>
                 ${
-                    isUnpaidStatus(order.status)
+                    isUnpaidStatus(order.isPaid)
                         ? `<button id="start-payment-btn" class="ml-3 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold">Thanh toán</button>`
                         : ''
                 }
@@ -132,7 +155,6 @@ if (!window._orderDetailPaymentListener) {
     });
     window._orderDetailPaymentListener = true;
 }
-
 
 // Render nội dung chi tiết thanh toán
 function renderPaymentDetailPanel(order) {

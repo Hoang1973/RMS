@@ -25,7 +25,7 @@
                                 <div>
                                     <h3 class="font-medium">@order.TableName</h3>
                                     <p class="text-sm text-gray-600 dark:text-gray-400">
-                                        @order.Created?.ToString("HH:mm:ss")
+                                        Thời gian chờ: <span class="kds-timer" data-start="@order.Created">00:00</span>
                                     </p>
                                     @if (!string.IsNullOrWhiteSpace(order.Note))
                                     {
@@ -71,7 +71,7 @@
                                 <div>
                                     <h3 class="font-medium">@order.TableName</h3>
                                     <p class="text-sm text-gray-600 dark:text-gray-400">
-                                        Bắt đầu: @(order.StartedCooking?.ToString("HH:mm:ss") ?? order.Created?.ToString("HH:mm:ss")) (@order.ElapsedMinutes phút)
+                                        Thời gian chờ món mới: <span class="kds-timer" data-start="@order.Created">00:00</span>
                                     </p>
                                     @if (!string.IsNullOrWhiteSpace(order.Note))
                                     {
@@ -86,10 +86,15 @@
                             <div class="space-y-2 mt-3">
                                 @foreach (var item in order.Items)
                                 {
-                                    <div class="flex justify-between items-center kitchen-item p-2 rounded border">
+                                    <div class="flex justify-between items-center kitchen-item p-2 rounded border @(item.IsCompleted ? "completed" : "")">
                                         <div>
                                             <div class="font-medium">@item.Name x@(item?.Quantity ?? 0)</div>
                                         </div>
+                                        <button class="complete-item-btn text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 px-2"
+                                                data-item-id="@item.Id"
+                                                @(item.IsCompleted ? "disabled" : "")>
+                                            <i class="fas @(item.IsCompleted ? "fa-check-circle" : "fa-circle")"></i>
+                                        </button>
                                     </div>
                                 }
                             </div>
@@ -145,6 +150,15 @@
 
 @section Scripts {
     <script>
+        // Khởi tạo flash timer cho tất cả order khi trang load
+        $(document).ready(function () {
+            // Chỉ khởi tạo flash timer cho các order đang chờ hoặc đang chế biến
+            $("#pending-kitchen-orders .kitchen-order-card[data-id], #in-progress-kitchen-orders .kitchen-order-card[data-id]").each(function () {
+                const orderId = $(this).data("id");
+                startOrderFlashTimer(orderId);
+            });
+        });
+
         $(document).ready(function () {
             // Start cooking button
             $(".start-cooking-btn").click(function () {
@@ -175,6 +189,10 @@
                     data: { orderId: orderId },
                     success: function (response) {
                         if (response.success) {
+                            // Tắt nháy đỏ ngay khi hoàn thành order
+                            const orderCard = $(`.kitchen-order-card[data-id='${orderId}']`);
+                            orderCard.removeClass('flash-red');
+                            if (orderFlashTimers[orderId]) clearTimeout(orderFlashTimers[orderId]);
                             location.reload();
                         } else {
                             alert("Không thể hoàn thành đơn hàng. Vui lòng thử lại.");
@@ -186,6 +204,118 @@
                 });
             });
         });
+
+        function tryAutoCompleteOrder(orderCard) {
+            const totalItems = orderCard.find('.kitchen-item').length;
+            const completedItems = orderCard.find('.kitchen-item.completed').length;
+            if (totalItems > 0 && totalItems === completedItems) {
+                // Tự động trigger nút hoàn thành đơn hàng
+                orderCard.find('.complete-order-btn').trigger('click');
+            }
+        }
+
+        const MAX_WAIT_SECONDS = 5; // ví dụ: 10 phút = 600 giây
+        const orderFlashTimers = {};
+
+        function startOrderFlashTimer(orderId) {
+            // Nếu đã có timer thì clear trước
+            if (orderFlashTimers[orderId]) clearTimeout(orderFlashTimers[orderId]);
+            const orderCard = document.querySelector(`.kitchen-order-card[data-id='${orderId}']`);
+            let seconds = 0;
+
+            function tick() {
+                // Nếu order đã hoàn thành (tất cả món đã completed) thì dừng nháy đỏ
+                const totalItems = orderCard.querySelectorAll('.kitchen-item').length;
+                const completedItems = orderCard.querySelectorAll('.kitchen-item.completed').length;
+                if (completedItems === totalItems) {
+                    orderCard.classList.remove('flash-red');
+                    return;
+                }
+
+                seconds++;
+                if (seconds >= MAX_WAIT_SECONDS) {
+                    orderCard.classList.add('flash-red');
+                } else {
+                    orderCard.classList.remove('flash-red');
+                }
+                orderFlashTimers[orderId] = setTimeout(tick, 1000);
+            }
+            seconds = 0;
+            tick();
+        }
+
+        // Reset flash timer khi hoàn thành một món
+        $(document).on("click", ".complete-item-btn", function () {
+            const btn = $(this);
+            const itemId = btn.data("item-id");
+            const orderCard = btn.closest(".kitchen-order-card");
+            const orderId = orderCard.data("id");
+            $.ajax({
+                url: "/KitchenDisplay/CompleteOrderItem",
+                type: "POST",
+                data: { orderItemId: itemId },
+                success: function (response) {
+                    if (response.success) {
+                        btn.find("i").removeClass("fa-circle").addClass("fa-check-circle");
+                        btn.prop("disabled", true);
+                        btn.closest(".kitchen-item").addClass("completed");
+                        // Reset flash timer cho order này
+                        startOrderFlashTimer(orderId);
+                        tryAutoCompleteOrder(orderCard);
+                        location.reload(); // Reload để cập nhật trạng thái
+                    } else {
+                        alert("Không thể hoàn thành món. Vui lòng thử lại.");
+                    }
+                },
+                error: function () {
+                    alert("Đã xảy ra lỗi. Vui lòng thử lại.");
+                }
+            });
+        });
+
+        // Reset timer khi hoàn thành một món
+        $(document).on("click", ".complete-item-btn", function () {
+            const btn = $(this);
+            const itemId = btn.data("item-id");
+            const orderCard = btn.closest(".kitchen-order-card");
+            const orderId = orderCard.data("id");
+            $.ajax({
+                url: "/KitchenDisplay/CompleteOrderItem",
+                type: "POST",
+                data: { orderItemId: itemId },
+                success: function (response) {
+                    if (response.success) {
+                        btn.find("i").removeClass("fa-circle").addClass("fa-check-circle");
+                        btn.prop("disabled", true);
+                        btn.closest(".kitchen-item").addClass("completed");
+                        // Reset timer cho order này
+                        startOrderTimer(orderId);
+                    } else {
+                        alert("Không thể hoàn thành món. Vui lòng thử lại.");
+                    }
+                },
+                error: function () {
+                    alert("Đã xảy ra lỗi. Vui lòng thử lại.");
+                }
+            });
+        });
+
+        // Simple JS timer for all .kds-timer elements
+        function updateTimers() {
+            document.querySelectorAll('.kds-timer').forEach(function (el) {
+                var start = el.dataset.start;
+                if (!start) return;
+                var startTime = new Date(start);
+                var now = new Date();
+                var diff = Math.max(0, Math.floor((now - startTime) / 1000));
+                var min = Math.floor(diff / 60);
+                var sec = diff % 60;
+                el.textContent = (min < 10 ? "0" : "") + min + ":" + (sec < 10 ? "0" : "") + sec;
+            });
+        }
+        setInterval(updateTimers, 1000);
+        updateTimers();
+
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     <script>
@@ -213,8 +343,21 @@
             70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
             100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
         }
-        .kitchen-order-card:first-child {
+
+        #pending-kitchen-orders .kitchen-order-card:first-child {
             animation: pulse 2s infinite;
+        }
+
+        .kitchen-item.completed {
+            background-color: rgba(74, 222, 128, 0.1);
+        }
+
+        @@keyframes flash-red {
+            0%, 100% { background-color: inherit; }
+            50% { background-color: rgba(239, 68, 68, 0.2); }
+        }
+        .kitchen-order-card.flash-red {
+            animation: flash-red 1s infinite;
         }
     </style>
 }
