@@ -255,5 +255,122 @@ namespace RMS.Controllers
                     return BadRequest("Invalid period");
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetBasicStats()
+        {
+            var stats = new
+            {
+                TotalRevenue = await _context.Bills.SumAsync(b => b.TotalDue),
+                TotalOrdersCount = await _context.Orders.CountAsync(),
+                AvailableTablesCount = await _context.Tables.CountAsync(t => t.Status == TableStatus.Available),
+                LowStockIngredientsCount = await _context.Ingredients.CountAsync(i => i.StockQuantity < 10)
+            };
+            return Json(stats);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLowStockIngredients()
+        {
+            var ingredients = await _context.Ingredients
+                .Where(i => i.StockQuantity < 10)
+                .Select(i => new
+                {
+                    i.Name,
+                    i.StockQuantity,
+                    i.Unit,
+                    i.Type
+                })
+                .ToListAsync();
+            return Json(ingredients);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetRecentOrders()
+        {
+            var orders = await _context.Orders
+                .Include(o => o.Table)
+                .OrderByDescending(o => o.CreatedAt)
+                .Take(5)
+                .Select(o => new
+                {
+                    o.Id,
+                    TableNumber = o.Table.TableNumber,
+                    o.Status,
+                    o.CreatedAt
+                })
+                .ToListAsync();
+            return Json(orders);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetRecentBills()
+        {
+            var bills = await _context.Bills
+                .Include(b => b.Order)
+                    .ThenInclude(o => o.Table)
+                .OrderByDescending(b => b.CreatedAt)
+                .Take(5)
+                .Select(b => new
+                {
+                    b.Id,
+                    TableNumber = b.Order.Table.TableNumber,
+                    b.TotalDue,
+                    b.CreatedAt
+                })
+                .ToListAsync();
+            return Json(bills);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetTopDishes()
+        {
+            var topDishes = await _context.OrderItems
+                .Include(oi => oi.Dish)
+                .GroupBy(oi => new { oi.DishId, oi.Dish.Name })
+                .Select(g => new
+                {
+                    Name = g.Key.Name,
+                    TotalQuantity = g.Sum(oi => oi.Quantity),
+                    TotalRevenue = g.Sum(oi => oi.Quantity * oi.Price)
+                })
+                .OrderByDescending(d => d.TotalQuantity)
+                .Take(5)
+                .ToListAsync();
+            return Json(topDishes);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetRevenueStats()
+        {
+            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, VietnamTimeZone);
+            var today = now.Date;
+            var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
+            var startOfMonth = new DateTime(today.Year, today.Month, 1);
+
+            var allBills = await _context.Bills
+                .Where(b => b.CreatedAt.HasValue)
+                .ToListAsync();
+
+            var stats = new
+            {
+                DailyRevenue = allBills
+                    .Where(b => TimeZoneInfo.ConvertTimeFromUtc(b.CreatedAt.Value, VietnamTimeZone).Date == today)
+                    .Sum(b => b.TotalDue),
+                WeeklyRevenue = allBills
+                    .Where(b => {
+                        var billDate = TimeZoneInfo.ConvertTimeFromUtc(b.CreatedAt.Value, VietnamTimeZone).Date;
+                        return billDate >= startOfWeek && billDate <= today;
+                    })
+                    .Sum(b => b.TotalDue),
+                MonthlyRevenue = allBills
+                    .Where(b => {
+                        var billDate = TimeZoneInfo.ConvertTimeFromUtc(b.CreatedAt.Value, VietnamTimeZone).Date;
+                        return billDate >= startOfMonth && billDate <= today;
+                    })
+                    .Sum(b => b.TotalDue)
+            };
+            return Json(stats);
+        }
     }
 } 

@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using RMS.Hubs;
 
 namespace RMS
 {
@@ -76,10 +77,10 @@ namespace RMS
                     policy.RequireRole("Admin"));
 
                 options.AddPolicy("ChefOnly", policy =>
-                    policy.RequireRole("Chef"));
+                    policy.RequireRole("Chef","Admin"));
 
                 options.AddPolicy("WaiterOrCashier", policy =>
-                    policy.RequireRole("Waiter", "Cashier"));
+                    policy.RequireRole("Waiter", "Cashier", "Admin"));
 
                 options.AddPolicy("StaffOnly", policy =>
                     policy.RequireRole("Admin", "Chef", "Waiter", "Cashier"));

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using RMS.Hubs;
 
 namespace RMS.Services
 {
