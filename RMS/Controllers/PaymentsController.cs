@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using RMS.Models;
 using RMS.Services;
 
 namespace RMS.Controllers
 {
+    [Authorize(Policy = "StaffOnly")]
     public class PaymentsController : Controller
     {
         private readonly IPaymentService _paymentService;

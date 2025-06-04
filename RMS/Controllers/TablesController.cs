@@ -9,9 +9,11 @@ using RMS.Data;
 using RMS.Data.Entities;
 using RMS.Models;
 using RMS.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RMS.Controllers
 {
+    [Authorize(Policy = "WaiterOrCashier")]
     public class TablesController : Controller
     {
         private readonly ITableService _tableService;

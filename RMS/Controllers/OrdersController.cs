@@ -8,9 +8,11 @@ using RMS.Models;
 using RMS.Services;
 using static RMS.Data.Entities.Order;
 using static RMS.Data.Entities.Table;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RMS.Controllers
 {
+    [Authorize(Policy = "WaiterOrCashier")]
     public class OrdersController : Controller
     {
         private readonly IOrderService _orderService;

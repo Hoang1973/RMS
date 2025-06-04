@@ -4,9 +4,11 @@ using RMS.Data;
 using RMS.Models;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RMS.Controllers
 {
+    [Authorize(Policy = "AdminOnly")]
     public class StockHistoryController : Controller
     {
         private readonly RMSDbContext _context;

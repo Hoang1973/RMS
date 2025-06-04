@@ -14,6 +14,7 @@ namespace RMS.Models
         public decimal DiscountAmount { get; set; }
         public decimal TotalDue { get; set; }
         public decimal AmountPaid { get; set; }
+        public DateTime? CreatedAt { get; set; }
 
         public List<DiscountViewModel>? Discounts { get; set; } = new();
         public string? TableNumber { get; set; }

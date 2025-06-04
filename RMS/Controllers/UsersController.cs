@@ -14,7 +14,6 @@ using RMS.Services;
 namespace RMS.Controllers
 {
     [Authorize(Policy = "AdminOnly")]
-    //[AllowAnonymous]
     public class UsersController : Controller
     {
         private readonly IUserService _userService;

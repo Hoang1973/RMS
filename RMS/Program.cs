@@ -74,6 +74,15 @@ namespace RMS
             {
                 options.AddPolicy("AdminOnly", policy =>
                     policy.RequireRole("Admin"));
+
+                options.AddPolicy("ChefOnly", policy =>
+                    policy.RequireRole("Chef"));
+
+                options.AddPolicy("WaiterOrCashier", policy =>
+                    policy.RequireRole("Waiter", "Cashier"));
+
+                options.AddPolicy("StaffOnly", policy =>
+                    policy.RequireRole("Admin", "Chef", "Waiter", "Cashier"));
             });
 
             var app = builder.Build();

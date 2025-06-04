@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using RMS.Models;
 using RMS.Services;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RMS.Controllers
 {
+    [Authorize(Policy = "ChefOnly")]
     public class KitchenDisplayController : Controller
     {
         private readonly IKitchenDisplayService _kitchenDisplayService;

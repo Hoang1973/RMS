@@ -13,6 +13,7 @@ using RMS.Services;
 
 namespace RMS.Controllers
 {
+    [Authorize(Policy = "AdminOnly")]
     public class DishesController : Controller
     {
         private readonly IDishService _dishService;
