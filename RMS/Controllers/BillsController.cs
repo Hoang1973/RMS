@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using RMS.Models;
 using RMS.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace RMS.Controllers
 {
+    [Authorize(Policy = "StaffOnly")]
     public class BillsController : Controller
     {
         private readonly IBillService _billService;

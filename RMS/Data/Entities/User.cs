@@ -14,7 +14,10 @@ namespace RMS.Data.Entities
         public enum Role
         {
             Admin = 1,
-            User = 2
+            User = 2,
+            Chef = 3,
+            Waiter = 4,
+            Cashier = 5
         }
 
     }

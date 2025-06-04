@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using RMS.Models;
 using RMS.Services;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RMS.Controllers
 {
+    [Authorize(Policy = "AdminOnly")]
     public class DiscountsController : Controller
     {
         private readonly IDiscountService _discountService;
@@ -29,7 +31,7 @@ namespace RMS.Controllers
 
         public async Task<IActionResult> Create()
         {
-                        return View();
+            return View();
         }
 
         [HttpPost]
@@ -41,14 +43,14 @@ namespace RMS.Controllers
                 await _discountService.CreateAsync(model);
                 return RedirectToAction(nameof(Index));
             }
-                        return View(model);
+            return View(model);
         }
 
         public async Task<IActionResult> Edit(int id)
         {
             var discount = await _discountService.GetByIdAsync(id);
             if (discount == null) return NotFound();
-                        return View(discount);
+            return View(discount);
         }
 
         [HttpPost]
@@ -60,7 +62,7 @@ namespace RMS.Controllers
                 await _discountService.UpdateAsync(model);
                 return RedirectToAction(nameof(Index));
             }
-                        return View(model);
+            return View(model);
         }
 
         public async Task<IActionResult> Delete(int id)
