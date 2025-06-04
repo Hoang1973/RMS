@@ -1,6 +1,7 @@
 @model RMS.Models.DashboardViewModel
 @using static RMS.Data.Entities.Order
 @using static RMS.Data.Entities.Table
+@using RMS.Hubs
 @{
     ViewData["Title"] = "Dashboard";
 }
@@ -18,7 +19,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm text-gray-500">Tổng doanh thu</p>
-                    <p class="text-2xl font-semibold">@Model.TotalRevenue.ToString("N0") VNĐ</p>
+                    <p class="text-2xl font-semibold" data-stat="total-revenue">0 VNĐ</p>
                 </div>
             </div>
         </div>
@@ -31,7 +32,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm text-gray-500">Tổng đơn hàng</p>
-                    <p class="text-2xl font-semibold">@Model.TotalOrdersCount</p>
+                    <p class="text-2xl font-semibold" data-stat="total-orders">0</p>
                 </div>
             </div>
         </div>
@@ -44,7 +45,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm text-gray-500">Bàn trống</p>
-                    <p class="text-2xl font-semibold">@Model.AvailableTablesCount</p>
+                    <p class="text-2xl font-semibold" data-stat="available-tables">0</p>
                 </div>
             </div>
         </div>
@@ -57,7 +58,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm text-gray-500">Nguyên liệu sắp hết</p>
-                    <p class="text-2xl font-semibold">@Model.LowStockIngredientsCount</p>
+                    <p class="text-2xl font-semibold" data-stat="low-stock-ingredients">0</p>
                 </div>
             </div>
         </div>
@@ -81,16 +82,7 @@
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Loại</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @foreach (var ingredient in Model.LowStockIngredients)
-                            {
-                                <tr>
-                                    <td class="px-4 py-2">@ingredient.Name</td>
-                                    <td class="px-4 py-2 text-red-600 font-medium">@ingredient.StockQuantity</td>
-                                    <td class="px-4 py-2">@ingredient.Unit</td>
-                                    <td class="px-4 py-2">@ingredient.Type</td>
-                                </tr>
-                            }
+                        <tbody class="divide-y divide-gray-200" id="low-stock-ingredients">
                         </tbody>
                     </table>
                 </div>
@@ -106,15 +98,15 @@
             <div class="space-y-4">
                 <div>
                     <p class="text-sm text-gray-500">Hôm nay</p>
-                    <p class="text-xl font-semibold">@Model.DailyRevenue.ToString("N0") VNĐ</p>
+                    <p class="text-xl font-semibold" data-stat="daily-revenue">0 VNĐ</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Tuần này</p>
-                    <p class="text-xl font-semibold">@Model.WeeklyRevenue.ToString("N0") VNĐ</p>
+                    <p class="text-xl font-semibold" data-stat="weekly-revenue">0 VNĐ</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Tháng này</p>
-                    <p class="text-xl font-semibold">@Model.MonthlyRevenue.ToString("N0") VNĐ</p>
+                    <p class="text-xl font-semibold" data-stat="monthly-revenue">0 VNĐ</p>
                 </div>
             </div>
         </div>
@@ -152,15 +144,7 @@
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Doanh thu</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @foreach (var dish in Model.TopDishes)
-                            {
-                                <tr>
-                                    <td class="px-4 py-2">@dish.Name</td>
-                                    <td class="px-4 py-2">@dish.TotalQuantity</td>
-                                    <td class="px-4 py-2">@dish.TotalRevenue.ToString("N0") VNĐ</td>
-                                </tr>
-                            }
+                        <tbody class="divide-y divide-gray-200" id="top-dishes">
                         </tbody>
                     </table>
                 </div>
@@ -182,23 +166,7 @@
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @foreach (var order in Model.TotalOrders)
-                            {
-                                <tr>
-                                    <td class="px-4 py-2">@order.TableNumber</td>
-                                    <td class="px-4 py-2">
-                                        <span class="px-2 py-1 text-xs rounded-full
-                                            @(order.Status == OrderStatus.Pending ? "bg-yellow-100 text-yellow-800" :
-                                              order.Status == OrderStatus.Processing ? "bg-blue-100 text-blue-800" :
-                                              order.Status == OrderStatus.Ready ? "bg-green-100 text-green-800" :
-                                              "bg-gray-100 text-gray-800")">
-                                            @order.Status
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-2">@order.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
-                                </tr>
-                            }
+                        <tbody class="divide-y divide-gray-200" id="recent-orders">
                         </tbody>
                     </table>
                 </div>
@@ -221,15 +189,7 @@
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @foreach (var bill in Model.RecentBills)
-                        {
-                            <tr>
-                                <td class="px-4 py-2">@bill.TableNumber</td>
-                                <td class="px-4 py-2">@bill.TotalDue.ToString("N0") VNĐ</td>
-                                <td class="px-4 py-2">@bill.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
-                            </tr>
-                        }
+                    <tbody class="divide-y divide-gray-200" id="recent-bills">
                     </tbody>
                 </table>
             </div>
@@ -238,7 +198,7 @@
 </div>
 
 @section Scripts {
-    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     <script>
         let revenueChart;
         let currentPeriod = 'daily';
@@ -289,36 +249,271 @@
             currentPeriod = period;
             const buttons = document.querySelectorAll('button');
             buttons.forEach(btn => {
-                btn.classList.remove('bg-blue-500', 'text-white');
-                btn.classList.add('bg-gray-200', 'text-gray-700');
+                if (btn.textContent.toLowerCase() === period) {
+                    btn.classList.remove('bg-gray-200', 'text-gray-700');
+                    btn.classList.add('bg-blue-500', 'text-white');
+                } else {
+                    btn.classList.remove('bg-blue-500', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                }
             });
-            event.target.classList.remove('bg-gray-200', 'text-gray-700');
-            event.target.classList.add('bg-blue-500', 'text-white');
 
             fetch(`/Dashboard/GetRevenueData?period=${period}`)
                 .then(response => response.json())
                 .then(data => {
                     initChart(data.revenues, data.labels);
+                })
+                .catch(error => {
+                    console.error('Error updating chart:', error);
                 });
         }
 
-        // Khởi tạo biểu đồ ban đầu
-        const hourlyData = @Html.Raw(Json.Serialize(Model.HourlyRevenue));
-        initChart(
-            hourlyData.map(h => h.revenue),
-            hourlyData.map(h => h.hour + ':00')
-        );
+        // Hàm chuyển đổi trạng thái đơn hàng
+        function getOrderStatusText(status) {
+            switch (status) {
+                case 0: return 'Pending';
+                case 1: return 'Processing';
+                case 2: return 'Ready';
+                case 3: return 'Completed';
+                case 4: return 'Cancelled';
+                default: return 'Unknown';
+            }
+        }
+
+        // Hàm chuyển đổi loại nguyên liệu
+        function getIngredientTypeText(type) {
+            switch (type) {
+                case 0: return 'Rau củ';
+                case 1: return 'Thịt';
+                case 2: return 'Hải sản';
+                case 3: return 'Gia vị';
+                case 4: return 'Khác';
+                default: return 'Unknown';
+            }
+        }
+
+        // Các hàm cập nhật từng phần
+        async function updateBasicStats() {
+            try {
+                const response = await fetch('/Dashboard/GetBasicStats');
+                if (!response.ok) throw new Error('Failed to fetch basic stats');
+                const stats = await response.json();
+                
+                document.querySelector('[data-stat="total-revenue"]').textContent = stats.totalRevenue.toLocaleString('vi-VN') + ' VNĐ';
+                document.querySelector('[data-stat="total-orders"]').textContent = stats.totalOrdersCount;
+                document.querySelector('[data-stat="available-tables"]').textContent = stats.availableTablesCount;
+                document.querySelector('[data-stat="low-stock-ingredients"]').textContent = stats.lowStockIngredientsCount;
+            } catch (error) {
+                console.error('Error updating basic stats:', error);
+            }
+        }
+
+        async function updateLowStockIngredients() {
+            try {
+                const response = await fetch('/Dashboard/GetLowStockIngredients');
+                if (!response.ok) throw new Error('Failed to fetch low stock ingredients');
+                const ingredients = await response.json();
+                
+                const tbody = document.querySelector('#low-stock-ingredients');
+                if (!tbody) return;
+                
+                tbody.innerHTML = ingredients.map(i => `
+                    <tr>
+                        <td class="px-4 py-2">${i.name}</td>
+                        <td class="px-4 py-2 text-red-600 font-medium">${i.stockQuantity}</td>
+                        <td class="px-4 py-2">${i.unit}</td>
+                        <td class="px-4 py-2">${getIngredientTypeText(i.type)}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error updating low stock ingredients:', error);
+            }
+        }
+
+        async function updateRecentOrders() {
+            try {
+                const response = await fetch('/Dashboard/GetRecentOrders');
+                if (!response.ok) throw new Error('Failed to fetch recent orders');
+                const orders = await response.json();
+                
+                const tbody = document.querySelector('#recent-orders');
+                if (!tbody) return;
+                
+                tbody.innerHTML = orders.map(o => {
+                    const status = getOrderStatusText(o.status);
+                    const statusClass = 
+                        status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                        status === 'Processing' ? 'bg-blue-100 text-blue-800' :
+                        status === 'Ready' ? 'bg-green-100 text-green-800' :
+                        status === 'Completed' ? 'bg-gray-100 text-gray-800' :
+                        'bg-red-100 text-red-800';
+                    
+                    return `
+                        <tr>
+                            <td class="px-4 py-2">${o.tableNumber}</td>
+                            <td class="px-4 py-2">
+                                <span class="px-2 py-1 text-xs rounded-full ${statusClass}">
+                                    ${status}
+                                </span>
+                            </td>
+                            <td class="px-4 py-2">${new Date(o.createdAt).toLocaleString('vi-VN')}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error updating recent orders:', error);
+            }
+        }
+
+        async function updateRecentBills() {
+            try {
+                const response = await fetch('/Dashboard/GetRecentBills');
+                if (!response.ok) throw new Error('Failed to fetch recent bills');
+                const bills = await response.json();
+                
+                const tbody = document.querySelector('#recent-bills');
+                if (!tbody) return;
+                
+                tbody.innerHTML = bills.map(b => `
+                    <tr>
+                        <td class="px-4 py-2">${b.tableNumber}</td>
+                        <td class="px-4 py-2">${b.totalDue.toLocaleString('vi-VN')} VNĐ</td>
+                        <td class="px-4 py-2">${new Date(b.createdAt).toLocaleString('vi-VN')}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error updating recent bills:', error);
+            }
+        }
+
+        async function updateTopDishes() {
+            try {
+                const response = await fetch('/Dashboard/GetTopDishes');
+                if (!response.ok) throw new Error('Failed to fetch top dishes');
+                const dishes = await response.json();
+                
+                const tbody = document.querySelector('#top-dishes');
+                if (!tbody) return;
+                
+                tbody.innerHTML = dishes.map(d => `
+                    <tr>
+                        <td class="px-4 py-2">${d.name}</td>
+                        <td class="px-4 py-2">${d.totalQuantity}</td>
+                        <td class="px-4 py-2">${d.totalRevenue.toLocaleString('vi-VN')} VNĐ</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error updating top dishes:', error);
+            }
+        }
+
+        async function updateRevenueStats() {
+            try {
+                const response = await fetch('/Dashboard/GetRevenueStats');
+                if (!response.ok) throw new Error('Failed to fetch revenue stats');
+                const stats = await response.json();
+                
+                document.querySelector('[data-stat="daily-revenue"]').textContent = stats.dailyRevenue.toLocaleString('vi-VN') + ' VNĐ';
+                document.querySelector('[data-stat="weekly-revenue"]').textContent = stats.weeklyRevenue.toLocaleString('vi-VN') + ' VNĐ';
+                document.querySelector('[data-stat="monthly-revenue"]').textContent = stats.monthlyRevenue.toLocaleString('vi-VN') + ' VNĐ';
+            } catch (error) {
+                console.error('Error updating revenue stats:', error);
+            }
+        }
+
+        // Hàm khởi tạo dữ liệu ban đầu
+        async function initializeDashboard() {
+            try {
+                await Promise.all([
+                    updateBasicStats(),
+                    updateLowStockIngredients(),
+                    updateRecentOrders(),
+                    updateRecentBills(),
+                    updateTopDishes(),
+                    updateRevenueStats()
+                ]);
+
+                // Khởi tạo biểu đồ với dữ liệu ban đầu
+                const hourlyData = @Html.Raw(Json.Serialize(Model.HourlyRevenue));
+                initChart(
+                    hourlyData.map(h => h.revenue),
+                    hourlyData.map(h => h.hour + ':00')
+                );
+            } catch (error) {
+                console.error('Error initializing dashboard:', error);
+            }
+        }
 
         // SignalR connection
-        const connection = new signalR.HubConnectionBuilder()
+        const dashboardConnection = new signalR.HubConnectionBuilder()
             .withUrl("/notificationHub")
+            .withAutomaticReconnect()
             .build();
 
-        connection.on("DataChanged", (data) => {
-            // Refresh the page when data changes
-            location.reload();
+        // Lắng nghe các event cụ thể
+        dashboardConnection.on("OrderChanged", async (data) => {
+            console.log("Order changed:", data);
+            try {
+                await Promise.all([
+                    updateBasicStats(),
+                    updateRecentOrders(),
+                    updateTopDishes()
+                ]);
+            } catch (error) {
+                console.error('Error handling OrderChanged event:', error);
+            }
         });
 
-        connection.start().catch(err => console.error(err));
+        dashboardConnection.on("BillChanged", async (data) => {
+            console.log("Bill changed:", data);
+            try {
+                await Promise.all([
+                    updateBasicStats(),
+                    updateRevenueStats(),
+                    updateRecentBills(),
+                    updateChart(currentPeriod)
+                ]);
+            } catch (error) {
+                console.error('Error handling BillChanged event:', error);
+            }
+        });
+
+        dashboardConnection.on("IngredientChanged", async (data) => {
+            console.log("Ingredient changed:", data);
+            try {
+                await Promise.all([
+                    updateBasicStats(),
+                    updateLowStockIngredients()
+                ]);
+            } catch (error) {
+                console.error('Error handling IngredientChanged event:', error);
+            }
+        });
+
+        dashboardConnection.on("TableChanged", async (data) => {
+            console.log("Table changed:", data);
+            try {
+                await updateBasicStats();
+            } catch (error) {
+                console.error('Error handling TableChanged event:', error);
+            }
+        });
+
+        // Start SignalR connection và khởi tạo dashboard
+        dashboardConnection.start()
+            .then(() => {
+                console.log("SignalR Connected");
+                initializeDashboard();
+            })
+            .catch(err => {
+                console.error("SignalR Connection Error:", err);
+                // Retry connection after 5 seconds
+                setTimeout(() => {
+                    console.log("Retrying SignalR connection...");
+                    dashboardConnection.start()
+                        .then(() => initializeDashboard())
+                        .catch(error => console.error("Failed to reconnect:", error));
+                }, 5000);
+            });
     </script>
 } 
