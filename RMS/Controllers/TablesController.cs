@@ -31,6 +31,12 @@ namespace RMS.Controllers
         public async Task<IActionResult> Index()
         {
             var models = await _tableService.GetAllAsync();
+                        
+            // Add data needed for order form
+            ViewData["Dishes"] = new SelectList(await _context.Dishes.ToListAsync(), "Id", "Name");
+            ViewData["Tables"] = new SelectList(models, "Id", "TableNumber");
+            ViewData["DishPrices"] = await _context.Dishes.ToDictionaryAsync(d => d.Id.ToString(), d => d.Price);
+
             return View(models);
         }
 
@@ -51,6 +57,14 @@ namespace RMS.Controllers
             // Check if the request is AJAX
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
+                // Get current order for the table
+                var currentOrder = await _context.Orders
+                    .Include(o => o.OrderItems)
+                        .ThenInclude(oi => oi.Dish)
+                    .Where(o => o.TableId == id && !o.isPaid)
+                    .OrderByDescending(o => o.CreatedAt)
+                    .FirstOrDefaultAsync();
+
                 return Json(new
                 {
                     id = model.Id,
@@ -58,7 +72,22 @@ namespace RMS.Controllers
                     capacity = model.Capacity,
                     status = (int)model.Status,
                     createdAt = model.CreatedAt,
-                    updatedAt = model.UpdatedAt
+                    updatedAt = model.UpdatedAt,
+                    currentOrder = currentOrder != null ? new {
+                        id = currentOrder.Id,
+                        orderNumber = currentOrder.Id.ToString().PadLeft(6, '0'),
+                        status = currentOrder.Status.ToString(),
+                        createdAt = currentOrder.CreatedAt,
+                        totalAmount = currentOrder.TotalAmount,
+                        customerPhone = currentOrder.CustomerPhoneNumber,
+                        note = currentOrder.Note,
+                        items = currentOrder.OrderItems.Select(oi => new {
+                            dishName = oi.Dish.Name,
+                            quantity = oi.Quantity,
+                            price = oi.Price,
+                            total = oi.Quantity * oi.Price
+                        })
+                    } : null
                 });
             }
 

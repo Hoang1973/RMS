@@ -278,8 +278,8 @@ namespace RMS.Controllers
                 {
                     i.Name,
                     i.StockQuantity,
-                    i.Unit,
-                    i.Type
+                    Unit = i.Unit.ToString(),  // Gán tên rõ ràng
+                    Type = i.Type.ToString()   // Gán tên rõ ràng
                 })
                 .ToListAsync();
             return Json(ingredients);
@@ -296,7 +296,7 @@ namespace RMS.Controllers
                 {
                     o.Id,
                     TableNumber = o.Table.TableNumber,
-                    o.Status,
+                    Status = o.Status.ToString(),
                     o.CreatedAt
                 })
                 .ToListAsync();

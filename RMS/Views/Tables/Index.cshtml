@@ -1,5 +1,4 @@
 ﻿@model IEnumerable<RMS.Models.TableViewModel>
-
 @{
     ViewData["Title"] = "Quản lý bàn";
 }
@@ -239,7 +238,13 @@
 
 </div>
 
+@Html.Partial("~/Views/Orders/_OrderForm.cshtml", new RMS.Models.OrderViewModel(), new ViewDataDictionary(ViewData))
+
 @section Scripts {
+    <script src="~/js/order.js"></script>
+    <script src="~/js/ingredient_stock_check.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script>
         // Initialize grid
         const gridSize = 5;
@@ -282,39 +287,36 @@
         }
 
         function handleDrop(e) {
-            e.preventDefault();
-            const tableId = e.dataTransfer.getData('text/plain');
-            const tableElement = document.querySelector(`[data-table-id="${tableId}"]`);
-            const cell = e.target.closest('.grid-cell');
-            
-            if (tableElement && cell) {
-                // Check if the target cell already has a table
-                if (cell.classList.contains('has-table')) {
-                    // If dropping on another table, don't allow it
-                    cell.classList.remove('drag-over');
+            try {
+                e.preventDefault();
+                const tableId = e.dataTransfer.getData('text/plain');
+                // Find the table element - either in grid or available tables
+                const tableElement = document.querySelector(`.table-grid-item[data-table-id="${tableId}"]`) || 
+                                   document.querySelector(`.table-item[data-table-id="${tableId}"]`);
+                const cell = e.target.closest('.grid-cell');
+                
+                if (!tableElement || !cell || cell.classList.contains('has-table')) {
                     return;
                 }
 
                 // Remove drag-over class
                 cell.classList.remove('drag-over');
 
-                // Get the original table data before removing anything
-                let sourceTable;
-                if (tableElement.closest('#availableTables')) {
-                    // Dragging from available tables
-                    sourceTable = tableElement;
-                } else {
-                    // Dragging from grid
-                    const originalCell = document.querySelector(`.grid-cell[data-table-id="${tableId}"]`);
-                    if (originalCell) {
-                        sourceTable = originalCell.querySelector('.table-grid-item');
-                    } else {
-                        // Fallback: use tableElement if originalCell not found
-                        sourceTable = tableElement;
-                    }
+                // Get table data from the source element
+                const tableData = {
+                    id: tableElement.dataset.tableId,
+                    number: tableElement.dataset.tableNumber,
+                    capacity: tableElement.dataset.tableCapacity,
+                    status: tableElement.dataset.tableStatus
+                };
+
+                // Validate table data
+                if (!tableData.id || !tableData.number || !tableData.capacity || !tableData.status) {
+                    console.error('Invalid table data:', tableData);
+                    return;
                 }
 
-                // Remove table from previous position
+                // Remove table from previous position if exists
                 const oldCell = document.querySelector(`.grid-cell[data-table-id="${tableId}"]`);
                 if (oldCell) {
                     oldCell.removeAttribute('data-table-id');
@@ -340,16 +342,14 @@
                 // Create new table element for the grid
                 const tableClone = document.createElement('div');
                 tableClone.className = 'table-grid-item w-full h-full cursor-pointer';
-                
-                // Set all data attributes
-                tableClone.dataset.tableId = sourceTable.dataset.tableId;
-                tableClone.dataset.tableNumber = sourceTable.dataset.tableNumber;
-                tableClone.dataset.tableCapacity = sourceTable.dataset.tableCapacity;
-                tableClone.dataset.tableStatus = sourceTable.dataset.tableStatus;
+                tableClone.dataset.tableId = tableData.id;
+                tableClone.dataset.tableNumber = tableData.number;
+                tableClone.dataset.tableCapacity = tableData.capacity;
+                tableClone.dataset.tableStatus = tableData.status;
                 tableClone.draggable = true;
                 
                 // Add status-based background color
-                const status = parseInt(sourceTable.dataset.tableStatus);
+                const status = parseInt(tableData.status);
                 if (status === 1) {
                     tableClone.classList.add('bg-green-100', 'border-green-500');
                 } else {
@@ -359,22 +359,21 @@
                 
                 // Add table content
                 tableClone.innerHTML = `
-                    <div class="text-sm font-bold">${sourceTable.dataset.tableNumber}</div>
-                    <div class="text-xs text-gray-600">${sourceTable.dataset.tableCapacity} chỗ</div>
-                    <button class="return-to-available mt-1 text-xs text-blue-600 hover:text-blue-800" onclick="returnTableToAvailable('${tableId}')">
+                    <div class="text-sm font-bold">${tableData.number}</div>
+                    <div class="text-xs text-gray-600">${tableData.capacity} chỗ</div>
+                    <button class="return-to-available mt-1 text-xs text-blue-600 hover:text-blue-800" onclick="returnTableToAvailable('${tableData.id}')">
                         <i class="fas fa-undo"></i> Trả về
                     </button>
                 `;
                 
                 // Add event listeners
                 tableClone.addEventListener('click', (e) => {
-                    // Don't show details if clicking the return button
                     if (!e.target.closest('.return-to-available')) {
-                        showTableDetails(tableId);
+                        showTableDetails(tableData.id);
                     }
                 });
                 tableClone.addEventListener('dragstart', (e) => {
-                    e.dataTransfer.setData('text/plain', tableId);
+                    e.dataTransfer.setData('text/plain', tableData.id);
                     e.dataTransfer.effectAllowed = 'move';
                     tableClone.classList.add('dragging');
                 });
@@ -392,131 +391,188 @@
                 }
 
                 // Show table details after moving
-                showTableDetails(tableId);
+                showTableDetails(tableData.id);
+            } catch (error) {
+                console.error('Error in handleDrop:', error);
+                throw error;
             }
         }
 
-        // Function to return table to available seats
-        function returnTableToAvailable(tableId) {
-            const cell = document.querySelector(`.grid-cell[data-table-id="${tableId}"]`);
-            if (cell) {
-                const tableElement = cell.querySelector('.table-grid-item');
-                if (tableElement) {
-                    // Create new table for available section
-                    const newTable = document.createElement('div');
-                    newTable.className = 'table-item aspect-square rounded-lg border-2 p-2 flex flex-col items-center justify-center cursor-move hover:shadow-lg transition-all duration-200';
-                    newTable.draggable = true;
-                    
-                    // Copy all data attributes
-                    newTable.dataset.tableId = tableElement.dataset.tableId;
-                    newTable.dataset.tableNumber = tableElement.dataset.tableNumber;
-                    newTable.dataset.tableCapacity = tableElement.dataset.tableCapacity;
-                    newTable.dataset.tableStatus = tableElement.dataset.tableStatus;
-                    
-                    // Add status-based background color
-                    const status = parseInt(tableElement.dataset.tableStatus);
-                    if (status === 1) {
-                        newTable.classList.add('bg-green-100', 'border-green-500');
-                    } else {
-                        newTable.classList.add('bg-red-100', 'border-red-500');
+        // Initialize grid cells with click handler
+        function initializeGridCells() {
+            document.querySelectorAll('.grid-cell').forEach(cell => {
+                cell.addEventListener('click', function() {
+                    if (!cell.classList.contains('has-table')) {
+                        showAvailableTablesMenu(cell);
                     }
-                    
-                    // Add table content
-                    newTable.innerHTML = `
-                        <div class="text-sm font-bold">${tableElement.dataset.tableNumber}</div>
-                        <div class="text-xs text-gray-600">${tableElement.dataset.tableCapacity} chỗ</div>
-                    `;
-                    
-                    // Add event listeners
-                    newTable.addEventListener('dragstart', (e) => {
-                        e.dataTransfer.setData('text/plain', tableId);
-                        e.dataTransfer.effectAllowed = 'move';
-                        newTable.classList.add('dragging');
-                    });
-                    newTable.addEventListener('dragend', () => {
-                        newTable.classList.remove('dragging');
-                    });
-                    
-                    // Add to available tables section
-                    document.getElementById('availableTables').appendChild(newTable);
-                    
-                    // Remove from grid
-                    cell.removeAttribute('data-table-id');
-                    cell.classList.remove('has-table');
-                    cell.innerHTML = '';
-                    
-                    // Update position display
-                    const positionDisplay = document.querySelector(`.table-position[data-table-id="${tableId}"]`);
-                    if (positionDisplay) {
-                        positionDisplay.textContent = '-';
-                    }
-                    
-                    // Remove from positions map
-                    tablePositions.delete(tableId);
-
-                    // Get all tables in grid
-                    const gridTables = Array.from(tablePositions.entries()).map(([tableId, position]) => ({
-                        tableId,
-                        x: position.x,
-                        y: position.y,
-                        isInGrid: true
-                    }));
-
-                    // Get all tables in available seats
-                    const availableTables = Array.from(document.querySelectorAll('#availableTables .table-item')).map(table => ({
-                        tableId: parseInt(table.dataset.tableId),
-                        x: null,
-                        y: null,
-                        isInGrid: false,
-                        tableNumber: table.dataset.tableNumber,
-                        capacity: parseInt(table.dataset.tableCapacity),
-                        status: parseInt(table.dataset.tableStatus)
-                    }));
-
-                    // Combine both arrays
-                    const layout = [...gridTables, ...availableTables];
-
-                    // Save the updated layout
-                    fetch('/Tables/SaveLayout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify(layout)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.success) {
-                            console.error('Failed to update layout after removing table');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error updating layout:', error);
-                    });
-                }
-            }
-        }
-
-        // Initialize draggable tables
-        function initializeDraggableTables() {
-            document.querySelectorAll('.table-item').forEach(table => {
-                table.addEventListener('dragstart', (e) => {
-                    e.dataTransfer.setData('text/plain', table.dataset.tableId);
-                    e.dataTransfer.effectAllowed = 'move';
-                    table.classList.add('dragging');
-                });
-                table.addEventListener('dragend', (e) => {
-                    e.target.classList.remove('dragging');
                 });
             });
         }
 
-        // Call initialization when page loads
+        // Show available tables menu
+        function showAvailableTablesMenu(cell) {
+            const availableTables = getAvailableTables();
+            if (availableTables.length === 0) return;
+
+            // Remove any existing menu first
+            const existingMenu = document.querySelector('#floatingTableList');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+
+            // Create menu element
+            const menu = document.createElement('div');
+            menu.id = 'floatingTableList';
+            menu.className = 'absolute z-50 bg-white rounded-lg shadow-lg border p-2';
+            menu.style.minWidth = '180px';
+
+            // Build menu content
+            let html = '<div class="text-sm font-semibold mb-2">Chọn bàn để đặt:</div>';
+            availableTables.forEach(table => {
+                html += `
+                    <div class="table-option flex items-center gap-2 mb-1 cursor-pointer rounded hover:bg-gray-100 px-2 py-1"
+                         data-table-id="${table.tableId}">
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full border border-green-500 bg-white text-green-600 mr-1">
+                            <i class="fas fa-plus"></i>
+                        </span>
+                        <span class="font-mono">${table.tableNumber} (${table.capacity} chỗ)</span>
+                    </div>
+                `;
+            });
+            menu.innerHTML = html;
+
+            // Position menu
+            const rect = cell.getBoundingClientRect();
+            menu.style.top = `${window.scrollY + rect.top}px`;
+            menu.style.left = `${window.scrollX + rect.right + 10}px`;
+
+            // Add click handlers
+            menu.querySelectorAll('.table-option').forEach(option => {
+                option.onclick = function(e) {
+                    e.stopPropagation();
+                    const tableId = option.dataset.tableId;
+                    placeTableInCell(tableId, cell);
+                    menu.remove();
+                };
+            });
+
+            // Add click outside handler
+            const clickOutsideHandler = function(e) {
+                if (!menu.contains(e.target) && e.target !== cell) {
+                    if (menu.parentNode) {
+                        menu.remove();
+                    }
+                    document.removeEventListener('click', clickOutsideHandler);
+                }
+            };
+            document.addEventListener('click', clickOutsideHandler);
+
+            // Add menu to body
+            document.body.appendChild(menu);
+        }
+
+        // Place table in cell
+        function placeTableInCell(tableId, cell) {
+            try {
+                const tableElement = document.querySelector(`#availableTables [data-table-id="${tableId}"]`);
+                if (!tableElement || cell.classList.contains('has-table')) return;
+
+                // Create a synthetic drag event
+                const dragEvent = new DragEvent('drop', {
+                    bubbles: true,
+                    cancelable: true,
+                    dataTransfer: new DataTransfer()
+                });
+                dragEvent.dataTransfer.setData('text/plain', tableId);
+                
+                // Set the target element
+                Object.defineProperty(dragEvent, 'target', {
+                    value: cell
+                });
+                
+                // Trigger the drop handler
+                return handleDrop(dragEvent);
+            } catch (error) {
+                console.error('Error in placeTableInCell:', error);
+                throw error;
+            }
+        }
+
+        // Initialize when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            initializeDraggableTables();
-            loadLayout();
+            try {
+                initializeGridCells();
+                loadLayout();
+            } catch (error) {
+                console.error('Error initializing page:', error);
+            }
         });
+
+        // Function to return table to available seats
+        function returnTableToAvailable(tableId) {
+            try {
+                const cell = document.querySelector(`.grid-cell[data-table-id="${tableId}"]`);
+                if (!cell) return;
+
+                const tableElement = cell.querySelector('.table-grid-item');
+                if (!tableElement) return;
+
+                // Create new table for available section
+                const newTable = document.createElement('div');
+                newTable.className = 'table-item aspect-square rounded-lg border-2 p-2 flex flex-col items-center justify-center cursor-move hover:shadow-lg transition-all duration-200';
+                newTable.draggable = true;
+                
+                // Copy all data attributes
+                newTable.dataset.tableId = tableElement.dataset.tableId;
+                newTable.dataset.tableNumber = tableElement.dataset.tableNumber;
+                newTable.dataset.tableCapacity = tableElement.dataset.tableCapacity;
+                newTable.dataset.tableStatus = tableElement.dataset.tableStatus;
+                
+                // Add status-based background color
+                const status = parseInt(tableElement.dataset.tableStatus);
+                if (status === 1) {
+                    newTable.classList.add('bg-green-100', 'border-green-500');
+                } else {
+                    newTable.classList.add('bg-red-100', 'border-red-500');
+                }
+                
+                // Add table content
+                newTable.innerHTML = `
+                    <div class="text-sm font-bold">${tableElement.dataset.tableNumber}</div>
+                    <div class="text-xs text-gray-600">${tableElement.dataset.tableCapacity} chỗ</div>
+                `;
+                
+                // Add event listeners
+                newTable.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', tableId);
+                    e.dataTransfer.effectAllowed = 'move';
+                    newTable.classList.add('dragging');
+                });
+                newTable.addEventListener('dragend', () => {
+                    newTable.classList.remove('dragging');
+                });
+                
+                // Add to available tables section
+                document.getElementById('availableTables').appendChild(newTable);
+                
+                // Remove from grid
+                cell.removeAttribute('data-table-id');
+                cell.classList.remove('has-table');
+                cell.innerHTML = '';
+                
+                // Update position display
+                const positionDisplay = document.querySelector(`.table-position[data-table-id="${tableId}"]`);
+                if (positionDisplay) {
+                    positionDisplay.textContent = '-';
+                }
+                
+                // Remove from positions map
+                tablePositions.delete(tableId);
+            } catch (error) {
+                console.error('Error in returnTableToAvailable:', error);
+                throw error;
+            }
+        }
 
         // Helper to get available tables
         function getAvailableTables() {
@@ -528,199 +584,107 @@
             }));
         }
 
-                // --- Floating Table List Logic ---
-
-        let floatingListHovered = false;
-        let hoveredCell = null;
-        const floating = document.getElementById('floatingTableList');
-
-        // Mouse enter/leave for the floating list
-        floating.addEventListener('mouseenter', () => {
-            floatingListHovered = true;
-        });
-        floating.addEventListener('mouseleave', () => {
-            floatingListHovered = false;
-            setTimeout(() => {
-                if (!floatingListHovered && !hoveredCell) {
-                    floating.style.display = 'none';
-                }
-            }, 80);
-        });
-
-        // Show floating list on empty cell hover
-        document.querySelectorAll('.grid-cell').forEach(cell => {
-            cell.addEventListener('mouseenter', function () {
-                if (cell.classList.contains('has-table')) {
-                    hoveredCell = null;
-                    return;
-                }
-                hoveredCell = cell;
-
-                const availableTables = getAvailableTables();
-                if (availableTables.length === 0) {
-                    floating.style.display = 'none';
-                    return;
-                }
-
-                // Build the list
-                let html = '<div class="text-sm font-semibold mb-2">Chọn bàn để đặt:</div>';
-                availableTables.forEach(table => {
-                    html += `
-                        <div class="floating-table-option flex items-center gap-2 mb-1 cursor-pointer rounded hover:bg-gray-100 px-2 py-1"
-                             data-table-id="${table.tableId}">
-                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full border border-green-500 bg-white text-green-600 mr-1">
-                                <i class="fas fa-plus"></i>
-                            </span>
-                            <span class="font-mono">${table.tableNumber} (${table.capacity} chỗ)</span>
-                        </div>
-                    `;
-                });
-
-                floating.innerHTML = html;
-                floating.style.display = 'block';
-
-                // Position the floating list near the cell
-                const rect = cell.getBoundingClientRect();
-                floating.style.top = `${window.scrollY + rect.top}px`;
-                floating.style.left = `${window.scrollX + rect.right + 10}px`;
-
-                // Make the whole option clickable
-                floating.querySelectorAll('.floating-table-option').forEach(option => {
-                    option.onclick = function (ev) {
-                        ev.stopPropagation();
-                        const tableId = option.dataset.tableId;
-                        placeTableInCell(tableId, cell);
-                        floating.style.display = 'none';
-                    };
-                });
-            });
-
-            cell.addEventListener('mouseleave', function () {
-                hoveredCell = null;
-                setTimeout(() => {
-                    if (!floatingListHovered && !hoveredCell) {
-                        floating.style.display = 'none';
-                    }
-                }, 80);
-            });
-        });
-
-
-
-        // Place table in cell (reuse your existing logic)
-        function placeTableInCell(tableId, cell) {
-            const tableElement = document.querySelector(`#availableTables [data-table-id="${tableId}"]`);
-            if (!tableElement || cell.classList.contains('has-table')) return;
-
-            // Remove from available tables
-            tableElement.remove();
-
-            // Place in grid cell (reuse your logic from handleDrop)
-            cell.setAttribute('data-table-id', tableId);
-            cell.classList.add('has-table');
-
-            const x = parseInt(cell.dataset.x);
-            const y = parseInt(cell.dataset.y);
-            tablePositions.set(tableId, { x, y });
-
-            // Update position display in table list
-            const positionDisplay = document.querySelector(`.table-position[data-table-id="${tableId}"]`);
-            if (positionDisplay) {
-                positionDisplay.textContent = `(${x + 1}, ${y + 1})`;
-            }
-
-            // Create new table element for the grid
-            const tableClone = document.createElement('div');
-            tableClone.className = 'table-grid-item w-full h-full cursor-pointer';
-            tableClone.dataset.tableId = tableElement.dataset.tableId;
-            tableClone.dataset.tableNumber = tableElement.dataset.tableNumber;
-            tableClone.dataset.tableCapacity = tableElement.dataset.tableCapacity;
-            tableClone.dataset.tableStatus = tableElement.dataset.tableStatus;
-            tableClone.draggable = true;
-
-            // Add status-based background color
-            const status = parseInt(tableElement.dataset.tableStatus);
-            if (status === 1) {
-                tableClone.classList.add('bg-green-100', 'border-green-500');
-            } else {
-                tableClone.classList.add('bg-red-100', 'border-red-500');
-            }
-            tableClone.classList.add('border-2', 'rounded-lg');
-
-            // Add table content
-            tableClone.innerHTML = `
-                <div class="text-sm font-bold">${tableElement.dataset.tableNumber}</div>
-                <div class="text-xs text-gray-600">${tableElement.dataset.tableCapacity} chỗ</div>
-                <button class="return-to-available mt-1 text-xs text-blue-600 hover:text-blue-800" onclick="returnTableToAvailable('${tableId}')">
-                    <i class="fas fa-undo"></i> Trả về
-                </button>
-            `;
-
-            // Add event listeners
-            tableClone.addEventListener('click', (e) => {
-                if (!e.target.closest('.return-to-available')) {
-                    showTableDetails(tableId);
-                }
-            });
-            tableClone.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', tableId);
-                e.dataTransfer.effectAllowed = 'move';
-                tableClone.classList.add('dragging');
-            });
-            tableClone.addEventListener('dragend', () => {
-                tableClone.classList.remove('dragging');
-            });
-
-            // Place the new table in the cell
-            cell.innerHTML = '';
-            cell.appendChild(tableClone);
-
-            // Show table details after moving
-            showTableDetails(tableId);
-        }
-
-
         // Save layout
         function saveLayout() {
-            // Get all tables in the grid
-            const gridTables = Array.from(tablePositions.entries()).map(([tableId, position]) => ({
-                tableId,
-                x: position.x,
-                y: position.y,
-                isInGrid: true
-            }));
+            try {
+                // Get all tables in the grid
+                const gridTables = Array.from(tablePositions.entries()).map(([tableId, position]) => {
+                    // Find the table element in the grid
+                    const cell = document.querySelector(`.grid-cell[data-table-id="${tableId}"]`);
+                    if (!cell) return null;
 
-            // Get all tables in available seats
-            const availableTables = Array.from(document.querySelectorAll('#availableTables .table-item')).map(table => ({
-                tableId: parseInt(table.dataset.tableId),
-                x: null,
-                y: null,
-                isInGrid: false
-            }));
+                    const tableElement = cell.querySelector('.table-grid-item');
+                    if (!tableElement) return null;
 
-            // Combine both arrays
-            const layout = [...gridTables, ...availableTables];
+                    // Get table data from the element
+                    const tableData = {
+                        tableId: parseInt(tableId),
+                        tableNumber: tableElement.dataset.tableNumber,
+                        capacity: parseInt(tableElement.dataset.tableCapacity),
+                        status: parseInt(tableElement.dataset.tableStatus),
+                        x: position.x,
+                        y: position.y,
+                        isInGrid: true
+                    };
 
-            fetch('/Tables/SaveLayout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(layout)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Đã lưu bố cục thành công!');
-                } else {
-                    alert('Có lỗi xảy ra khi lưu bố cục!');
+                    // Validate table data
+                    if (!tableData.tableNumber || !tableData.capacity || typeof tableData.status !== 'number') {
+                        console.error('Invalid table data:', tableData);
+                        return null;
+                    }
+
+                    return tableData;
+                }).filter(table => table !== null);
+
+                // Get all tables in available seats
+                const availableTables = Array.from(document.querySelectorAll('#availableTables .table-item')).map(table => {
+                    const tableData = {
+                        tableId: parseInt(table.dataset.tableId),
+                        tableNumber: table.dataset.tableNumber,
+                        capacity: parseInt(table.dataset.tableCapacity),
+                        status: parseInt(table.dataset.tableStatus),
+                        x: null,
+                        y: null,
+                        isInGrid: false
+                    };
+
+                    // Validate table data
+                    if (!tableData.tableNumber || !tableData.capacity || typeof tableData.status !== 'number') {
+                        console.error('Invalid available table data:', tableData);
+                        return null;
+                    }
+
+                    return tableData;
+                }).filter(table => table !== null);
+
+                // Combine both arrays
+                const layout = [...gridTables, ...availableTables];
+
+                // Log layout data for debugging
+                console.log('Saving layout:', layout);
+
+                // Validate layout data
+                if (!layout.every(table => 
+                    table && 
+                    table.tableId && 
+                    table.tableNumber && 
+                    table.capacity && 
+                    typeof table.status === 'number' &&
+                    typeof table.isInGrid === 'boolean'
+                )) {
+                    console.error('Invalid layout data:', layout);
+                    throw new Error('Invalid layout data');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Có lỗi xảy ra khi lưu bố cục!');
-            });
+
+                return fetch('/Tables/SaveLayout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(layout)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data.success) {
+                        throw new Error(data.message || 'Failed to save layout');
+                    }
+                    showSuccessNotification('Đã lưu bố cục thành công!');
+                    console.log('Layout saved successfully');
+                })
+                .catch(error => {
+                    console.error('Error saving layout:', error);
+                    throw error;
+                });
+            } catch (error) {
+                console.error('Error in saveLayout:', error);
+                throw error;
+            }
         }
 
         // Load saved layout
@@ -906,11 +870,79 @@
                             <span class="text-gray-600">Cập nhật lần cuối:</span>
                             <span class="font-semibold">${new Date(table.updatedAt).toLocaleDateString()}</span>
                         </div>
+                        ${table.currentOrder ? `
+                            <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                                <h4 class="text-sm font-semibold text-blue-800 mb-2">Thông tin Order hiện tại</h4>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-blue-600">Mã Order:</span>
+                                        <span class="text-sm font-medium">#${table.currentOrder.orderNumber}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-blue-600">SĐT khách hàng:</span>
+                                        <span class="text-sm font-medium">${table.currentOrder.customerPhone || 'Chưa có'}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-blue-600">Thời gian tạo:</span>
+                                        <span class="text-sm font-medium">${new Date(table.currentOrder.createdAt).toLocaleString()}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-blue-600">Trạng thái:</span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                            table.currentOrder.status === 'Ready' ? 'bg-green-100 text-green-800' :
+                                            table.currentOrder.status === 'Processing' ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-blue-100 text-blue-800'
+                                        }">
+                                            ${table.currentOrder.status}
+                                        </span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <div class="text-sm font-medium text-blue-800 mb-1">Chi tiết món:</div>
+                                        <div class="space-y-1">
+                                            ${table.currentOrder.items.map(item => `
+                                                <div class="flex justify-between items-center text-sm">
+                                                    <span class="text-gray-600">${item.dishName} x${item.quantity}</span>
+                                                    <span class="font-medium">${(item.price).toLocaleString('vi-VN')}đ</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                    ${table.currentOrder.note ? `
+                                        <div class="mt-2">
+                                            <div class="text-sm font-medium text-blue-800 mb-1">Ghi chú:</div>
+                                            <div class="text-sm text-gray-600">${table.currentOrder.note}</div>
+                                        </div>
+                                    ` : ''}
+                                    <div class="flex justify-between items-center mt-2 pt-2 border-t border-blue-100">
+                                        <span class="text-sm font-medium text-blue-800">Tổng tiền:</span>
+                                        <span class="text-sm font-bold text-blue-900">${table.currentOrder.totalAmount.toLocaleString('vi-VN')}đ</span>
+                                    </div>
+                                    <div class="mt-3 flex gap-2">
+                                        <button onclick="showOrderDetail(${table.currentOrder.id})" 
+                                           class="flex-1 inline-flex items-center justify-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                                            <i class="fas fa-eye mr-1.5"></i>Xem chi tiết
+                                        </button>
+                                        <button onclick="editOrder(${table.currentOrder.id})" 
+                                           class="flex-1 inline-flex items-center justify-center px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200">
+                                            <i class="fas fa-edit mr-1.5"></i>Sửa Order
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
                         <div class="pt-4 flex gap-2">
-                            <a href="/Tables/Edit/${table.id}" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                            ${table.status === 1 ? `
+                                <button onclick="openOrderModal(${table.id})" 
+                                        class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200">
+                                    <i class="fas fa-plus mr-2"></i>Tạo Order mới
+                                </button>
+                            ` : ''}
+                            <a href="/Tables/Edit/${table.id}" 
+                               class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
                                 <i class="fas fa-edit mr-2"></i>Sửa
                             </a>
-                            <a href="/Tables/Delete/${table.id}" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200">
+                            <a href="/Tables/Delete/${table.id}" 
+                               class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200">
                                 <i class="fas fa-trash mr-2"></i>Xóa
                             </a>
                         </div>
@@ -923,6 +955,32 @@
                 document.getElementById('tableDetails').innerHTML = '<p class="text-red-500 text-center py-8">Không thể tải thông tin bàn</p>';
             });
         }
+
+        // Function to open order modal with pre-selected table
+        function openOrderModal(tableId) {
+            // Set the table ID in the form
+            document.getElementById('TableId').value = tableId;
+            // Show the modal
+            document.getElementById('orderModal').style.display = 'flex';
+        }
+
+        // Connect to the SignalR hub
+        const orderConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .build();
+
+        // Listen for the OrderStatusChanged event
+        orderConnection.on("OrderStatusChanged", function (data) {
+            if (data.status == "Ready") {
+                toastr.success("Đơn hàng #" + data.OrderId + " đã nấu xong, sẵn sàng phục vụ!");
+            } else {
+                toastr.info("Đơn hàng #" + data.OrderId + " đang được chế biến.");
+            }            
+        });
+
+        orderConnection.start().catch(function (err) {
+            console.error(err.toString());
+        });
 
         // Show modal for creating a new table
         function openCreateTableModal() {
@@ -988,6 +1046,78 @@
                 };
             }
         });
+
+        // Add success notification function
+        function showSuccessNotification(message) {
+            // Create notification container if it doesn't exist
+            let container = document.getElementById('notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'notification-container';
+                container.className = 'fixed top-4 right-4 z-50';
+                document.body.appendChild(container);
+            }
+
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'bg-white rounded-lg shadow-lg p-4 mb-4 relative overflow-hidden';
+            notification.style.minWidth = '300px';
+            notification.style.maxWidth = '400px';
+
+            // Add content
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900">${message}</p>
+                    </div>
+                </div>
+                <div class="absolute bottom-0 left-0 h-1 bg-green-500 w-full"></div>
+            `;
+
+            // Add to container
+            container.appendChild(notification);
+
+            // Get the progress bar element
+            const progressBar = notification.querySelector('.h-1');
+
+            // Start progress bar animation
+            requestAnimationFrame(() => {
+                progressBar.style.transition = 'width 3s linear';
+                progressBar.style.width = '0%';
+            });
+
+            // Remove notification after animation completes
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                notification.style.transition = 'all 0.3s ease-out';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Add styles for notification
+        const style = document.createElement('style');
+        style.textContent = `
+            #notification-container {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            #notification-container > div {
+                transition: all 0.3s ease-out;
+            }
+            .h-1 {
+                transition: width 3s linear;
+            }
+        `;
+        document.head.appendChild(style);
 
     </script>
 

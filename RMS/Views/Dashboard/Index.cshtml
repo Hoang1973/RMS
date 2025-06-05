@@ -2,6 +2,7 @@
 @using static RMS.Data.Entities.Order
 @using static RMS.Data.Entities.Table
 @using RMS.Hubs
+@using RMS.Data.Entities
 @{
     ViewData["Title"] = "Dashboard";
 }
@@ -268,30 +269,6 @@
                 });
         }
 
-        // Hàm chuyển đổi trạng thái đơn hàng
-        function getOrderStatusText(status) {
-            switch (status) {
-                case 0: return 'Pending';
-                case 1: return 'Processing';
-                case 2: return 'Ready';
-                case 3: return 'Completed';
-                case 4: return 'Cancelled';
-                default: return 'Unknown';
-            }
-        }
-
-        // Hàm chuyển đổi loại nguyên liệu
-        function getIngredientTypeText(type) {
-            switch (type) {
-                case 0: return 'Rau củ';
-                case 1: return 'Thịt';
-                case 2: return 'Hải sản';
-                case 3: return 'Gia vị';
-                case 4: return 'Khác';
-                default: return 'Unknown';
-            }
-        }
-
         // Các hàm cập nhật từng phần
         async function updateBasicStats() {
             try {
@@ -322,7 +299,7 @@
                         <td class="px-4 py-2">${i.name}</td>
                         <td class="px-4 py-2 text-red-600 font-medium">${i.stockQuantity}</td>
                         <td class="px-4 py-2">${i.unit}</td>
-                        <td class="px-4 py-2">${getIngredientTypeText(i.type)}</td>
+                        <td class="px-4 py-2">${i.type}</td>
                     </tr>
                 `).join('');
             } catch (error) {
@@ -340,12 +317,11 @@
                 if (!tbody) return;
                 
                 tbody.innerHTML = orders.map(o => {
-                    const status = getOrderStatusText(o.status);
                     const statusClass = 
-                        status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                        status === 'Processing' ? 'bg-blue-100 text-blue-800' :
-                        status === 'Ready' ? 'bg-green-100 text-green-800' :
-                        status === 'Completed' ? 'bg-gray-100 text-gray-800' :
+                        o.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                        o.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
+                        o.status === 'Ready' ? 'bg-green-100 text-green-800' :
+                        o.status === 'Completed' ? 'bg-gray-100 text-gray-800' :
                         'bg-red-100 text-red-800';
                     
                     return `
@@ -353,7 +329,7 @@
                             <td class="px-4 py-2">${o.tableNumber}</td>
                             <td class="px-4 py-2">
                                 <span class="px-2 py-1 text-xs rounded-full ${statusClass}">
-                                    ${status}
+                                    ${o.status}
                                 </span>
                             </td>
                             <td class="px-4 py-2">${new Date(o.createdAt).toLocaleString('vi-VN')}</td>
