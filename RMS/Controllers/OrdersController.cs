@@ -359,5 +359,23 @@ namespace RMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            // Chỉ cho phép hủy khi đơn ở trạng thái Pending hoặc Processing
+            if (order.Status != OrderStatus.Pending && order.Status != OrderStatus.Processing)
+            {
+                return BadRequest(new { success = false, message = "Không thể hủy đơn hàng đã hoàn thành hoặc đã thanh toán" });
+            }
+
+            order.Status = OrderStatus.Cancelled;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
     }
 }
