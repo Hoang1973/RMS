@@ -139,6 +139,11 @@ function renderPaymentPanel(order) {
     // Chỉ cập nhật nội dung, không tạo lại modal
     const content = document.getElementById('order-detail-content');
     if (!content) return;
+
+    // Tính toán subtotal từ dishes
+    const subtotal = order.dishes.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const vat = subtotal * 0.08; // 8% VAT
+    const total = subtotal + vat;
     
     content.innerHTML = `
         <div class="flex flex-col space-y-6">
@@ -164,7 +169,7 @@ function renderPaymentPanel(order) {
                                     <td class="py-1">${d.name}</td>
                                     <td class="py-1 text-right">${d.quantity}</td>
                                     <td class="py-1 text-right">${formatVND(d.price)}</td>
-                                    <td class="py-1 text-right">${formatVND(d.subtotal)}</td>
+                                    <td class="py-1 text-right">${formatVND(d.price * d.quantity)}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -538,6 +543,161 @@ function removeDish(button) {
     }
 }
 
+// Hàm khởi tạo form đơn hàng
+function initOrderForm(order = null) {
+    // Show order form modal
+    const modal = document.getElementById('orderModal');
+    if (!modal) {
+        console.error('Không tìm thấy modal form');
+        return;
+    }
+    
+    // Hiển thị modal
+    modal.style.display = 'flex';
+    
+    // Set form title
+    const titleEl = modal.querySelector('h2');
+    if (titleEl) titleEl.textContent = order ? 'Sửa đơn hàng' : 'Tạo đơn hàng mới';
+    
+    // Fill form data
+    const form = document.getElementById('orderCreateForm');
+    if (!form) {
+        console.error('Không tìm thấy form');
+        return;
+    }
+
+    // Reset form
+    form.reset();
+    
+    // Clear existing dishes
+    const dishList = document.getElementById('dish-list');
+    if (!dishList) {
+        console.error('Không tìm thấy danh sách món');
+        return;
+    }
+    dishList.innerHTML = '';
+
+    // Nếu là sửa đơn hàng
+    if (order) {
+        // Điền thông tin cơ bản
+        const customerPhoneInput = form.querySelector('input[name="CustomerPhoneNumber"]');
+        const tableIdInput = form.querySelector('input[name="TableId"]');
+        const noteInput = form.querySelector('textarea[name="Note"]');
+
+        if (customerPhoneInput) customerPhoneInput.value = order.customerPhoneNumber || '';
+        if (tableIdInput) tableIdInput.value = order.tableId || '';
+        if (noteInput) noteInput.value = order.note || '';
+        
+        // Add existing dishes
+        if (order.dishes && order.dishes.length > 0) {
+            console.log('Adding dishes:', order.dishes);
+            
+            // Lấy danh sách món từ select đầu tiên
+            const firstSelect = document.querySelector('.dish-select');
+            if (firstSelect) {
+                window._dishes = Array.from(firstSelect.options).map(opt => ({
+                    id: opt.value,
+                    name: opt.text
+                })).filter(d => d.id !== ''); // Loại bỏ option "Chọn món ăn"
+                
+                // Thêm món vào form
+                addDishesToForm(order.dishes);
+            }
+        }
+        
+        // Update total amount
+        updateTotalAmount();
+        
+        // Change form action to edit
+        form.onsubmit = function(e) {
+            e.preventDefault();
+            var formData = $(this).serialize();
+            $.ajax({
+                url: `/Orders/Edit/${order.id}`,
+                type: 'POST',
+                data: formData,
+                success: function(res) {
+                    if (res.success) {
+                        $('#orderModal').hide();
+                        toastr.success('Cập nhật đơn thành công!');
+                        // Refresh the page or update the UI
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        let errorMsg = res.message || 'Có lỗi xảy ra!';
+                        if (res.errors) errorMsg += '\n' + res.errors.join('\n');
+                        if (res.inner) errorMsg += '\n' + res.inner;
+                        toastr.error(errorMsg);
+                    }
+                },
+                error: function(xhr) {
+                    toastr.error('Lỗi server!\n' + xhr.responseText);
+                }
+            });
+        };
+    } else {
+        // Nếu là tạo đơn mới
+        form.onsubmit = function(e) {
+            e.preventDefault();
+            var formData = $(this).serialize();
+            $.ajax({
+                url: '/Orders/Create',
+                type: 'POST',
+                data: formData,
+                success: function(res) {
+                    if (res.success) {
+                        $('#orderModal').hide();
+                        toastr.success('Tạo đơn thành công!');
+                        // Refresh the page or update the UI
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        let errorMsg = res.message || 'Có lỗi xảy ra!';
+                        if (res.errors) errorMsg += '\n' + res.errors.join('\n');
+                        if (res.inner) errorMsg += '\n' + res.inner;
+                        toastr.error(errorMsg);
+                    }
+                },
+                error: function(xhr) {
+                    toastr.error('Lỗi server!\n' + xhr.responseText);
+                }
+            });
+        };
+    }
+}
+
+// Hàm thêm món vào form
+function addDishesToForm(dishes) {
+    const dishList = document.getElementById('dish-list');
+    if (!dishList) return;
+
+    dishes.forEach((item, index) => {
+        // Tạo món mới
+        addDish();
+        
+        // Lấy phần tử món vừa thêm
+        const dishItem = dishList.lastElementChild;
+        if (dishItem) {
+            // Tìm select và input trong món mới
+            const select = dishItem.querySelector('select');
+            const input = dishItem.querySelector('input[type="number"]');
+            
+            if (select && window._dishes) {
+                // Tìm món trong danh sách
+                const dish = window._dishes.find(d => d.name === item.name);
+                if (dish) {
+                    select.value = dish.id;
+                    // Trigger change event để cập nhật giá
+                    const event = new Event('change');
+                    select.dispatchEvent(event);
+                }
+            }
+            
+            if (input) {
+                input.value = item.quantity;
+            }
+        }
+    });
+}
+
 // Hàm sửa order
 window.editOrder = function(orderId) {
     // Đóng modal chi tiết trước
@@ -551,7 +711,13 @@ window.editOrder = function(orderId) {
             return res.json();
         })
         .then(order => {
-            console.log('Order data:', order); // Debug log
+            console.log('Order data:', order);
+
+            // Kiểm tra trạng thái đơn hàng
+            if (order.status === 'Ready' || order.status === 'Completed' || order.status === 'Cancelled') {
+                toastr.error('Không thể chỉnh sửa đơn hàng đã hoàn thành, đã thanh toán hoặc đã hủy');
+                return;
+            }
 
             // Show order form modal
             const modal = document.getElementById('orderModal');
@@ -574,6 +740,17 @@ window.editOrder = function(orderId) {
                 return;
             }
 
+            // Reset form
+            form.reset();
+            
+            // Clear existing dishes
+            const dishList = document.getElementById('dish-list');
+            if (!dishList) {
+                console.error('Không tìm thấy danh sách món');
+                return;
+            }
+            dishList.innerHTML = '';
+
             // Điền thông tin cơ bản
             const customerPhoneInput = form.querySelector('input[name="CustomerPhoneNumber"]');
             const tableIdInput = form.querySelector('input[name="TableId"]');
@@ -583,31 +760,48 @@ window.editOrder = function(orderId) {
             if (tableIdInput) tableIdInput.value = order.tableId || '';
             if (noteInput) noteInput.value = order.note || '';
             
-            // Clear existing dishes
-            const dishList = document.getElementById('dish-list');
-            if (!dishList) {
-                console.error('Không tìm thấy danh sách món');
-                return;
-            }
-            dishList.innerHTML = '';
-            
             // Add existing dishes
-            if (order.orderItems && order.orderItems.length > 0) {
-                order.orderItems.forEach((item, index) => {
-                    addDish();
-                    const dishItem = dishList.lastElementChild;
-                    if (dishItem) {
-                        const select = dishItem.querySelector('select');
-                        const input = dishItem.querySelector('input[type="number"]');
-                        if (select) {
-                            select.value = item.dishId;
-                            // Trigger change event to update price
-                            const event = new Event('change');
-                            select.dispatchEvent(event);
+            if (order.dishes && order.dishes.length > 0) {
+                console.log('Adding dishes:', order.dishes);
+                
+                // Lấy danh sách món từ select đầu tiên
+                const firstSelect = document.querySelector('.dish-select');
+                if (firstSelect) {
+                    // Tạo danh sách món từ options
+                    const dishes = Array.from(firstSelect.options).map(opt => ({
+                        id: opt.value,
+                        name: opt.text
+                    })).filter(d => d.id !== ''); // Loại bỏ option "Chọn món ăn"
+                    
+                    // Thêm từng món vào form
+                    order.dishes.forEach((item, index) => {
+                        // Tạo món mới
+                        addDish();
+                        
+                        // Lấy phần tử món vừa thêm
+                        const dishItem = dishList.lastElementChild;
+                        if (dishItem) {
+                            // Tìm select và input trong món mới
+                            const select = dishItem.querySelector('select');
+                            const input = dishItem.querySelector('input[type="number"]');
+                            
+                            if (select) {
+                                // Tìm món trong danh sách
+                                const dish = dishes.find(d => d.name === item.name);
+                                if (dish) {
+                                    select.value = dish.id;
+                                    // Trigger change event để cập nhật giá
+                                    const event = new Event('change');
+                                    select.dispatchEvent(event);
+                                }
+                            }
+                            
+                            if (input) {
+                                input.value = item.quantity;
+                            }
                         }
-                        if (input) input.value = item.quantity;
-                    }
-                });
+                    });
+                }
             }
             
             // Update total amount
@@ -641,7 +835,198 @@ window.editOrder = function(orderId) {
             };
         })
         .catch(error => {
-            console.error('Error:', error); // Debug log
+            console.error('Error:', error);
             toastr.error('Không tìm thấy đơn hàng hoặc lỗi server.');
         });
 };
+
+// Hàm tạo đơn mới
+window.createOrder = function() {
+    initOrderForm();
+};
+
+// Hàm khởi tạo form thanh toán
+function initializePaymentForm(order) {
+    // Xử lý sự kiện chọn phương thức thanh toán
+    const paymentMethods = document.querySelectorAll('.payment-method');
+    const cardQR = document.getElementById('card-qr');
+    const completeBtn = document.getElementById('complete-payment-btn');
+    
+    paymentMethods.forEach(method => {
+        method.addEventListener('click', function() {
+            // Bỏ active tất cả các phương thức
+            paymentMethods.forEach(m => m.classList.remove('bg-blue-50', 'border-blue-500'));
+            
+            // Active phương thức được chọn
+            this.classList.add('bg-blue-50', 'border-blue-500');
+            
+            // Hiển thị/ẩn QR code
+            if (this.dataset.method === 'card') {
+                cardQR.classList.remove('hidden');
+            } else {
+                cardQR.classList.add('hidden');
+            }
+            
+            // Enable nút hoàn tất
+            completeBtn.disabled = false;
+        });
+    });
+    
+    // Xử lý sự kiện nhập giảm giá
+    const discountType = document.getElementById('discount-type');
+    const discountValue = document.getElementById('discount-value');
+    const subtotalEl = document.getElementById('payment-subtotal');
+    const taxEl = document.getElementById('payment-tax');
+    const totalEl = document.getElementById('payment-total');
+    
+    function updateTotal() {
+        const subtotal = parseFloat(subtotalEl.textContent.replace(/[^\d]/g, ''));
+        const vat = parseFloat(taxEl.textContent.replace(/[^\d]/g, ''));
+        let discount = parseFloat(discountValue.value) || 0;
+        
+        // Tính giảm giá theo % hoặc số tiền
+        if (discountType.value === 'percent') {
+            discount = (subtotal * discount) / 100;
+        }
+        
+        const total = subtotal + vat - discount;
+        totalEl.textContent = formatVND(total);
+    }
+    
+    discountType.addEventListener('change', updateTotal);
+    discountValue.addEventListener('input', updateTotal);
+    
+    // Xử lý sự kiện hoàn tất thanh toán
+    completeBtn.addEventListener('click', function() {
+        const selectedMethod = document.querySelector('.payment-method.bg-blue-50');
+        if (!selectedMethod) {
+            toastr.error('Vui lòng chọn phương thức thanh toán');
+            return;
+        }
+        
+        const paymentMethod = selectedMethod.dataset.method;
+        const discount = parseFloat(discountValue.value) || 0;
+        const discountType = document.getElementById('discount-type').value;
+        const total = parseFloat(totalEl.textContent.replace(/[^\d]/g, ''));
+        const subtotal = parseFloat(subtotalEl.textContent.replace(/[^\d]/g, ''));
+        
+        // Lấy anti-forgery token
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        if (!token) {
+            toastr.error('Không tìm thấy token xác thực');
+            return;
+        }
+        
+        // Gọi API thanh toán
+        $.ajax({
+            url: '/Payments/Order',
+            type: 'POST',
+            contentType: 'application/json',
+            headers: {
+                'RequestVerificationToken': token
+            },
+            data: JSON.stringify({
+                orderId: order.id,
+                tableId: order.tableId,
+                subtotal: subtotal,
+                discountValue: discount,
+                discountType: discountType,
+                vatPercent: 8,
+                paymentMethod: paymentMethod,
+                tableNumber: order.tableNumber
+            }),
+            success: function(res) {
+                if (res.success) {
+                    // Đóng modal thanh toán
+                    document.getElementById('order-detail-modal').remove();
+                    
+                    // Hiển thị modal thành công
+                    const successModal = document.createElement('div');
+                    successModal.id = 'payment-success-modal';
+                    successModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                    successModal.innerHTML = `
+                        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+                            <div class="text-center">
+                                <div class="text-green-500 text-6xl mb-4">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <h3 class="text-2xl font-bold text-gray-900 mb-2">Thanh toán thành công!</h3>
+                                <p class="text-gray-600 mb-6">Đơn hàng đã được thanh toán và hóa đơn đã được tạo.</p>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Mã đơn:</span>
+                                        <span class="font-semibold">#${order.id.toString().padStart(6, '0')}</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Bàn:</span>
+                                        <span class="font-semibold">${order.tableNumber}</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Tổng tiền:</span>
+                                        <span class="font-semibold">${formatVND(total)}</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Phương thức:</span>
+                                        <span class="font-semibold">${paymentMethod === 'cash' ? 'Tiền mặt' : 'Quét QR'}</span>
+                                    </div>
+                                </div>
+                                <div class="mt-8 flex justify-center space-x-4">
+                                    <button onclick="printBill(${order.id})" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                                        <i class="fas fa-print mr-2"></i>In hóa đơn
+                                    </button>
+                                    <button onclick="document.getElementById('payment-success-modal').remove(); location.reload();" class="bg-gray-200 text-gray-700 px-6 py-2 rounded hover:bg-gray-300">
+                                        Đóng
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(successModal);
+                } else {
+                    toastr.error(res.message || 'Có lỗi xảy ra!');
+                }
+            },
+            error: function(xhr) {
+                console.error('Payment error:', xhr.responseText);
+                toastr.error('Lỗi server!\n' + xhr.responseText);
+            }
+        });
+    });
+}
+
+// Hàm in hóa đơn
+function printBill(orderId) {
+    window.open(`/Bills/Print/${orderId}`, '_blank');
+}
+
+// Hàm hủy đơn hàng
+function cancelOrder(orderId) {
+    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
+    
+    // Lấy anti-forgery token
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    if (!token) {
+        toastr.error('Không tìm thấy token xác thực');
+        return;
+    }
+    
+    $.ajax({
+        url: `/Orders/Cancel/${orderId}`,
+        type: 'POST',
+        headers: {
+            'RequestVerificationToken': token
+        },
+        success: function(res) {
+            if (res.success) {
+                toastr.success('Hủy đơn hàng thành công!');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                toastr.error(res.message || 'Có lỗi xảy ra!');
+            }
+        },
+        error: function(xhr) {
+            console.error('Cancel error:', xhr.responseText);
+            toastr.error('Lỗi server!\n' + xhr.responseText);
+        }
+    });
+}

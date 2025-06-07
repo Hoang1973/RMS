@@ -1,6 +1,8 @@
 @model RMS.Models.OrderViewModel
 @{
-    var isCurrent = Model.isPaid == false;
+    var isCurrent = Model.isPaid == false && Model.Status != RMS.Data.Entities.Order.OrderStatus.Cancelled;
+    var isCancelable = Model.Status == RMS.Data.Entities.Order.OrderStatus.Pending || 
+                    Model.Status == RMS.Data.Entities.Order.OrderStatus.Processing;
 }
 <script src="~/js/order.js" defer></script>
 <script src="~/js/bills.js" defer></script>
@@ -34,12 +36,21 @@
         <button type="button" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold flex items-center" onclick="showOrderDetail(@Model.Id)">
             <i class="fas fa-info-circle mr-1"></i> Xem chi tiết
         </button>
+        @if (isCancelable)
+        {
+            <button type="button" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-semibold flex items-center" onclick="cancelOrder(@Model.Id)">
+                <i class="fas fa-times mr-1"></i> Hủy
+            </button>
+        }
         @if (isCurrent)
         {
+            <button type="button" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold flex items-center" onclick="editOrder(@Model.Id)">
+                <i class="fas fa-edit mr-1"></i> Sửa
+            </button>
             <form asp-action="CompletePayment" asp-controller="Orders" method="post" style="display:inline;">
                 <input type="hidden" name="orderId" value="@Model.Id" />
                 <input type="hidden" name="tableId" value="@Model.TableId" />
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold flex items-center ml-2">
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold flex items-center">
                     <i class="fas fa-cash-register mr-1"></i> Thanh toán
                 </button>
             </form>
