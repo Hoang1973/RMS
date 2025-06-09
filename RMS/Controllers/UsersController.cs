@@ -10,6 +10,7 @@ using RMS.Data;
 using RMS.Data.Entities;
 using RMS.Models;
 using RMS.Services;
+using System.Text.Json;
 
 namespace RMS.Controllers
 {
@@ -24,27 +25,27 @@ namespace RMS.Controllers
         }
 
         // GET: Users
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            var models = await _userService.GetAllAsync();
-            return View(models);
+            return View();
         }
 
-        // GET: Users/Details/5
-        public async Task<IActionResult> Details(int? id)
+        // GET: Users/GetAll
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var users = await _userService.GetAllAsync();
+            return Json(new { success = true, data = users });
+        }
 
-            var user = await _userService.GetByIdAsync(id.Value);
+        // GET: Users/GetById/5
+        [HttpGet]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var user = await _userService.GetByIdAsync(id);
             if (user == null)
-            {
-                return NotFound();
-            }
-
-            return View(user);
+                return Json(new { success = false, message = "User not found" });
+            return Json(new { success = true, data = user });
         }
 
         // GET: Users/Create
@@ -63,14 +64,43 @@ namespace RMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(UserViewModel model)
         {
+            // Log model để debug
+            System.Diagnostics.Debug.WriteLine($"Received model: {JsonSerializer.Serialize(model)}");
+
             if (!ModelState.IsValid)
             {
-                ModelState.AddModelError("", "User could not be added. Please check the details and try again.");
-                return View(model);
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                // Log validation errors
+                foreach (var error in errors)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Validation Error: {error}");
+                }
+
+                return Json(new { 
+                    success = false, 
+                    message = "Validation failed",
+                    errors = errors,
+                    modelState = ModelState.ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                    )
+                });
             }
-            
-            await _userService.CreateAsync(model);
-            return RedirectToAction(nameof(Index));
+
+            try
+            {
+                await _userService.CreateAsync(model);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Exception: {ex}");
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         // GET: Users/Edit/5
@@ -95,31 +125,22 @@ namespace RMS.Controllers
         public async Task<IActionResult> Edit(int id, UserViewModel model)
         {
             if (id != model.Id)
+                return Json(new { success = false, message = "Invalid ID" });
+
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                return Json(new { success = false, message = "Validation failed" });
             }
 
-            if (ModelState.IsValid)
+            try
             {
-                try
-                {
-                    Console.WriteLine("Updating user");
-                    await _userService.UpdateAsync(model);
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!await _userService.ExistsAsync(model.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                await _userService.UpdateAsync(model);
+                return Json(new { success = true });
             }
-            return View(model);
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         // GET: Users/Delete/5
@@ -140,18 +161,19 @@ namespace RMS.Controllers
         }
 
         // POST: Users/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            bool deleted = await _userService.DeleteByIdAsync(id);
-            if (!deleted)
+            try
             {
-                return NotFound();
+                var success = await _userService.DeleteByIdAsync(id);
+                return Json(new { success });
             }
-
-            return RedirectToAction(nameof(Index));
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
-
     }
 }
