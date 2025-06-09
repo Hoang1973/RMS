@@ -7,10 +7,11 @@
 <div class="container mx-auto px-4 py-8">
     <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <h1 class="text-2xl font-bold text-gray-800">Users</h1>
-        <a asp-action="Create" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow">
+        <button id="btnCreateUser" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow">
             <i class="fas fa-plus mr-2"></i> Create New
-        </a>
+        </button>
     </div>
+
     <div class="bg-white rounded-xl shadow-lg overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead>
@@ -18,52 +19,210 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">ID</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Name</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Email</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Password</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Phone</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Address</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Role</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Created At</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Updated At</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Created By</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Updated By</th>
                     <th class="px-4 py-3"></th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @foreach (var item in Model)
-                {
-                    <tr class="hover:bg-blue-50 transition-colors duration-200">
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Id</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Name</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Email</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-400 italic">••••••••</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Phone</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Address</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm">
-                            <span class="inline-block px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium">
-                                @item.UserRole
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">@item.CreatedAt?.ToString("yyyy-MM-dd HH:mm")</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">@item.UpdatedAt?.ToString("yyyy-MM-dd HH:mm")</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">@item.CreatedBy</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">@item.UpdatedBy</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm">
-                            <div class="flex gap-2">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors duration-200">
-                                    <i class="fas fa-edit mr-1.5"></i>Edit
-                                </a>
-                                <a asp-action="Details" asp-route-id="@item.Id" class="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200">
-                                    <i class="fas fa-info-circle mr-1.5"></i>Details
-                                </a>
-                                <a asp-action="Delete" asp-route-id="@item.Id" class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200">
-                                    <i class="fas fa-trash mr-1.5"></i>Delete
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                }
+            <tbody id="usersTableBody">
+                <!-- Will be populated by JavaScript -->
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- User Modal -->
+<div id="userModal" class="modal-bg fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" style="display:none;">
+    <div class="modal-content bg-white rounded-lg shadow-lg w-full max-w-lg relative p-6">
+        <button type="button" class="absolute top-2 right-2 text-2xl text-gray-400 hover:text-gray-700" id="closeUserModal">×</button>
+        <h2 class="text-xl font-bold mb-6 text-gray-800" id="modalTitle">Create User</h2>
+        <form id="userForm" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="userId" name="Id" value="0" />
+            
+            <div class="space-y-2">
+                <label for="Name" class="block text-sm font-medium text-gray-700">Name</label>
+                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="Name" name="Name" required>
+            </div>
+            
+            <div class="space-y-2">
+                <label for="Email" class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="Email" name="Email" required>
+            </div>
+            
+            <div class="space-y-2">
+                <label for="Password" class="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="Password" name="Password" required>
+            </div>
+            
+            <div class="space-y-2">
+                <label for="Phone" class="block text-sm font-medium text-gray-700">Phone</label>
+                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="Phone" name="Phone">
+            </div>
+            
+            <div class="space-y-2">
+                <label for="Address" class="block text-sm font-medium text-gray-700">Address</label>
+                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="Address" name="Address">
+            </div>
+            
+            <div class="space-y-2">
+                <label for="UserRole" class="block text-sm font-medium text-gray-700">Role</label>
+                <select class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="UserRole" name="UserRole" required>
+                    <option value="">Select Role</option>
+                    <option value="1">Admin</option>
+                    <option value="2">User</option>
+                    <option value="3">Chef</option>
+                    <option value="4">Waiter</option>
+                    <option value="5">Cashier</option>
+                </select>
+            </div>
+            
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" id="cancelUserModal">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            loadUsers();
+
+            $('#btnCreateUser').click(function() {
+                $('#modalTitle').text('Create User');
+                $('#userForm')[0].reset();
+                $('#userId').val('0');
+                $('#userModal').show();
+            });
+
+            $('#closeUserModal, #cancelUserModal').click(function() {
+                $('#userModal').hide();
+            });
+
+            $('#userForm').submit(function(e) {
+                e.preventDefault();
+                const userId = $('#userId').val();
+                const url = userId && userId !== '0' ? `/Users/Edit/${userId}` : '/Users/Create';
+                
+                const formData = $(this).serialize();
+                console.log('Form data being sent:', formData);
+                
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: formData,
+                    success: function(res) {
+                        console.log('Server response:', res);
+                        if (res.success) {
+                            $('#userModal').hide();
+                            loadUsers();
+                            alert('User saved successfully');
+                        } else {
+                            let errorMsg = res.message || 'Error saving user';
+                            if (res.errors) {
+                                errorMsg += '\n' + res.errors.join('\n');
+                            }
+                            alert(errorMsg);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error details:', {
+                            status: status,
+                            error: error,
+                            response: xhr.responseText
+                        });
+                        alert('Server error occurred: ' + xhr.responseText);
+                    }
+                });
+            });
+        });
+
+        function loadUsers() {
+            $.get('/Users/GetAll', function(res) {
+                if (res.success) {
+                    const tbody = $('#usersTableBody');
+                    tbody.empty();
+                    
+                    res.data.forEach(user => {
+                        tbody.append(`
+                            <tr class="hover:bg-blue-50 transition-colors duration-200">
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${user.id}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${user.name}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${user.email}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${user.phone}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${user.address || '-'}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                    <span class="inline-block px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium">
+                                        ${getRoleName(user.userRole)}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                    <div class="flex gap-2">
+                                        <button onclick="editUser(${user.id})" class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors duration-200">
+                                            <i class="fas fa-edit mr-1.5"></i>Edit
+                                        </button>
+                                        <button onclick="deleteUser(${user.id})" class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200">
+                                            <i class="fas fa-trash mr-1.5"></i>Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                }
+            });
+        }
+
+        function editUser(id) {
+            $.get(`/Users/GetById/${id}`, function(res) {
+                if (res.success) {
+                    const user = res.data;
+                    $('#modalTitle').text('Edit User');
+                    $('#userId').val(user.id);
+                    $('#Name').val(user.name);
+                    $('#Email').val(user.email);
+                    $('#Phone').val(user.phone);
+                    $('#UserRole').val(user.userRole);
+                    $('#userModal').show();
+                }
+            });
+        }
+
+        function deleteUser(id) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                $.ajax({
+                    url: `/Users/Delete/${id}`,
+                    type: 'POST',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            loadUsers();
+                            alert('User deleted successfully');
+                        } else {
+                            alert(res.message || 'Error deleting user');
+                        }
+                    },
+                    error: function(xhr) {
+                        alert('Server error occurred: ' + xhr.responseText);
+                    }
+                });
+            }
+        }
+
+        function getRoleName(roleId) {
+            switch(roleId) {
+                case 1: return 'Admin';
+                case 2: return 'User';
+                case 3: return 'Chef';
+                case 4: return 'Waiter';
+                case 5: return 'Cashier';
+                default: return 'Unknown';
+            }
+        }
+    </script>
+}
