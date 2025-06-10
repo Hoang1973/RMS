@@ -1,0 +1,58 @@
+// Khởi tạo các âm thanh thông báo
+const notificationSounds = {
+    order: new Audio('/sounds/order-notification.mp3'),
+    payment: new Audio('/sounds/payment-notification.mp3'),
+    table: new Audio('/sounds/table-notification.mp3'),
+    dish: new Audio('/sounds/dish-notification.mp3'),
+    ingredient: new Audio('/sounds/ingredient-notification.mp3'),
+    default: new Audio('/sounds/default-notification.mp3')
+};
+
+// Kết nối tới SignalR Hub
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("/notificationHub")
+    .build();
+
+// Xử lý sự kiện nhận thông báo
+connection.on("DataChanged", function (data) {
+    // Phát âm thanh thông báo
+    const sound = notificationSounds[data.notificationType] || notificationSounds.default;
+    sound.play().catch(error => console.log('Error playing sound:', error));
+
+    // Hiển thị thông báo trên màn hình (tùy chọn)
+    showNotification(data);
+
+    // Cập nhật dữ liệu (nếu cần)
+    if (typeof updateData === 'function') {
+        updateData(data);
+    }
+});
+
+// Hàm hiển thị thông báo
+function showNotification(data) {
+    // Kiểm tra xem trình duyệt có hỗ trợ thông báo không
+    if (!("Notification" in window)) {
+        return;
+    }
+
+    // Yêu cầu quyền hiển thị thông báo nếu chưa có
+    if (Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+
+    // Hiển thị thông báo
+    if (Notification.permission === "granted") {
+        const notification = new Notification("RMS Notification", {
+            body: `Có thay đổi mới: ${data.event}`,
+            icon: '/images/logo.png' // Thay đổi đường dẫn logo của bạn
+        });
+
+        // Tự động đóng thông báo sau 5 giây
+        setTimeout(() => notification.close(), 5000);
+    }
+}
+
+// Bắt đầu kết nối
+connection.start().catch(function (err) {
+    console.error(err.toString());
+}); 

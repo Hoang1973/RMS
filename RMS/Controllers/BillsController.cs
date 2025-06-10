@@ -43,6 +43,7 @@ namespace RMS.Controllers
                 Id = bill.Id,
                 OrderId = bill.OrderId,
                 TableNumber = bill.TableNumber,
+                CreatedAt = bill.CreatedAt?.ToString("dd/MM/yyyy HH:mm:ss"),
                 Subtotal = bill.Subtotal,
                 VatPercent = bill.VatPercent,
                 VatAmount = bill.VatAmount,

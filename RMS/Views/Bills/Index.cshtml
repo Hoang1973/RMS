@@ -2,7 +2,6 @@
 @{
     ViewData["Title"] = "Lịch sử hóa đơn";
 }
-
 <div class="container mx-auto px-4 py-8">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h2 class="text-2xl font-bold text-gray-800">Lịch sử hóa đơn</h2>
@@ -15,7 +14,7 @@
     </div>
 
     <div class="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
-    <table class="min-w-full divide-y divide-gray-200 bg-white">
+        <table class="min-w-full divide-y divide-gray-200 bg-white">
             <thead>
                 <tr class="bg-gradient-to-r from-blue-50 to-blue-100">
                     <th class="px-6 py-4 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Mã HĐ</th>
@@ -27,11 +26,11 @@
                     <th class="px-6 py-4 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Giảm giá</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Thành tiền phải trả</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Hành động</th>
-            </tr>
-        </thead>
+                </tr>
+            </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-        @foreach (var bill in Model)
-        {
+                @foreach (var bill in Model)
+                {
                     <tr class="hover:bg-blue-50 transition-colors duration-200">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">@bill.Id</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@bill.OrderId</td>
@@ -44,12 +43,12 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             <button onclick="showBillDetails(@bill.Id)" class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors duration-200">
                                 <i class="fas fa-eye mr-1.5"></i>Chi tiết
-                    </button>
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -58,64 +57,82 @@
     <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center px-6 py-4 border-b">
             <h3 class="text-xl font-bold">Chi tiết hóa đơn</h3>
-            <button onclick="closeBillModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            <button onclick="closeBillModal()" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
         </div>
         <div class="p-6">
-            <div class="text-center mb-4">
-                <div class="text-2xl font-bold text-primary">Nhà hàng RMS</div>
-                <div class="text-sm text-gray-700">123 Nguyễn Huệ, Q.1, TP.HCM</div>
-                <div class="text-sm text-gray-700">Tel: (028) 1234 5678</div>
-            </div>
-            <div class="border-t border-b border-gray-300 my-3 py-2">
-                <div class="flex justify-between">
-                    <span class="font-semibold">Bàn:</span> <span id="tableNumber"></span>
+            <div id="print-content" class="bill-container">
+                <!-- Header -->
+                <div class="bill-header">
+                    <div class="restaurant-name">Nhà hàng RMS</div>
+                    <div class="restaurant-info">123 Nguyễn Huệ, Q.1, TP.HCM</div>
+                    <div class="restaurant-info">Tel: (028) 1234 5678</div>
+                    <div class="restaurant-info">MST: 0123456789</div>
                 </div>
-                <div class="flex justify-between">
-                    <span class="font-semibold">Mã hóa đơn:</span> <span id="billId"></span>
+
+                <!-- Bill Info -->
+                <div class="bill-info">
+                    <div class="bill-info-grid">
+                        <div class="bill-info-item">
+                            <span class="bill-info-label">Bàn:</span>
+                            <span id="tableNumber"></span>
+                        </div>
+                        <div class="bill-info-item">
+                            <span class="bill-info-label">Mã hóa đơn:</span>
+                            <span id="billId"></span>
+                        </div>
+                        <div class="bill-info-item">
+                            <span class="bill-info-label">Mã đơn hàng:</span>
+                            <span id="orderId"></span>
+                        </div>
+                        <div class="bill-info-item">
+                            <span class="bill-info-label">Thời gian:</span>
+                            <span id="createdAt"></span>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex justify-between">
-                    <span class="font-semibold">Mã đơn hàng:</span> <span id="orderId"></span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="font-semibold">Thời gian:</span> <span id="createdAt"></span>
-                </div>
-            </div>
-            <div class="mb-3">
-                <table class="w-full border border-gray-300">
+
+                <!-- Bill Items -->
+                <table class="bill-table">
                     <thead>
-                        <tr class="bg-gray-100">
-                            <th class="border px-2 py-1 text-left">Món</th>
-                            <th class="border px-2 py-1">SL</th>
-                            <th class="border px-2 py-1">Đơn giá</th>
-                            <th class="border px-2 py-1">Thành tiền</th>
+                        <tr>
+                            <th>Món</th>
+                            <th>SL</th>
+                            <th>Đơn giá</th>
+                            <th>Thành tiền</th>
                         </tr>
                     </thead>
-                    <tbody id="billItems" class="divide-y divide-gray-200">
+                    <tbody id="billItems">
                     </tbody>
                 </table>
-            </div>
-            <div class="space-y-1 border-t pt-3">
-                <div class="flex justify-between">
-                    <span>Tổng tiền hàng:</span>
-                    <span id="subtotal"></span>
+
+                <!-- Bill Summary -->
+                <div class="bill-summary">
+                    <div class="bill-summary-item">
+                        <span>Tổng tiền hàng:</span>
+                        <span id="subtotal"></span>
+                    </div>
+                    <div class="bill-summary-item">
+                        <span>Thuế VAT (<span id="vatPercent"></span>%):</span>
+                        <span id="vatAmount"></span>
+                    </div>
+                    <div class="bill-summary-item">
+                        <span>Giảm giá:</span>
+                        <span id="discountAmount"></span>
+                    </div>
                 </div>
-                <div class="flex justify-between">
-                    <span>Thuế VAT (<span id="vatPercent"></span>%):</span>
-                    <span id="vatAmount"></span>
+                <div class="bill-total">
+                    <span>Tổng thanh toán:</span>
+                    <span class="bill-total-amount" id="totalDue"></span>
                 </div>
-                <div class="flex justify-between">
-                    <span>Giảm giá:</span>
-                    <span id="discountAmount"></span>
+
+                <!-- Footer -->
+                <div class="bill-footer">
+                    <p>Cảm ơn quý khách đã sử dụng dịch vụ!</p>
+                    <p>Hẹn gặp lại quý khách!</p>
                 </div>
             </div>
-            <div class="flex justify-between font-bold text-lg pt-2 border-t mt-2">
-                <span>Tổng thanh toán:</span>
-                <span class="text-green-600" id="totalDue"></span>
-            </div>
-            <div class="text-center text-xs mt-6 text-gray-500">
-                <p>Cảm ơn quý khách đã sử dụng dịch vụ!</p>
-                <p>Hẹn gặp lại quý khách!</p>
-            </div>
+
+            <!-- Action Buttons -->
             <div class="flex justify-center gap-2 mt-4">
                 <button onclick="printBill()" class="px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
                     <i class="fas fa-print mr-1"></i> In hóa đơn
@@ -129,6 +146,8 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/bill.js"></script>
+    <link rel="stylesheet" href="~/css/bill.css" />
     <script>
         // Search functionality
         document.getElementById('bill-search').addEventListener('input', function(e) {
@@ -140,41 +159,5 @@
                 row.style.display = show ? '' : 'none';
             });
         });
-
-        // Modal functions
-        function showBillDetails(id) {
-            fetch(`/Bills/GetBillDetails/${id}`)
-                .then(response => response.json())
-                .then(bill => {
-                    document.getElementById('billItems').innerHTML = bill.items.map(item => `
-                        <tr>
-                            <td class="border px-2 py-1">${item.name}</td>
-                            <td class="border px-2 py-1 text-center">${item.quantity}</td>
-                            <td class="border px-2 py-1 text-right">${item.price.toLocaleString()} ₫</td>
-                            <td class="border px-2 py-1 text-right">${item.total.toLocaleString()} ₫</td>
-                        </tr>
-                    `).join('');
-                    
-                    document.getElementById('subtotal').textContent = bill.subtotal.toLocaleString() + ' ₫';
-                    document.getElementById('vatPercent').textContent = bill.vatPercent;
-                    document.getElementById('vatAmount').textContent = bill.vatAmount.toLocaleString() + ' ₫';
-                    document.getElementById('discountAmount').textContent = bill.discountAmount.toLocaleString() + ' ₫';
-                    document.getElementById('totalDue').textContent = bill.totalDue.toLocaleString() + ' ₫';
-                    
-                    document.getElementById('bill-modal').classList.remove('hidden');
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Không thể tải thông tin hóa đơn');
-                });
-        }
-
-        function closeBillModal() {
-            document.getElementById('bill-modal').classList.add('hidden');
-        }
-
-        function printBill() {
-            window.print();
-        }
     </script>
 }
