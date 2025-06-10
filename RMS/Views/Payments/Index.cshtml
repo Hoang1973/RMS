@@ -42,14 +42,10 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             @payment.CreatedAt?.ToString("HH:mm dd/MM/yyyy")
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                            <a href="@Url.Action("Details", new { id = payment.Id })"
-                               class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors duration-200">
-                                <i class="fas fa-eye mr-1.5"></i>Chi tiết
-                            </a>
-                            <button class="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <button class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
                                     onclick="showPaymentDetails(@payment.Id)">
-                                Xem chi tiết thanh toán
+                                <i class="fas fa-eye mr-1.5"></i>Chi tiết
                             </button>
                         </td>
                     </tr>
@@ -88,17 +84,63 @@
             document.getElementById('paymentDetailsModal').classList.remove('hidden');
             // Show loading
             document.getElementById('paymentDetailsContent').innerHTML = '<div class="text-center text-gray-500 py-8">Đang tải thông tin thanh toán...</div>';
+            
             // Fetch details
-            fetch(`/Payments/Details/${paymentId}`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(resp => resp.text())
-            .then(html => {
-                document.getElementById('paymentDetailsContent').innerHTML = html;
-            })
-            .catch(() => {
-                document.getElementById('paymentDetailsContent').innerHTML = '<div class="text-center text-red-500 py-8">Không thể tải thông tin thanh toán.</div>';
-            });
+            fetch(`/Payments/Details/${paymentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Format date
+                    const createdAt = data.createdAt ? new Date(data.createdAt).toLocaleString('vi-VN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour12: false
+                    }) : 'N/A';
+
+                    const content = `
+                        <div class="space-y-4">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Chi tiết thanh toán</h3>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Mã thanh toán:</span>
+                                        <span class="font-semibold">${data.id}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Mã đơn hàng:</span>
+                                        <span class="font-semibold">${data.orderId}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Số bàn:</span>
+                                        <span class="font-semibold">${data.tableNumber || 'N/A'}</span>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Số tiền:</span>
+                                        <span class="font-semibold text-green-600">${data.amountPaid.toLocaleString('vi-VN')} ₫</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Phương thức:</span>
+                                        <span class="font-semibold">${data.paymentMethod}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Thời gian:</span>
+                                        <span class="font-semibold">${createdAt}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('paymentDetailsContent').innerHTML = content;
+                })
+                .catch(error => {
+                    document.getElementById('paymentDetailsContent').innerHTML = 
+                        '<div class="text-center text-red-500 py-8">Không thể tải thông tin thanh toán.</div>';
+                });
         }
 
         function closePaymentModal() {

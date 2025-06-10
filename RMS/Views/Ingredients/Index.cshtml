@@ -441,14 +441,14 @@
 
         // Listen for the IngredientChanged event
         ingredientConnection.on("IngredientChanged", function (data) {
-            // Option 1: Reload the page (simple, but not SPA-like)
-            //window.location.reload();
+            // Phát âm thanh thông báo khi có thay đổi real-time
+            const sound = new Audio('/sounds/ingredient-notification.mp3');
+            sound.play().catch(error => console.log('Error playing sound:', error));
 
-            // Option 2: (Advanced) Use AJAX to fetch and update the table only
+            // Cập nhật bảng
             fetch('/Ingredients/Index')
                 .then(response => response.text())
                 .then(html => {
-                    // Parse and update only the table body
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     const newTbody = doc.querySelector('tbody');

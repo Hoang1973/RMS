@@ -37,6 +37,7 @@ namespace RMS.Services
                 .ReverseMap()
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
             CreateMap<Payment, PaymentViewModel>()
+                .ForMember(dest => dest.TableNumber, opt => opt.MapFrom(src => src.Order.Table.TableNumber))
                 .ReverseMap()
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
                 

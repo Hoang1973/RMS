@@ -67,23 +67,17 @@ namespace RMS.Controllers
             return Json(new { success = true, message = "Thanh toán thành công!" });
         }
 
-        // GET: Ingredients/Details/5
-        public async Task<IActionResult> Details(int? id)
+        // GET: Payments/Details/5
+        [HttpGet("Payments/Details/{id}")]
+        public async Task<IActionResult> Details(int id)
         {
-            if (id == null)
+            var payment = await _paymentService.GetByIdAsync(id);
+            if (payment == null)
             {
                 return NotFound();
             }
 
-            var model = await _paymentService.GetByIdAsync(id.Value);
-            if (model == null)
-            {
-                return NotFound();
-            }
-            // Check if the request is an AJAX request
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                return PartialView("_PaymentDetailsPartial", model);
-            return View(model);
+            return Json(payment);
         }
     }
 }

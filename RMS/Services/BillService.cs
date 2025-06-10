@@ -24,12 +24,15 @@ namespace RMS.Services
                 .Include(b => b.Order)
                     .ThenInclude(o => o.OrderItems)
                         .ThenInclude(oi => oi.Dish)
+                .Include(b => b.Order)
+                    .ThenInclude(o => o.Table)
                 .FirstOrDefaultAsync(b => b.Id == id);
 
             if (bill == null) return null;
 
             var viewModel = _mapper.Map<BillViewModel>(bill);
             viewModel.TableNumber = bill.Order?.Table?.TableNumber;
+            viewModel.CreatedAt = bill.CreatedAt;
             viewModel.Items = bill.Order?.OrderItems.Select(oi => new BillViewModel.OrderItem
             {
                 DishId = oi.DishId,
