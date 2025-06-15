@@ -20,6 +20,8 @@ function getStatusDisplay(status) {
             return { text: 'Sẵn sàng phục vụ', color: 'bg-blue-100 text-blue-800' };
         case 'Completed':
             return { text: 'Đã thanh toán', color: 'bg-green-100 text-green-800' };
+        case 'Cancelled':
+            return { text: 'Đã hủy', color: 'bg-red-100 text-red-800' };
         default:
             return { text: 'Không rõ', color: 'bg-gray-100 text-gray-600' };
     }
@@ -73,6 +75,9 @@ function showOrderDetail(orderId) {
 function renderOrderDetailContent(order) {
     const { text: statusText, color: statusColor } = getStatusDisplay(order.status);
     const content = document.getElementById('order-detail-content');
+
+    // Store customerPhoneNumber in the order object
+    order.customerPhoneNumber = order.customerPhoneNumber || '';
 
     content.innerHTML = `
         <div class="flex flex-col space-y-6">
@@ -384,14 +389,15 @@ function renderPaymentDetailPanel(order) {
                 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
             },
             body: JSON.stringify({
-                OrderId: order.id,
-                TableId: order.tableId,
-                Subtotal: subtotal,
-                DiscountValue: parseInt(discountValueEl.value) || 0,
-                DiscountType: discountTypeEl.value,
-                VatPercent: 8, // hoặc cho phép chọn nếu cần
-                PaymentMethod: paymentMethod,
-                TableNumber: order.tableNumber,
+                orderId: order.id,
+                tableId: order.tableId,
+                subtotal: subtotal,
+                discountValue: parseInt(discountValueEl.value) || 0,
+                discountType: discountTypeEl.value,
+                vatPercent: 8, // hoặc cho phép chọn nếu cần
+                paymentMethod: paymentMethod,
+                tableNumber: order.tableNumber,
+                customerPhoneNumber: order.customerPhoneNumber || ''
             })
         })
         .then(response => response.json())
@@ -503,16 +509,17 @@ function addDish() {
     const dishList = document.getElementById('dish-list');
     if (!dishList) return;
 
+    const index = dishList.querySelectorAll('.dish-item').length;
     const dishItem = document.createElement('div');
     dishItem.className = 'dish-item flex items-center gap-2 mb-2';
     dishItem.innerHTML = `
-        <select name="DishIds[]" class="flex-1 border rounded p-2" onchange="updateDishPrice(this)">
+        <select name="Dishes[${index}].DishId" class="flex-1 border rounded p-2 dish-select">
             <option value="">Chọn món</option>
-            ${window._dishes ? window._dishes.map(d => 
-                `<option value="${d.id}" data-price="${d.price}">${d.name} - ${formatVND(d.price)}</option>`
-            ).join('') : ''}
+            ${window._dishes ? window._dishes.map(d =>
+        `<option value="${d.id}" data-price="${d.price}">${d.name} - ${formatVND(d.price)}</option>`
+    ).join('') : ''}
         </select>
-        <input type="number" name="Quantities[]" value="1" min="1" class="w-20 border rounded p-2" onchange="updateTotalAmount()">
+        <input type="number" name="Dishes[${index}].Quantity" value="1" min="1" class="w-20 border rounded p-2 dish-quantity" onchange="updateTotalAmount()">
         <span class="dish-price" data-price="0">0 ₫</span>
         <button type="button" class="text-red-500 hover:text-red-700" onclick="removeDish(this)">
             <i class="fas fa-times"></i>
@@ -539,8 +546,19 @@ function removeDish(button) {
     const dishItem = button.closest('.dish-item');
     if (dishItem) {
         dishItem.remove();
+        updateDishIndexes();
         updateTotalAmount();
     }
+}
+
+function updateDishIndexes() {
+    const dishItems = document.querySelectorAll('#dish-list .dish-item');
+    dishItems.forEach((item, index) => {
+        const select = item.querySelector('select');
+        const input = item.querySelector('input[type="number"]');
+        if (select) select.name = `Dishes[${index}].DishId`;
+        if (input) input.name = `Dishes[${index}].Quantity`;
+    });
 }
 
 // Hàm khởi tạo form đơn hàng
@@ -933,7 +951,8 @@ function initializePaymentForm(order) {
                 discountType: discountType,
                 vatPercent: 8,
                 paymentMethod: paymentMethod,
-                tableNumber: order.tableNumber
+                tableNumber: order.tableNumber,
+                customerPhoneNumber: order.customerPhoneNumber || ''
             }),
             success: function(res) {
                 if (res.success) {

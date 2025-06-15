@@ -428,6 +428,10 @@
 
         // Lắng nghe các event cụ thể
         dashboardConnection.on("OrderChanged", async (data) => {
+            // Phát âm thanh thông báo khi có thay đổi real-time
+            const sound = new Audio('/sounds/ingredient-notification.mp3');
+            sound.play().catch(error => console.log('Error playing sound:', error));
+
             console.log("Order changed:", data);
             try {
                 await Promise.all([
@@ -441,6 +445,10 @@
         });
 
         dashboardConnection.on("BillChanged", async (data) => {
+            // Phát âm thanh thông báo khi có thay đổi real-time
+            const sound = new Audio('/sounds/ingredient-notification.mp3');
+            sound.play().catch(error => console.log('Error playing sound:', error));
+
             console.log("Bill changed:", data);
             try {
                 await Promise.all([
@@ -455,6 +463,10 @@
         });
 
         dashboardConnection.on("IngredientChanged", async (data) => {
+            // Phát âm thanh thông báo khi có thay đổi real-time
+            const sound = new Audio('/sounds/ingredient-notification.mp3');
+            sound.play().catch(error => console.log('Error playing sound:', error));
+
             console.log("Ingredient changed:", data);
             try {
                 await Promise.all([
@@ -467,6 +479,10 @@
         });
 
         dashboardConnection.on("TableChanged", async (data) => {
+            // Phát âm thanh thông báo khi có thay đổi real-time
+            const sound = new Audio('/sounds/ingredient-notification.mp3');
+            sound.play().catch(error => console.log('Error playing sound:', error));
+
             console.log("Table changed:", data);
             try {
                 await updateBasicStats();

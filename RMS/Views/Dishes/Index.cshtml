@@ -25,26 +25,35 @@
                 <i class="fas fa-search absolute top-3 right-3 text-gray-400"></i>
             </div>
             <button id="add-menu-item-btn" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded">
-            <i class="fas fa-plus mr-2"></i>Thêm món mới
-        </button>
+                <i class="fas fa-plus mr-2"></i>Thêm món mới
+            </button>
+        </div>
     </div>
-            </div>
     <div class="mb-4 flex flex-wrap gap-2">
         <button class="menu-filter px-3 py-1 rounded transition bg-primary text-white" data-category="all">Tất cả</button>
-                @foreach (var type in dishTypes)
-                {
+        @foreach (var type in dishTypes)
+        {
             <button class="menu-filter px-3 py-1 rounded transition bg-gray-100 text-gray-600" data-category="@type">
                 @GetEnumDisplayName((RMS.Data.Entities.Dish.DishType)type)
             </button>
-                }
+        }
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="menu-items-container">
         @foreach (var item in Model)
         {
             <div class="card bg-white shadow rounded-lg overflow-hidden border border-light-border flex flex-col menu-item-card" data-category="@item.Type" data-name="@item.Name.ToLower() @item.Description.ToLower()">
-                <div class="h-32 bg-gradient-to-r from-blue-300 to-purple-300 flex items-center justify-center relative">
-                    <span class="text-3xl font-bold text-white">@item.Name.Substring(0,1)</span>
-                    <span class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium">
+                <div class="h-48 bg-gray-100 relative">
+                    @if (!string.IsNullOrEmpty(item.ImageUrl))
+                    {
+                        <img src="@item.ImageUrl" alt="@item.Name" class="w-full h-full object-cover">
+                    }
+                    else
+                    {
+                        <div class="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-300 to-purple-300">
+                            <span class="text-3xl font-bold text-white">@item.Name.Substring(0,1)</span>
+                        </div>
+                    }
+                    <span class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium bg-white bg-opacity-75">
                         @GetEnumDisplayName(item.Type)
                     </span>
                 </div>
@@ -58,11 +67,11 @@
                         <span class="text-xs text-gray-500">@string.Join(", ", item.Ingredients.Select(i => i.IngredientName))</span>
                         <div>
                             <button type="button" class="edit-menu-item text-blue-600 hover:text-blue-800 mr-2" data-id="@item.Id">
-                            <i class="fas fa-edit"></i>
-                        </button>
+                                <i class="fas fa-edit"></i>
+                            </button>
                             <button type="button" class="delete-menu-item text-red-600 hover:text-red-800" data-id="@item.Id">
                                 <i class="fas fa-trash-alt"></i>
-                        </button>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -70,10 +79,12 @@
         }
     </div>
 </div>
+
 <!-- Modal -->
 <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
     <div id="modal-container" class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"></div>
 </div>
+
 @section Scripts {
 <script>
     // Filtering and search
@@ -97,6 +108,7 @@
             filterMenu();
         });
     });
+
     // Modal logic
     function openModal(title, dish) {
         var modal = document.getElementById('modal-overlay');
@@ -113,7 +125,7 @@
                 <h3 class="text-xl font-bold">${isEdit ? 'Sửa món' : 'Thêm món mới'}</h3>
                 <button id="modal-close" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
-            <form id="dish-form" class="p-6 space-y-4" action="${isEdit ? '/Dishes/EditJson/' + (dish ? dish.id : '') : '/Dishes/CreateJson'}" method="post">
+            <form id="dish-form" class="p-6 space-y-4" action="${isEdit ? '/Dishes/EditJson/' + (dish ? dish.id : '') : '/Dishes/CreateJson'}" method="post" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Id" value="${dish ? dish.id : ''}">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -141,6 +153,11 @@
                     </select>
                 </div>
                 <div>
+                    <label class="block text-sm font-medium mb-1">Ảnh minh họa</label>
+                    <input type="file" name="ImageFile" accept="image/*" class="w-full border rounded px-3 py-2 text-base">
+                    ${dish && dish.imageUrl ? `<img src="${dish.imageUrl}" alt="Current image" class="mt-2 h-32 object-cover rounded">` : ''}
+                </div>
+                <div>
                     <label class="block text-sm font-medium mb-1">Nguyên liệu</label>
                     <div id="ingredients-container" class="space-y-2">
                         ${isEdit && dish.ingredients && dish.ingredients.length > 0 ? 
@@ -163,7 +180,7 @@
                                 <button type="button" class="remove-ingredient px-2 bg-red-100 text-red-600 rounded"><i class="fas fa-times"></i></button>
                             </div>`
                         }
-                </div>
+                    </div>
                     <button type="button" id="add-ingredient" class="mt-2 text-sm text-primary"><i class="fas fa-plus mr-1"></i>Thêm nguyên liệu</button>
                 </div>
                 <div class="flex justify-end space-x-2">
@@ -216,63 +233,71 @@
             e.preventDefault();
             var formData = new FormData(this);
             
+            // Get the file input
+            var imageFile = formData.get('ImageFile');
+            if (imageFile && imageFile.size > 0) {
+                // Validate file type
+                if (!imageFile.type.startsWith('image/')) {
+                    alert('Vui lòng chọn file ảnh hợp lệ');
+                    return;
+                }
+                // Validate file size (max 5MB)
+                if (imageFile.size > 5 * 1024 * 1024) {
+                    alert('Kích thước file không được vượt quá 5MB');
+                    return;
+                }
+            }
+
             // Create the model structure
             var model = {
-                Id: 0,
-                Name: '',
-                Price: 0,
-                Description: '',
-                Type: 0,
+                Id: formData.get('Id') ? parseInt(formData.get('Id')) : 0,
+                Name: formData.get('Name'),
+                Price: parseFloat(formData.get('Price')),
+                Description: formData.get('Description'),
+                Type: parseInt(formData.get('Type')),
+                ImageUrl: '/images/dishes/default-dish.png', // Set default image URL
                 Ingredients: []
             };
 
-            // Fill the model with form data
-            formData.forEach((value, key) => {
-                if (value === '') return;
-                
-                if (key.includes('[')) {
-                    // Handle ingredients array
-                    var parts = key.split(/[\[\].]+/);
-                    var index = parseInt(parts[1]);
-                    var field = parts[2];
-                    
-                    if (!model.Ingredients[index]) {
-                        model.Ingredients[index] = {
-                            IngredientId: 0,
-                            QuantityNeeded: 0
-                        };
-                    }
-                    
-                    if (field === 'IngredientId' || field === 'QuantityNeeded') {
-                        model.Ingredients[index][field] = Number(value);
-                    } else {
-                        model.Ingredients[index][field] = value;
-                    }
-                } else {
-                    // Handle regular fields
-                    if (key === 'Id' || key === 'Price' || key === 'Type') {
-                        model[key] = Number(value);
-                    } else {
-                        model[key] = value;
-                    }
+            // Process ingredients
+            var ingredientRows = document.querySelectorAll('.ingredient-row');
+            ingredientRows.forEach((row, index) => {
+                var ingredientId = row.querySelector('.ingredient-select').value;
+                var quantity = row.querySelector('.ingredient-quantity').value;
+                if (ingredientId && quantity) {
+                    model.Ingredients.push({
+                        IngredientId: parseInt(ingredientId),
+                        QuantityNeeded: parseFloat(quantity)
+                    });
                 }
             });
 
-            // Clean up ingredients array
-            model.Ingredients = model.Ingredients.filter(ing => 
-                ing && ing.IngredientId && !isNaN(ing.IngredientId) && 
-                ing.QuantityNeeded && !isNaN(ing.QuantityNeeded)
-            );
-
             var url = model.Id ? `/Dishes/EditJson/${model.Id}` : '/Dishes/CreateJson';
+            
+            // Create FormData for file upload
+            var uploadData = new FormData();
+            uploadData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+            uploadData.append('Id', model.Id);
+            uploadData.append('Name', model.Name);
+            uploadData.append('Price', model.Price);
+            uploadData.append('Description', model.Description);
+            uploadData.append('Type', model.Type);
+            uploadData.append('ImageUrl', model.ImageUrl);
+            
+            // Add ingredients
+            model.Ingredients.forEach((ing, index) => {
+                uploadData.append(`Ingredients[${index}].IngredientId`, ing.IngredientId);
+                uploadData.append(`Ingredients[${index}].QuantityNeeded`, ing.QuantityNeeded);
+            });
+
+            // Add image file if exists
+            if (imageFile && imageFile.size > 0) {
+                uploadData.append('ImageFile', imageFile);
+            }
             
             fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                },
-                body: JSON.stringify(model)
+                body: uploadData
             })
             .then(response => {
                 if (!response.ok) {
@@ -348,25 +373,29 @@
             }
         };
     });
-    </script>
+</script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-    <script>
-        // Connect to the SignalR hub
-        const ingredientConnection = new signalR.HubConnectionBuilder()
-            .withUrl("/notificationHub")
-            .build();
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<script>
+    // Connect to the SignalR hub
+    const ingredientConnection = new signalR.HubConnectionBuilder()
+        .withUrl("/notificationHub")
+        .build();
 
-        // Listen for the IngredientChanged event
-        ingredientConnection.on("IngredientChanged", function (data) {
-            // Show a notification or reload the page, as you prefer
-            alert("Có nguyên liệu mới hoặc thay đổi nguyên liệu! Vui lòng tải lại trang để cập nhật danh sách nguyên liệu.");
-            // Optionally, you can reload automatically:
-            //window.location.reload();
-        });
+    // Listen for the IngredientChanged event
+    ingredientConnection.on("IngredientChanged", function (data) {
+        // Phát âm thanh thông báo khi có thay đổi real-time
+        const sound = new Audio('/sounds/ingredient-notification.mp3');
+        sound.play().catch(error => console.log('Error playing sound:', error));
 
-        ingredientConnection.start().catch(function (err) {
-            return console.error(err.toString());
-        });
-    </script>
+        // Show a notification or reload the page, as you prefer
+        alert("Có nguyên liệu mới hoặc thay đổi nguyên liệu! Vui lòng tải lại trang để cập nhật danh sách nguyên liệu.");
+        // Optionally, you can reload automatically:
+        //window.location.reload();
+    });
+
+    ingredientConnection.start().catch(function (err) {
+        return console.error(err.toString());
+    });
+</script>
 }

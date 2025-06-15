@@ -971,6 +971,10 @@
 
         // Listen for the OrderStatusChanged event
         orderConnection.on("OrderStatusChanged", function (data) {
+            // Phát âm thanh thông báo khi có thay đổi real-time
+            const sound = new Audio('/sounds/ingredient-notification.mp3');
+            sound.play().catch(error => console.log('Error playing sound:', error));
+
             if (data.status == "Ready") {
                 toastr.success("Đơn hàng #" + data.OrderId + " đã nấu xong, sẵn sàng phục vụ!");
             } else {

@@ -17,8 +17,6 @@ namespace RMS
         {
             var builder = WebApplication.CreateBuilder(args);
 
-
-
             // Get environment variable (set manually for home/office)
             string location = Environment.GetEnvironmentVariable("MY_LOCATION"); // Default is Home
 
@@ -28,8 +26,6 @@ namespace RMS
                 : builder.Configuration.GetConnectionString("DefaultConnection");
 
             //$env:MY_LOCATION = "Office"
-
-
 
             // Add services to the container.
             builder.Services.AddControllersWithViews(options =>
@@ -63,14 +59,18 @@ namespace RMS
             builder.Services.AddRazorPages();
             builder.Services.AddSignalR(); // Add this line
 
-            // Add these services in Program.cs
+            // Configure authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
                 {
                     options.LoginPath = "/Auth/Login";
                     options.AccessDeniedPath = "/Auth/AccessDenied";
                     options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+                    options.Cookie.HttpOnly = true;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.Cookie.SameSite = SameSiteMode.Lax;
                 });
+
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("AdminOnly", policy =>

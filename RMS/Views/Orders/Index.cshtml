@@ -60,11 +60,20 @@ $(document).ready(function(){
             .build();
         // Listen for the OrderStatusChanged event
         orderConnection.on("OrderStatusChanged", function (data) {
-            if (data.status == "Ready") {
-                alert("Đơn hàng #" + data.OrderId + " đã nấu xong, sẵn sàng phục vụ!");
+            // Phát âm âm thanh thông báo khi có thay đổi real-time
+            const sound = new Audio('/sounds/ingredient-notification.mp3');
+            sound.play().catch(error => console.log('Error playing sound:', error));
+
+            if (data && data.orderId) {
+                const dishNames = data.dishNames ? data.dishNames.join(", ") : "";
+                if (data.status === "Ready") {
+                    alert("Đơn hàng #" + data.orderId + " (" + dishNames + ") đã nấu xong, sẵn sàng phục vụ!");
+                } else {
+                    alert("Đơn hàng #" + data.orderId + " (" + dishNames + ") đang được chế biến.");
+                }
             } else {
-                alert("Đơn hàng #" + data.OrderId + " đang được chế biến.");
-            }            
+                console.error("Invalid order data received:", data);
+            }
         });
         orderConnection.start().catch(function (err) {
             return console.error(err.toString());

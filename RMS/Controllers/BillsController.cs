@@ -24,13 +24,6 @@ namespace RMS.Controllers
             return View(bills);
         }
 
-        public async Task<IActionResult> Details(int id)
-        {
-            var bill = await _billService.GetByIdAsync(id);
-            if (bill == null) return NotFound();
-            return View(bill);
-        }
-
         // GET: Bills/GetBillDetails/5
         [HttpGet("Bills/GetBillDetails/{id}")]
         public async Task<IActionResult> GetBillDetails(int id)

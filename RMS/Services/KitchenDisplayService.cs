@@ -76,7 +76,11 @@ namespace RMS.Services
 
         public async Task<bool> StartCookingOrderAsync(int orderId)
         {
-            var order = await _context.Orders.FindAsync(orderId);
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Dish)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+                
             if (order == null) return false;
 
             if (order.Status == OrderStatus.Completed || order.Status == OrderStatus.Cancelled)
@@ -90,14 +94,23 @@ namespace RMS.Services
 
             // Notify all clients that an order is now being processed
             await _notificationService.NotifyAllAsync("OrderStatusChanged",
-                new { OrderId = orderId, Status = "Processing", Message = $"Order #{orderId} is now being processed" });
+                new { 
+                    orderId = orderId, 
+                    status = "Processing", 
+                    message = $"Order #{orderId} is now being processed",
+                    dishNames = order.OrderItems.Select(oi => oi.Dish?.Name ?? "Unknown Dish").ToList()
+                });
 
             return true;
         }
 
         public async Task<bool> CompleteOrderAsync(int orderId)
         {
-            var order = await _context.Orders.FindAsync(orderId);
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Dish)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+                
             if (order == null) return false;
 
             if (order.Status == OrderStatus.Completed || order.Status == OrderStatus.Cancelled)
@@ -112,7 +125,12 @@ namespace RMS.Services
 
             // Notify all clients that an order is ready
             await _notificationService.NotifyAllAsync("OrderStatusChanged",
-                new { OrderId = orderId, Status = "Ready", Message = $"Order #{orderId} is now ready" });
+                new { 
+                    orderId = orderId, 
+                    status = "Ready", 
+                    message = $"Order #{orderId} is now ready",
+                    dishNames = order.OrderItems.Select(oi => oi.Dish?.Name ?? "Unknown Dish").ToList()
+                });
 
             return true;
         }

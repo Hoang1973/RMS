@@ -22,12 +22,12 @@ namespace RMS.Hubs
             // Phân loại các sự kiện để phát âm thanh phù hợp
             return eventType switch
             {
-                "OrderChanged" => "order",
-                "PaymentChanged" => "payment",
-                "TableChanged" => "table",
-                "DishChanged" => "dish",
+                "OrderChanged" => "ingredient",
+                "PaymentChanged" => "ingredient",
+                "TableChanged" => "ingredient",
+                "DishChanged" => "ingredient",
                 "IngredientChanged" => "ingredient",
-                _ => "default"
+                _ => "ingredient"
             };
         }
     }
