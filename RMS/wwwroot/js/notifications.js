@@ -14,17 +14,27 @@ const connection = new signalR.HubConnectionBuilder()
     .build();
 
 // Xử lý sự kiện nhận thông báo
-connection.on("DataChanged", function (data) {
-    // Phát âm thanh thông báo
-    const sound = notificationSounds[data.notificationType] || notificationSounds.default;
-    sound.play().catch(error => console.log('Error playing sound:', error));
+connection.on("DataChanged", async function (data) {
+    try {
+        // Phát âm thanh thông báo ngay lập tức
+        const sound = notificationSounds[data.notificationType] || notificationSounds.ingredient;
+        sound.currentTime = 0; // Reset âm thanh về đầu
+        await sound.play();
 
-    // Hiển thị thông báo trên màn hình (tùy chọn)
-    showNotification(data);
+        // Sau khi âm thanh bắt đầu phát, thực hiện các hành động khác
+        showNotification(data);
 
-    // Cập nhật dữ liệu (nếu cần)
-    if (typeof updateData === 'function') {
-        updateData(data);
+        // Cập nhật dữ liệu (nếu cần)
+        if (typeof updateData === 'function') {
+            updateData(data);
+        }
+    } catch (error) {
+        console.log('Error playing sound:', error);
+        // Nếu không phát được âm thanh, vẫn thực hiện các hành động khác
+        showNotification(data);
+        if (typeof updateData === 'function') {
+            updateData(data);
+        }
     }
 });
 

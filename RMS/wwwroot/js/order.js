@@ -970,7 +970,7 @@ function initializePaymentForm(order) {
                                     <i class="fas fa-check-circle"></i>
                                 </div>
                                 <h3 class="text-2xl font-bold text-gray-900 mb-2">Thanh toán thành công!</h3>
-                                <p class="text-gray-600 mb-6">Đơn hàng đã được thanh toán và hóa đơn đã được tạo.</p>
+                                <p class="text-gray-600 mb-6">Đơn hàng đã được thanh toán.</p>
                                 <div class="space-y-4">
                                     <div class="flex justify-between text-sm">
                                         <span class="text-gray-600">Mã đơn:</span>
@@ -989,10 +989,7 @@ function initializePaymentForm(order) {
                                         <span class="font-semibold">${paymentMethod === 'cash' ? 'Tiền mặt' : 'Quét QR'}</span>
                                     </div>
                                 </div>
-                                <div class="mt-8 flex justify-center space-x-4">
-                                    <button onclick="printBill(${order.id})" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
-                                        <i class="fas fa-print mr-2"></i>In hóa đơn
-                                    </button>
+                                <div class="mt-8 flex justify-center">
                                     <button onclick="document.getElementById('payment-success-modal').remove(); location.reload();" class="bg-gray-200 text-gray-700 px-6 py-2 rounded hover:bg-gray-300">
                                         Đóng
                                     </button>
