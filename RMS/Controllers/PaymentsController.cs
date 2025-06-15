@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using RMS.Models;
 using RMS.Services;
+using RMS.Data;
+using RMS.Data.Entities;
 
 namespace RMS.Controllers
 {
@@ -11,11 +13,13 @@ namespace RMS.Controllers
         private readonly IPaymentService _paymentService;
         private readonly IBillService _billService;
         private readonly ITableService _tableService;
-        public PaymentsController(IPaymentService paymentService, IBillService billService, ITableService tableService)
+        private readonly RMSDbContext _context;
+        public PaymentsController(IPaymentService paymentService, IBillService billService, ITableService tableService, RMSDbContext context)
         {
             _paymentService = paymentService;
             _billService = billService;
             _tableService = tableService;
+            _context = context;
         }
 
         // GET: Payments
@@ -36,8 +40,11 @@ namespace RMS.Controllers
             // Đồng bộ hóa logic: luôn gọi BillService để cập nhật trạng thái, tạo bill và payment
             bool success = await _billService.CompletePaymentAndCreateBillAsync(model);
             if (!success)
-                return NotFound();
+                return NotFound(new { success = false, message = "Không thể hoàn tất thanh toán" });
+
             var table = await _tableService.GetByIdAsync(model.TableId);
+            if (table == null)
+                return NotFound(new { success = false, message = "Không tìm thấy bàn" });
 
             // Calculate total due
             decimal vatAmount = Math.Round(model.Subtotal * model.VatPercent / 100, 0);
@@ -54,15 +61,16 @@ namespace RMS.Controllers
             decimal totalDue = totalAmount - discountAmount;
             if (totalDue < 0) totalDue = 0;
 
-            // Tạo bản ghi Payment
-            var payment = new PaymentViewModel
+            // Tạo payment entity trực tiếp
+            var payment = new Payment
             {
                 OrderId = model.OrderId,
-                TableNumber = table.TableNumber,
-                AmountPaid = totalDue,  // Set AmountPaid equal to TotalDue
-                PaymentMethod = model.PaymentMethod,
+                AmountPaid = totalDue,
+                PaymentMethod = model.PaymentMethod == "cash" ? Payment.PaymentMethodEnum.Cash : Payment.PaymentMethodEnum.Card,
+                CreatedAt = DateTime.Now
             };
-            await _paymentService.CreateAsync(payment);
+            _context.Payments.Add(payment);
+            await _context.SaveChangesAsync();
 
             return Json(new { success = true, message = "Thanh toán thành công!" });
         }
