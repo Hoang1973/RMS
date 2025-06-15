@@ -23,7 +23,8 @@ $(document).ready(function(){
         <h3 class="font-bold text-lg mb-4">Đơn hàng hiện tại</h3>
         <div id="current-orders" class="space-y-3">
             @foreach (var order in Model
-            .Where(o => o.isPaid == false))
+            .Where(o => o.isPaid == false)
+            .OrderByDescending(o => o.CreatedAt))
             {
                 @Html.Partial("_OrderCard", order)
             }
@@ -36,7 +37,8 @@ $(document).ready(function(){
     <div class="card bg-white dark:bg-dark-card shadow rounded-lg p-6 border border-light-border dark:border-dark-border">
         <h3 class="font-bold text-lg mb-4">Lịch sử đơn hàng</h3>
         <div id="order-history" class="space-y-3">
-            @foreach (var order in Model.Where(o => o.isPaid == true))
+            @foreach (var order in Model.Where(o => o.isPaid == true)
+            .OrderByDescending(o => o.CreatedAt))
             {
                 @Html.Partial("_OrderCard", order)
             }
@@ -54,29 +56,68 @@ $(document).ready(function(){
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script>
+        // Khởi tạo âm thanh thông báo
+        const notificationSound = new Audio('/sounds/ingredient-notification.mp3');
+        
         // Connect to the SignalR hub
         const orderConnection = new signalR.HubConnectionBuilder()
             .withUrl("/notificationHub")
             .build();
+
         // Listen for the OrderStatusChanged event
         orderConnection.on("OrderStatusChanged", function (data) {
-            // Phát âm âm thanh thông báo khi có thay đổi real-time
-            const sound = new Audio('/sounds/ingredient-notification.mp3');
-            sound.play().catch(error => console.log('Error playing sound:', error));
-
-            if (data && data.orderId) {
-                const dishNames = data.dishNames ? data.dishNames.join(", ") : "";
-                if (data.status === "Ready") {
-                    alert("Đơn hàng #" + data.orderId + " (" + dishNames + ") đã nấu xong, sẵn sàng phục vụ!");
+            // Phát âm thanh thông báo ngay lập tức
+            notificationSound.currentTime = 0; // Reset âm thanh về đầu
+            notificationSound.play().then(() => {
+                // Sau khi âm thanh bắt đầu phát, hiển thị alert
+                if (data && data.orderId) {
+                    const dishNames = data.dishNames ? data.dishNames.join(", ") : "";
+                    if (data.status === "Ready") {
+                        alert("Đơn hàng #" + data.orderId + " (" + dishNames + ") đã nấu xong, sẵn sàng phục vụ!");
+                    } else {
+                        alert("Đơn hàng #" + data.orderId + " (" + dishNames + ") đang được chế biến.");
+                    }
                 } else {
-                    alert("Đơn hàng #" + data.orderId + " (" + dishNames + ") đang được chế biến.");
+                    console.error("Invalid order data received:", data);
                 }
-            } else {
-                console.error("Invalid order data received:", data);
-            }
+            }).catch(error => {
+                console.log('Error playing sound:', error);
+                // Nếu không phát được âm thanh, vẫn hiển thị alert
+                if (data && data.orderId) {
+                    const dishNames = data.dishNames ? data.dishNames.join(", ") : "";
+                    if (data.status === "Ready") {
+                        alert("Đơn hàng #" + data.orderId + " (" + dishNames + ") đã nấu xong, sẵn sàng phục vụ!");
+                    } else {
+                        alert("Đơn hàng #" + data.orderId + " (" + dishNames + ") đang được chế biến.");
+                    }
+                }
+            });
         });
+
+        // Listen for the OrderItemCompleted event
+        orderConnection.on("OrderItemCompleted", function (data) {
+            // Phát âm thanh thông báo ngay lập tức
+            notificationSound.currentTime = 0;
+            notificationSound.play().then(() => {
+                if (data && data.orderId && data.dishName) {
+                    // Chỉ hiển thị thông báo món hoàn thành nếu chưa phải món cuối cùng
+                    if (!data.allItemsCompleted) {
+                        alert("Món " + data.dishName + " của đơn hàng #" + data.orderId + " đã hoàn thành!");
+                    }
+                }
+            }).catch(error => {
+                console.log('Error playing sound:', error);
+                if (data && data.orderId && data.dishName) {
+                    // Chỉ hiển thị thông báo món hoàn thành nếu chưa phải món cuối cùng
+                    if (!data.allItemsCompleted) {
+                        alert("Món " + data.dishName + " của đơn hàng #" + data.orderId + " đã hoàn thành!");
+                    }
+                }
+            });
+        });
+
         orderConnection.start().catch(function (err) {
-            return console.error(err.toString());
+            console.error(err.toString());
         });
     </script>
 }

@@ -58,6 +58,9 @@ namespace RMS.Services
             order.Status = Order.OrderStatus.Completed;
             table.Status = Table.TableStatus.Available;
             order.isPaid = true;
+            // Giữ nguyên CustomerPhoneNumber
+            _context.Entry(order).Property(x => x.CustomerPhoneNumber).IsModified = false;
+
             // 2. Tính toán các giá trị hóa đơn
             decimal vatAmount = Math.Round(model.Subtotal * model.VatPercent / 100, 0);
             decimal totalAmount = model.Subtotal + vatAmount;

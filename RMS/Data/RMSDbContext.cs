@@ -51,11 +51,11 @@ namespace RMS.Data
             {
                 if (entry.State == EntityState.Added)
                 {
-                    entry.Entity.CreatedAt = DateTime.UtcNow;
+                    entry.Entity.CreatedAt = DateTime.Now;
                 }
                 else if (entry.State == EntityState.Modified)
                 {
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    entry.Entity.UpdatedAt = DateTime.Now;
                 }
             }
         }

@@ -1,5 +1,5 @@
 // Bill-related functionality
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
     let currentBillData = null;
 
     // Inject invoice styles
@@ -25,159 +25,260 @@
     document.head.appendChild(style);
 
     // Show bill details in modal
-    window.showBillDetails = function(billId) {
-        fetch(`/Bills/GetBillDetails/${billId}`)
+    window.showBillDetails = function(id) {
+        fetch(`/Bills/GetBillDetails/${id}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
                 return response.json();
             })
-            .then(data => {
-                if (!data) {
+            .then(bill => {
+                if (!bill) {
                     throw new Error('No data received');
                 }
 
-                currentBillData = data; // Store the data for printing
+                currentBillData = bill; // Store the data for printing
 
-                // Update modal content
-                const elements = {
-                    billId: document.getElementById('billId'),
-                    orderId: document.getElementById('orderId'),
-                    tableNumber: document.getElementById('tableNumber'),
-                    createdAt: document.getElementById('createdAt'),
-                    subtotal: document.getElementById('subtotal'),
-                    vatPercent: document.getElementById('vatPercent'),
-                    vatAmount: document.getElementById('vatAmount'),
-                    discountAmount: document.getElementById('discountAmount'),
-                    totalDue: document.getElementById('totalDue'),
-                    billItems: document.getElementById('billItems')
-                };
+                // Update bill info
+                document.getElementById('tableNumber').textContent = bill.tableNumber || 'N/A';
+                document.getElementById('billId').textContent = bill.id;
+                document.getElementById('orderId').textContent = bill.orderId;
+                document.getElementById('createdAt').textContent = bill.createdAt;
 
-                // Check if all elements exist
-                for (const [key, element] of Object.entries(elements)) {
-                    if (!element) {
-                        console.error(`Element with id '${key}' not found`);
-                        return;
-                    }
-                }
-
-                // Update content
-                elements.billId.textContent = '#' + data.id;
-                elements.orderId.textContent = '#' + data.orderId;
-                elements.tableNumber.textContent = data.tableNumber;
-                elements.createdAt.textContent = new Date(data.createdAt).toLocaleString('vi-VN');
-                elements.subtotal.textContent = formatCurrency(data.subtotal);
-                elements.vatPercent.textContent = data.vatPercent;
-                elements.vatAmount.textContent = formatCurrency(data.vatAmount);
-                elements.discountAmount.textContent = formatCurrency(data.discountAmount);
-                elements.totalDue.textContent = formatCurrency(data.totalDue);
-
-                // Update items table
-                elements.billItems.innerHTML = '';
-                if (data.items && Array.isArray(data.items)) {
-                    data.items.forEach(item => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td class="border px-2 py-1">${item.name}</td>
-                            <td class="border px-2 py-1 text-center">${item.quantity}</td>
-                            <td class="border px-2 py-1 text-right">${formatCurrency(item.price)}</td>
-                            <td class="border px-2 py-1 text-right">${formatCurrency(item.total)}</td>
-                        `;
-                        elements.billItems.appendChild(row);
-                    });
-                }
-
-                // Show modal
-                document.getElementById('billDetailsModal').classList.remove('hidden');
+                // Update bill items
+                document.getElementById('billItems').innerHTML = bill.items.map(item => `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td class="text-center">${item.quantity}</td>
+                        <td class="text-right">${formatCurrency(item.price)}</td>
+                        <td class="text-right">${formatCurrency(item.total)}</td>
+                    </tr>
+                `).join('');
+                
+                // Update bill summary
+                document.getElementById('subtotal').textContent = formatCurrency(bill.subtotal);
+                document.getElementById('vatPercent').textContent = bill.vatPercent;
+                document.getElementById('vatAmount').textContent = formatCurrency(bill.vatAmount);
+                document.getElementById('discountAmount').textContent = formatCurrency(bill.discountAmount);
+                document.getElementById('totalDue').textContent = formatCurrency(bill.totalDue);
+                
+                document.getElementById('bill-modal').classList.remove('hidden');
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Có lỗi xảy ra khi tải thông tin hóa đơn');
+                alert('Không thể tải thông tin hóa đơn');
             });
     };
 
-    // Print bill function
-    window.printBill = function(billId = null) {
-        // Nếu có billId được truyền vào, thì fetch dữ liệu và sau đó in
-        if (billId) {
-            fetch(`/Bills/GetBillDetails/${billId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (!data) throw new Error("Không tìm thấy hóa đơn");
-                    currentBillData = data;
-                    renderAndPrint();
-                })
-                .catch(error => {
-                    console.error(error);
-                    alert("Không thể tải dữ liệu hóa đơn để in");
-                });
-        } 
-        // Nếu đã có dữ liệu sẵn, thì in luôn
-        else if (currentBillData) {
-            renderAndPrint();
-        } 
-        // Ngược lại, báo lỗi
-        else {
-            alert("Không có dữ liệu hóa đơn để in");
-        }
+    // Close bill modal
+    window.closeBillModal = function() {
+        document.getElementById('bill-modal').classList.add('hidden');
     };
-    
-    function renderAndPrint() {
-        const content = document.querySelector('#billDetailsModal .max-w-md').innerHTML;
-        const printWindow = window.open('', '', 'width=800,height=600');
-    
+
+    // Print bill function
+    window.printBill = function() {
+        if (!currentBillData) {
+            alert("Không có dữ liệu hóa đơn để in");
+            return;
+        }
+
+        const printContent = document.getElementById('print-content').cloneNode(true);
+        const printWindow = window.open('', '_blank');
+        
+        // Get all styles from the current document
+        const styles = Array.from(document.styleSheets)
+            .map(styleSheet => {
+                try {
+                    return Array.from(styleSheet.cssRules)
+                        .map(rule => rule.cssText)
+                        .join('\n');
+                } catch (e) {
+                    return '';
+                }
+            })
+            .join('\n');
+
+        // Create the print document with embedded styles
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
             <head>
                 <title>In hóa đơn</title>
-                <link href="https://cdn.tailwindcss.com" rel="stylesheet" />
                 <style>
-                    body { background: white; font-family: Arial, sans-serif; }
-                    @media print {
-                        body { padding: 20px; }
-                        .no-print { display: none !important; }
+                    ${styles}
+                    
+                    /* Additional print-specific styles */
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        font-family: Arial, sans-serif;
+                        font-size: 12pt;
+                        color: #1f2937;
+                    }
+                    
+                    .bill-container {
+                        width: 100%;
+                        max-width: none;
+                        padding: 10mm;
+                        box-sizing: border-box;
+                    }
+                    
+                    .bill-header {
+                        text-align: center;
+                        margin-bottom: 1rem;
+                    }
+                    
+                    .bill-header .restaurant-name {
+                        font-size: 20pt;
+                        font-weight: bold;
+                        color: #1e40af;
+                        margin-bottom: 4mm;
+                    }
+                    
+                    .bill-header .restaurant-info {
+                        font-size: 10pt;
+                        color: #4b5563;
+                        line-height: 1.5;
+                    }
+                    
+                    .bill-info {
+                        border-top: 1px solid #e5e7eb;
+                        border-bottom: 1px solid #e5e7eb;
+                        margin: 6mm 0;
+                        padding: 4mm 0;
+                    }
+                    
+                    .bill-info-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 4mm;
+                    }
+                    
+                    .bill-info-item {
+                        display: flex;
+                        justify-content: space-between;
+                    }
+                    
+                    .bill-info-label {
+                        font-weight: 600;
+                        color: #374151;
+                    }
+                    
+                    .bill-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 6mm 0;
+                    }
+                    
+                    .bill-table th {
+                        background-color: #f3f4f6;
+                        color: #1e40af;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        font-size: 9pt;
+                        padding: 3mm;
+                        border: 1px solid #e5e7eb;
+                    }
+                    
+                    .bill-table td {
+                        padding: 2mm 3mm;
+                        border: 1px solid #e5e7eb;
+                        font-size: 10pt;
+                    }
+                    
+                    .bill-table .text-center {
+                        text-align: center;
+                    }
+                    
+                    .bill-table .text-right {
+                        text-align: right;
+                    }
+                    
+                    .bill-summary {
+                        border-top: 1px solid #e5e7eb;
+                        padding-top: 0.75rem;
+                        margin-top: 0.5rem;
+                    }
+                    
+                    .bill-summary-item {
+                        display: flex;
+                        justify-content: space-between;
+                        margin: 2mm 0;
+                        font-size: 10pt;
+                    }
+                    
+                    .bill-total {
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 14pt;
+                        font-weight: bold;
+                        margin-top: 2mm;
+                        padding-top: 2mm;
+                        border-top: 1px solid #e5e7eb;
+                    }
+                    
+                    .bill-total-amount {
+                        color: #16a34a;
+                    }
+                    
+                    .bill-footer {
+                        text-align: center;
+                        font-size: 8pt;
+                        color: #6b7280;
+                        line-height: 1.5;
+                        margin-top: 12mm;
+                    }
+                    
+                    @page {
+                        size: auto;
+                        margin: 0;
                     }
                 </style>
             </head>
-            <body class="invoice-page">
-                <div class="invoice-container">${content}</div>
-                <div class="no-print text-center mt-4">
-                    <button onclick="window.print()" class="print-btn">In hóa đơn</button>
-                </div>
+            <body>
+                ${printContent.outerHTML}
             </body>
             </html>
         `);
-    
+        
+        // Wait for styles to be applied
         printWindow.document.close();
-        printWindow.focus();
-    }
-    
+        
+        // Add a small delay to ensure styles are applied
+        setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+        }, 100);
+    };
 
     // Format currency helper function
     function formatCurrency(amount) {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
     }
 
-    // Initialize event listeners when DOM is loaded
-    document.addEventListener('DOMContentLoaded', function() {
-        // Close modal when clicking the close button
-        const closeButton = document.getElementById('closeModal');
-        if (closeButton) {
-            closeButton.addEventListener('click', function() {
-                document.getElementById('billDetailsModal').classList.add('hidden');
+    // Search functionality
+    const searchInput = document.getElementById('bill-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const search = e.target.value.toLowerCase();
+            document.querySelectorAll('tbody tr').forEach(function(row) {
+                const id = row.cells[0].textContent.toLowerCase();
+                const order = row.cells[1].textContent.toLowerCase();
+                const show = id.includes(search) || order.includes(search);
+                row.style.display = show ? '' : 'none';
             });
-        }
+        });
+    }
 
-        // Close modal when clicking outside
-        const modal = document.getElementById('billDetailsModal');
-        if (modal) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.add('hidden');
-                }
-            });
-        }
-    });
-})(); 
+    // Close modal when clicking outside
+    const modal = document.getElementById('bill-modal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+    }
+}); 

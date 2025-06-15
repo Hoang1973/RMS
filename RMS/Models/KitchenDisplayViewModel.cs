@@ -24,8 +24,8 @@ namespace RMS.Models
         {
             get
             {
-                var startTime = Created ?? DateTime.Now;
-                return (int)Math.Floor((DateTime.Now - startTime).TotalMinutes);
+                if (!Created.HasValue) return 0;
+                return (int)Math.Floor((DateTime.Now - Created.Value).TotalMinutes);
             }
         }
 

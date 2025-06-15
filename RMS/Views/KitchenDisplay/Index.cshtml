@@ -71,7 +71,7 @@
                                 <div>
                                     <h3 class="font-medium">@order.TableName</h3>
                                     <p class="text-sm text-gray-600 dark:text-gray-400">
-                                        Thời gian chờ món mới: <span class="kds-timer" data-start="@order.Created">00:00</span>
+                                        Thời gian chờ: <span class="kds-timer" data-start="@order.Created">00:00</span>
                                     </p>
                                     @if (!string.IsNullOrWhiteSpace(order.Note))
                                     {
@@ -123,7 +123,7 @@
                             <div>
                                 <h3 class="font-medium">@order.TableName</h3>
                                 <p class="text-sm text-gray-600 dark:text-gray-400">
-                                    Hoàn thành: @(order.Created?.ToString("HH:mm:ss"))
+                                    Hoàn thành: @(order.Created?.ToString("dd/MM/yyyy HH:mm:ss"))
                                 </p>
                                 @if (!string.IsNullOrWhiteSpace(order.Note))
                                 {
@@ -150,6 +150,12 @@
 
 @section Scripts {
     <script>
+        // Function to play notification sound
+        function playNotificationSound() {
+            const sound = new Audio('/sounds/ingredient-notification.mp3');
+            sound.play().catch(error => console.log('Error playing sound:', error));
+        }
+
         // Khởi tạo flash timer cho tất cả order khi trang load
         $(document).ready(function () {
             // Chỉ khởi tạo flash timer cho các order đang chờ hoặc đang chế biến
@@ -171,10 +177,12 @@
                         if (response.success) {
                             location.reload();
                         } else {
+                            playNotificationSound();
                             alert("Không thể bắt đầu chế biến. Vui lòng thử lại.");
                         }
                     },
                     error: function () {
+                        playNotificationSound();
                         alert("Đã xảy ra lỗi. Vui lòng thử lại.");
                     }
                 });
@@ -195,10 +203,12 @@
                             if (orderFlashTimers[orderId]) clearTimeout(orderFlashTimers[orderId]);
                             location.reload();
                         } else {
+                            playNotificationSound();
                             alert("Không thể hoàn thành đơn hàng. Vui lòng thử lại.");
                         }
                     },
                     error: function () {
+                        playNotificationSound();
                         alert("Đã xảy ra lỗi. Vui lòng thử lại.");
                     }
                 });
@@ -214,7 +224,7 @@
             }
         }
 
-        const MAX_WAIT_SECONDS = 5; // ví dụ: 10 phút = 600 giây
+        const MAX_WAIT_SECONDS = 10; // ví dụ: 10 phút = 600 giây
         const orderFlashTimers = {};
 
         function startOrderFlashTimer(orderId) {
@@ -264,37 +274,12 @@
                         tryAutoCompleteOrder(orderCard);
                         location.reload(); // Reload để cập nhật trạng thái
                     } else {
+                        playNotificationSound();
                         alert("Không thể hoàn thành món. Vui lòng thử lại.");
                     }
                 },
                 error: function () {
-                    alert("Đã xảy ra lỗi. Vui lòng thử lại.");
-                }
-            });
-        });
-
-        // Reset timer khi hoàn thành một món
-        $(document).on("click", ".complete-item-btn", function () {
-            const btn = $(this);
-            const itemId = btn.data("item-id");
-            const orderCard = btn.closest(".kitchen-order-card");
-            const orderId = orderCard.data("id");
-            $.ajax({
-                url: "/KitchenDisplay/CompleteOrderItem",
-                type: "POST",
-                data: { orderItemId: itemId },
-                success: function (response) {
-                    if (response.success) {
-                        btn.find("i").removeClass("fa-circle").addClass("fa-check-circle");
-                        btn.prop("disabled", true);
-                        btn.closest(".kitchen-item").addClass("completed");
-                        // Reset timer cho order này
-                        startOrderTimer(orderId);
-                    } else {
-                        alert("Không thể hoàn thành món. Vui lòng thử lại.");
-                    }
-                },
-                error: function () {
+                    playNotificationSound();
                     alert("Đã xảy ra lỗi. Vui lòng thử lại.");
                 }
             });
@@ -323,16 +308,16 @@
         const kdsConnection = new signalR.HubConnectionBuilder()
             .withUrl("/notificationHub")
             .build();
-        // Listen for the IngredientChanged event
+
+        // Listen for the OrderChanged event
         kdsConnection.on("OrderChanged", function (data) {
             // Phát âm thanh thông báo khi có thay đổi real-time
-            const sound = new Audio('/sounds/ingredient-notification.mp3');
-            sound.play().catch(error => console.log('Error playing sound:', error));
-
+            playNotificationSound();
             window.location.reload();
         });
+
         kdsConnection.start().catch(function (err) {
-            return console.error(err.toString());
+            console.error(err.toString());
         });
     </script>
     <style>

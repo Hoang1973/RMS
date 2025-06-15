@@ -1,7 +1,7 @@
 <aside id="sidebar" class="w-64 bg-white dark:bg-dark-card shadow-md transition-all duration-300 transform -translate-x-full md:translate-x-0 fixed md:relative z-10 h-full md:h-auto">
     <nav class="p-2">
         <ul class="space-y-1">
-            @if (User.IsInRole("Admin") || User.IsInRole("Chef") || User.IsInRole("Waiter") || User.IsInRole("Cashier"))
+            @if (User.IsInRole("Admin") || User.IsInRole("Waiter") || User.IsInRole("Cashier"))
             {
                 <li>
                     <a href="/Dashboard/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
@@ -22,7 +22,7 @@
             <li>
                 <a href="/Payments/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
                     <i class="fas fa-cash-register w-6"></i>
-                    <span class="ml-2">Thanh toán</span>
+                    <span class="ml-2">Lịch Sử Thanh toán</span>
                 </a>
             </li>
             <li>

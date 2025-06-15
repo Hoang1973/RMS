@@ -29,7 +29,7 @@
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-                @foreach (var bill in Model)
+                @foreach (var bill in Model.OrderByDescending(b => b.CreatedAt))
                 {
                     <tr class="hover:bg-blue-50 transition-colors duration-200">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">@bill.Id</td>
@@ -146,8 +146,8 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/bill.js"></script>
     <link rel="stylesheet" href="~/css/bill.css" />
+    <script src="~/js/bills.js" defer></script>
     <script>
         // Search functionality
         document.getElementById('bill-search').addEventListener('input', function(e) {

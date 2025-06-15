@@ -49,9 +49,7 @@ namespace RMS.Services
                     TableId = order.TableId,
                     TableName = order.Table?.TableNumber ?? "Mang về",
                     Status = order.Status.ToString(),
-                    Created = order.CreatedAt.HasValue
-                        ? DateTime.SpecifyKind(order.CreatedAt.Value, DateTimeKind.Utc).ToLocalTime()
-                        : (DateTime?)null,
+                    Created = order.CreatedAt,
                     Note = order.Note,
                     Items = order.OrderItems.Select(oi => new RMS.Models.KitchenOrderViewModel.Item
                     {
@@ -137,7 +135,11 @@ namespace RMS.Services
 
         public async Task<bool> CompleteOrderItem(int orderItemId)
         {
-            var item = await _context.OrderItems.FirstOrDefaultAsync(x => x.Id == orderItemId);
+            var item = await _context.OrderItems
+                .Include(oi => oi.Dish)
+                .Include(oi => oi.Order)
+                    .ThenInclude(o => o.OrderItems)
+                .FirstOrDefaultAsync(x => x.Id == orderItemId);
             if (item == null) return false;
 
             if (item.IsCompleted) return true; // Đã hoàn thành rồi thì không làm gì nữa
@@ -145,9 +147,7 @@ namespace RMS.Services
             item.IsCompleted = true;
 
             // Lấy đơn hàng và kiểm tra trạng thái các món
-            var order = await _context.Orders
-                .Include(o => o.OrderItems)
-                .FirstOrDefaultAsync(o => o.Id == item.OrderId);
+            var order = item.Order;
 
             if (order == null)
             {
@@ -155,21 +155,37 @@ namespace RMS.Services
                 return true;
             }
 
-            order.CreatedAt = DateTime.UtcNow; // Cập nhật thời gian tạo đơn hàng nếu cần
+            // Kiểm tra xem tất cả món đã hoàn thành chưa
+            var allItemsCompleted = order.OrderItems.All(i => i.IsCompleted);
 
             // Nếu tất cả món đã hoàn thành, cập nhật trạng thái đơn hàng
-            if (order.OrderItems.All(i => i.IsCompleted))
+            if (allItemsCompleted)
             {
                 order.Status = OrderStatus.Ready;
             }
 
             await _context.SaveChangesAsync();
 
-            // Gửi thông báo nếu đơn hàng đã sẵn sàng phục vụ
-            if (order.OrderItems.All(i => i.IsCompleted))
+            // Gửi thông báo khi hoàn thành một món
+            await _notificationService.NotifyAllAsync("OrderItemCompleted",
+                new { 
+                    orderId = order.Id, 
+                    itemId = item.Id,
+                    dishName = item.Dish?.Name ?? "Unknown Dish",
+                    message = $"Món {item.Dish?.Name ?? "Unknown"} của đơn hàng #{order.Id} đã hoàn thành",
+                    allItemsCompleted = allItemsCompleted
+                });
+
+            // Chỉ gửi thông báo đơn hàng hoàn thành khi tất cả món đã hoàn thành
+            if (allItemsCompleted)
             {
                 await _notificationService.NotifyAllAsync("OrderStatusChanged",
-                    new { OrderId = order.Id, Status = "Ready", Message = $"Order #{order.Id} is now ready" });
+                    new { 
+                        orderId = order.Id, 
+                        status = "Ready", 
+                        message = $"Đơn hàng #{order.Id} đã sẵn sàng phục vụ",
+                        dishNames = order.OrderItems.Select(oi => oi.Dish?.Name ?? "Unknown Dish").ToList()
+                    });
             }
 
             return true;
