@@ -10,6 +10,8 @@ using RMS.Data;
 using RMS.Data.Entities;
 using RMS.Models;
 using RMS.Services;
+using System.IO;
+using Microsoft.AspNetCore.Hosting;
 
 namespace RMS.Controllers
 {
@@ -18,11 +20,36 @@ namespace RMS.Controllers
     {
         private readonly IDishService _dishService;
         private readonly IIngredientService _ingredientService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public DishesController(IDishService dishService, IIngredientService ingredientService)
+        public DishesController(
+            IDishService dishService, 
+            IIngredientService ingredientService,
+            IWebHostEnvironment webHostEnvironment)
         {
             _dishService = dishService;
             _ingredientService = ingredientService;
+            _webHostEnvironment = webHostEnvironment;
+        }
+
+        private async Task<string> SaveImage(IFormFile imageFile)
+        {
+            if (imageFile == null || imageFile.Length == 0)
+                return null;
+
+            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images/dishes");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            string uniqueFileName = Guid.NewGuid().ToString() + "_" + imageFile.FileName;
+            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await imageFile.CopyToAsync(fileStream);
+            }
+
+            return "/images/dishes/" + uniqueFileName;
         }
 
         // GET: Dishes
@@ -48,7 +75,7 @@ namespace RMS.Controllers
         // POST: Dishes/Create (JSON)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateJson([FromBody] DishViewModel model)
+        public async Task<IActionResult> CreateJson([FromForm] DishViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -56,6 +83,15 @@ namespace RMS.Controllers
             }
             try 
             {
+                if (model.ImageFile != null)
+                {
+                    model.ImageUrl = await SaveImage(model.ImageFile);
+                }
+                else if (string.IsNullOrEmpty(model.ImageUrl))
+                {
+                    // Set a default image URL if no image is provided and no ImageUrl is set
+                    model.ImageUrl = "/images/dishes/default-dish.png";
+                }
                 await _dishService.CreateAsync(model);
                 return Json(new { success = true });
             }
@@ -68,7 +104,7 @@ namespace RMS.Controllers
         // POST: Dishes/Edit/5 (JSON)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditJson(int id, [FromBody] DishViewModel model)
+        public async Task<IActionResult> EditJson(int id, [FromForm] DishViewModel model)
         {
             if (id != model.Id)
             {
@@ -82,6 +118,22 @@ namespace RMS.Controllers
 
             try
             {
+                if (model.ImageFile != null)
+                {
+                    // Delete old image if exists
+                    var oldDish = await _dishService.GetByIdAsync(id);
+                    if (oldDish != null && !string.IsNullOrEmpty(oldDish.ImageUrl))
+                    {
+                        var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, oldDish.ImageUrl.TrimStart('/'));
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+
+                    model.ImageUrl = await SaveImage(model.ImageFile);
+                }
+
                 await _dishService.UpdateAsync(model);
                 return Json(new { success = true });
             }
@@ -106,6 +158,16 @@ namespace RMS.Controllers
         {
             try
             {
+                var dish = await _dishService.GetByIdAsync(id);
+                if (dish != null && !string.IsNullOrEmpty(dish.ImageUrl))
+                {
+                    var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, dish.ImageUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(imagePath))
+                    {
+                        System.IO.File.Delete(imagePath);
+                    }
+                }
+
                 bool deleted = await _dishService.DeleteByIdAsync(id);
                 if (!deleted)
                 {
@@ -154,6 +216,12 @@ namespace RMS.Controllers
                 ViewData["Ingredients"] = new SelectList(await _ingredientService.GetAllAsync(), "Id", "Name");
                 return View(model);
             }
+
+            if (model.ImageFile != null)
+            {
+                model.ImageUrl = await SaveImage(model.ImageFile);
+            }
+
             await _dishService.CreateAsync(model);
             return RedirectToAction(nameof(Index));
         }
@@ -189,6 +257,22 @@ namespace RMS.Controllers
             {
                 try
                 {
+                    if (model.ImageFile != null)
+                    {
+                        // Delete old image if exists
+                        var oldDish = await _dishService.GetByIdAsync(id);
+                        if (oldDish != null && !string.IsNullOrEmpty(oldDish.ImageUrl))
+                        {
+                            var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, oldDish.ImageUrl.TrimStart('/'));
+                            if (System.IO.File.Exists(oldImagePath))
+                            {
+                                System.IO.File.Delete(oldImagePath);
+                            }
+                        }
+
+                        model.ImageUrl = await SaveImage(model.ImageFile);
+                    }
+
                     await _dishService.UpdateAsync(model);
                     return RedirectToAction(nameof(Index));
                 }
@@ -230,6 +314,16 @@ namespace RMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            var dish = await _dishService.GetByIdAsync(id);
+            if (dish != null && !string.IsNullOrEmpty(dish.ImageUrl))
+            {
+                var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, dish.ImageUrl.TrimStart('/'));
+                if (System.IO.File.Exists(imagePath))
+                {
+                    System.IO.File.Delete(imagePath);
+                }
+            }
+
             bool deleted = await _dishService.DeleteByIdAsync(id);
             if (!deleted)
             {

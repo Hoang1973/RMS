@@ -1,11 +1,11 @@
 // Khởi tạo các âm thanh thông báo
 const notificationSounds = {
-    order: new Audio('/sounds/order-notification.mp3'),
-    payment: new Audio('/sounds/payment-notification.mp3'),
-    table: new Audio('/sounds/table-notification.mp3'),
-    dish: new Audio('/sounds/dish-notification.mp3'),
+    // order: new Audio('/sounds/order-notification.mp3'),
+    // payment: new Audio('/sounds/payment-notification.mp3'),
+    // table: new Audio('/sounds/table-notification.mp3'),
+    // dish: new Audio('/sounds/dish-notification.mp3'),
     ingredient: new Audio('/sounds/ingredient-notification.mp3'),
-    default: new Audio('/sounds/default-notification.mp3')
+    // default: new Audio('/sounds/default-notification.mp3')
 };
 
 // Kết nối tới SignalR Hub

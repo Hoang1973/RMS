@@ -1,8 +1,4 @@
-@* Sidebar partial view based on PoeGenerated.html *@
 <aside id="sidebar" class="w-64 bg-white dark:bg-dark-card shadow-md transition-all duration-300 transform -translate-x-full md:translate-x-0 fixed md:relative z-10 h-full md:h-auto">
-    <div class="p-4 border-b border-light-border dark:border-dark-border">
-        <p id="sidebar-user-role" class="font-semibold"></p>
-    </div>
     <nav class="p-2">
         <ul class="space-y-1">
             @if (User.IsInRole("Admin") || User.IsInRole("Chef") || User.IsInRole("Waiter") || User.IsInRole("Cashier"))
@@ -17,58 +13,58 @@
 
             @if (User.IsInRole("Admin") || User.IsInRole("Waiter") || User.IsInRole("Cashier"))
             {
-                <li>
-                    <a href="/Tables/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
-                        <i class="fas fa-chair w-6"></i>
-                        <span class="ml-2">Quản lý bàn</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/Payments/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
-                        <i class="fas fa-cash-register w-6"></i>
-                        <span class="ml-2">Thanh toán</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/Bills/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
-                        <i class="fas fa-file-invoice-dollar w-6"></i>
-                        <span class="ml-2">Lịch sử hóa đơn</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/Orders/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
-                        <i class="fas fa-receipt w-6"></i>
-                        <span class="ml-2">Quản lý order</span>
-                    </a>
-                </li>
+            <li>
+                <a href="/Tables/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
+                    <i class="fas fa-chair w-6"></i>
+                    <span class="ml-2">Quản lý bàn</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Payments/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
+                    <i class="fas fa-cash-register w-6"></i>
+                    <span class="ml-2">Thanh toán</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Bills/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
+                    <i class="fas fa-file-invoice-dollar w-6"></i>
+                    <span class="ml-2">Lịch sử hóa đơn</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Orders/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
+                    <i class="fas fa-receipt w-6"></i>
+                    <span class="ml-2">Quản lý order</span>
+                </a>
+            </li>
             }
 
             @if (User.IsInRole("Admin"))
             {
-                <li>
-                    <a href="/Dishes/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
-                        <i class="fas fa-utensils w-6"></i>
-                        <span class="ml-2">Quản lý thực đơn</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/Ingredients/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
-                        <i class="fas fa-carrot w-6"></i>
-                        <span class="ml-2">Nguyên liệu</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/Discounts/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
-                        <i class="fas fa-percent w-6"></i>
-                        <span class="ml-2">Giảm giá</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="/Users/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
-                        <i class="fas fa-user w-6"></i>
-                        <span class="ml-2">Người dùng</span>
-                    </a>
-                </li>
+            <li>
+                <a href="/Dishes/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
+                    <i class="fas fa-utensils w-6"></i>
+                    <span class="ml-2">Quản lý thực đơn</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Ingredients/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
+                    <i class="fas fa-carrot w-6"></i>
+                    <span class="ml-2">Nguyên liệu</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Discounts/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
+                    <i class="fas fa-percent w-6"></i>
+                    <span class="ml-2">Giảm giá</span>
+                </a>
+            </li>
+            <li>
+                <a href="/Users/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
+                    <i class="fas fa-user w-6"></i>
+                    <span class="ml-2">Người dùng</span>
+                </a>
+            </li>
                 <li>
                     <a href="/StockHistory/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
                         <i class="fas fa-history w-6"></i>
@@ -79,12 +75,12 @@
 
             @if (User.IsInRole("Admin") || User.IsInRole("Chef"))
             {
-                <li>        
-                    <a href="/KitchenDisplay/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
-                        <i class="fas fa-fire w-6"></i>
-                        <span class="ml-2">KDS</span>
-                    </a>
-                </li>
+            <li>        
+                <a href="/KitchenDisplay/Index" class="flex items-center px-4 py-2 rounded hover:bg-primary hover:text-white transition">
+                    <i class="fas fa-fire w-6"></i>
+                    <span class="ml-2">KDS</span>
+                </a>
+            </li>
             }
         </ul>
     </nav>

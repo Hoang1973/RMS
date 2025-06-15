@@ -99,6 +99,7 @@ namespace RMS.Controllers
                 TotalAmount = order.TotalAmount,
                 CreatedAt = order.CreatedAt,
                 isPaid = order.isPaid,
+                CustomerPhoneNumber = order.CustomerPhoneNumber,
                 Dishes = order.OrderItems != null
                     ? order.OrderItems.Select(x => new OrderViewModel.DishItem
                         {
@@ -163,6 +164,7 @@ namespace RMS.Controllers
             {
                 Id = order.Id,
                 TableId = order.TableId,
+                CustomerPhoneNumber = order.CustomerPhoneNumber,
                 TableNumber = order.Table?.TableNumber,
                 TotalAmount = order.TotalAmount,
                 CreatedAt = order.CreatedAt,
@@ -198,6 +200,7 @@ namespace RMS.Controllers
                 createdAt = model.CreatedAt?.ToString("HH:mm dd/MM/yyyy"),
                 totalAmount = model.TotalAmount,
                 isPaid = model.isPaid,
+                customerPhoneNumber = model.CustomerPhoneNumber,
                 dishes = model.Dishes?.Select(d => new {
                     name = d.Name,
                     quantity = d.Quantity,

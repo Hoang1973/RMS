@@ -13,6 +13,8 @@ namespace RMS.Models
         [Range(0, int.MaxValue, ErrorMessage = "Stock Quantity must be zero or positive.")]
         public decimal Price { get; set; }
         public string Description { get; set; }
+        public string ImageUrl { get; set; }
+        public IFormFile ImageFile { get; set; }
 
         [Required(ErrorMessage = "Type is required.")]
         public Dish.DishType Type { get; set; }

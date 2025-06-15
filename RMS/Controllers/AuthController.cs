@@ -7,6 +7,7 @@ using RMS.Data.Entities;
 using RMS.Models;
 using RMS.Services;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace RMS.Controllers
 {
@@ -32,12 +33,10 @@ namespace RMS.Controllers
             return View();
         }
 
-
         // POST: Auth/Login
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        // Trong hàm Login của AuthController
         public async Task<IActionResult> Login(LoginModel model)
         {
             var token = await _authService.AuthenticateAsync(model);
@@ -57,18 +56,28 @@ namespace RMS.Controllers
                 return View(model);
             }
 
-            // Store token and role in cookie
-            await HttpContext.SignInAsync(new ClaimsPrincipal(
-                new ClaimsIdentity(
-                    new[]
-                    {
+            // Tạo claims cho user
+            var claims = new List<Claim>
+            {
                 new Claim(ClaimTypes.Name, model.Email),
+                new Claim("FullName", user.Name),
                 new Claim("JWT", token),
-                new Claim(ClaimTypes.Role, user.UserRole.ToString()) // Thêm role
-                    },
-                    "CookieAuth"
-                )
-            ));
+                new Claim(ClaimTypes.Role, user.UserRole.ToString())
+            };
+
+            // Tạo identity và principal
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(60)
+            };
+
+            // Đăng nhập user
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties);
 
             return RedirectToAction("Index", "Home");
         }
@@ -76,7 +85,7 @@ namespace RMS.Controllers
         // GET: Auth/Logout
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync();
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login");
         }
 
@@ -87,5 +96,4 @@ namespace RMS.Controllers
             return View();
         }
     }
-
 }

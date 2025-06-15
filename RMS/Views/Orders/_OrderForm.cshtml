@@ -14,7 +14,7 @@
             @Html.AntiForgeryToken()
             <div class="mb-3">
                 <label class="block font-semibold mb-1">Số điện thoại khách hàng</label>
-                <input asp-for="CustomerPhoneNumber" class="border px-3 py-2 w-full rounded" placeholder="Nhập số điện thoại khách hàng..." />
+                <input asp-for="CustomerPhoneNumber" required class="border px-3 py-2 w-full rounded" placeholder="Nhập số điện thoại khách hàng..." />
             </div>
             <div class="mb-3">
                 <label class="block font-semibold mb-1">Chọn bàn</label>
@@ -156,6 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
     $('#orderCreateForm').on('submit', function (e) {
         e.preventDefault();
         var formData = $(this).serialize();
+        console.log('Form data:', formData);
         $.ajax({
             url: '/Orders/Create',
             type: 'POST',
