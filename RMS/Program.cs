@@ -17,16 +17,6 @@ namespace RMS
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Get environment variable (set manually for home/office)
-            string location = Environment.GetEnvironmentVariable("MY_LOCATION"); // Default is Home
-
-            // Choose the correct connection string
-            string connectionString = location == "Office"
-                ? builder.Configuration.GetConnectionString("OfficeDB")
-                : builder.Configuration.GetConnectionString("DefaultConnection");
-
-            //$env:MY_LOCATION = "Office"
-
             // Add services to the container.
             builder.Services.AddControllersWithViews(options =>
             {
@@ -38,7 +28,7 @@ namespace RMS
             });
 
             builder.Services.AddDbContext<RMSDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("OfficeDB")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Add AutoMapper
             builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -67,7 +57,7 @@ namespace RMS
                     options.AccessDeniedPath = "/Auth/AccessDenied";
                     options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
                     options.Cookie.HttpOnly = true;
-                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // ✅
                     options.Cookie.SameSite = SameSiteMode.Lax;
                 });
 
@@ -96,7 +86,7 @@ namespace RMS
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseRouting();
